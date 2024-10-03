@@ -4,6 +4,15 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { EmployeeModule } from './modules/employee/employee.module';
+import { LocationModule } from './modules/location/location.module';
+import { TransactionModule } from './modules/transaction/transaction.module';
+import { VehicleModule } from './modules/vehicle/vehicle.module';
+import { Vehicle } from './modules/vehicle/entities/vehical.entity';
+import { Location } from './modules/location/entities/location.entity';
+import { Employee } from './modules/employee/entities/employee.entity';
+import { Transaction } from './modules/transaction/entities/transaction.entity';
+import { CommonModule } from './common/common.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -12,12 +21,12 @@ import { DataSource } from 'typeorm';
     TypeOrmModule.forRootAsync({
       useFactory: async () => ({
         type: 'mysql',
-        host: process.env.DB_HOST,
+        host: process.env.DB_HOST,  
         port: Number(process.env.DB_PORT),
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [Vehicle, Location, Employee, Transaction],
         synchronize: true, // Set to false in production
       }),
       async dataSourceFactory(options) {
@@ -26,6 +35,11 @@ import { DataSource } from 'typeorm';
         return dataSource;
       },
     }),
+    VehicleModule,
+    EmployeeModule,
+    LocationModule,
+    TransactionModule,
+    CommonModule,
   ],
   controllers: [AppController],
   providers: [AppService],
