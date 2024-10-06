@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Logger, Param, Post, Put, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { VehicleService } from './vehicle.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Vehicle } from './entities/vehical.entity';
@@ -14,160 +14,114 @@ export class VehicleController {
     private readonly uploadService: UploadService,
   ) { }
 
-  /**
-     * Create a new vehicle.
-     * @param vehicle The vehicle data to be created.
-     * @returns A response object indicating success or failure.
-     */
   @Post()
   async create(
-    @Body() vehicle: Vehicle
-  ): Promise<{ success: boolean; message: string; data?: Vehicle }> {
+    @Body(new ValidationPipe()) vehicle: Vehicle
+  ): Promise<response<Vehicle>> {
     try {
       const response = await this.vehicleService.create(vehicle);
       return {
         success: true,
-        message: Messages.vehicle.createSuccess, // Using constant message
+        message: Messages.vehicle.createSuccess,
         data: response,
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [create] Error: ${error.message}`);
-      return {
-        success: false,
-        message: Messages.vehicle.createFailure,
-      };
+      throw new HttpException(Messages.vehicle.createFailure, HttpStatus.BAD_REQUEST);
     }
   }
 
-  /**
-   * Retrieve all vehicles.
-   * @returns A response object with a list of vehicles.
-   */
   @Get()
-  async findAll(): Promise<{ success: boolean; message: string; data?: Vehicle[] }> {
+  async findAll(): Promise<response<Vehicle[]>> {
     try {
       const response = await this.vehicleService.findAll();
       return {
         success: true,
-        message: Messages.vehicle.findAllSuccess, // Using constant message
+        message: Messages.vehicle.findAllSuccess,
         data: response,
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [findAll] Error: ${error.message}`);
-      return {
-        success: false,
-        message: Messages.vehicle.findAllFailure,
-      };
+      throw new HttpException(Messages.vehicle.findAllFailure, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  /**
-   * Retrieve a vehicle by its ID.
-   * @param id The ID of the vehicle to retrieve.
-   * @returns A response object with the vehicle data.
-   */
   @Get(':id')
   async findOne(
-    @Param('id') id: number
-  ): Promise<{ success: boolean; message: string; data?: Vehicle }> {
+    @Param('id') id: string // Get id as string
+  ): Promise<response<Vehicle>> {
+    const vehicleId = parseInt(id, 10); // Convert to number
     try {
-      const response = await this.vehicleService.findOne(id);
+      const response = await this.vehicleService.findOne(vehicleId);
+      if (!response) {
+        throw new HttpException(Messages.vehicle.findOneFailure(vehicleId), HttpStatus.NOT_FOUND);
+      }
       return {
         success: true,
-        message: Messages.vehicle.findOneSuccess(id), // Using constant message
+        message: Messages.vehicle.findOneSuccess(vehicleId),
         data: response,
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [findOne] Error: ${error.message}`);
-      return {
-        success: false,
-        message: Messages.vehicle.findOneFailure(id), // Using constant message
-      };
+      throw new HttpException(Messages.vehicle.findOneFailure(vehicleId), HttpStatus.NOT_FOUND);
     }
   }
 
-  /**
-   * Update a vehicle by its ID.
-   * @param id The ID of the vehicle to update.
-   * @param vehicle The updated vehicle data.
-   * @returns A response object indicating success or failure.
-   */
   @Put(':id')
   async update(
-    @Param('id') id: number,
-    @Body() vehicle: Vehicle
-  ): Promise<{ success: boolean; message: string; data?: Vehicle }> {
+    @Param('id') id: string, // Get id as string
+    @Body(new ValidationPipe()) vehicle: Vehicle
+  ): Promise<response<Vehicle>> {
+    const vehicleId = parseInt(id, 10); // Convert to number
     try {
-      const response = await this.vehicleService.update(id, vehicle);
+      const response = await this.vehicleService.update(vehicleId, vehicle);
       return {
         success: true,
-        message: Messages.vehicle.updateSuccess(id), // Using constant message
+        message: Messages.vehicle.updateSuccess(vehicleId),
         data: response,
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [update] Error: ${error.message}`);
-      return {
-        success: false,
-        message: Messages.vehicle.updateFailure(id), // Using constant message
-      };
+      throw new HttpException(Messages.vehicle.updateFailure(vehicleId), HttpStatus.BAD_REQUEST);
     }
   }
 
-  /**
-   * Delete a vehicle by its ID.
-   * @param id The ID of the vehicle to delete.
-   * @returns A response object indicating success or failure.
-   */
   @Delete(':id')
   async remove(
-    @Param('id') id: number
-  ): Promise<{ success: boolean; message: string }> {
+    @Param('id') id: string // Get id as string
+  ): Promise<response<void>> {
+    const vehicleId = parseInt(id, 10); // Convert to number
     try {
-      await this.vehicleService.remove(id);
+      await this.vehicleService.remove(vehicleId);
       return {
         success: true,
-        message: Messages.vehicle.removeSuccess(id), // Using constant message
+        message: Messages.vehicle.removeSuccess(vehicleId),
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [remove] Error: ${error.message}`);
-      return {
-        success: false,
-        message: Messages.vehicle.removeFailure(id), // Using constant message
-      };
+      throw new HttpException(Messages.vehicle.removeFailure(vehicleId), HttpStatus.BAD_REQUEST);
     }
   }
 
-  /**
-   * Update multiple vehicles in the database.
-   * @param vehicles An array of vehicles to update.
-   * @returns A response object indicating success or failure.
-   */
   @Post('update-vehicles')
   async updateVehicles(
-    @Body() vehicles: Vehicle[]
-  ): Promise<{ success: boolean; message: string }> {
+    @Body(new ValidationPipe()) vehicles: Vehicle[]
+  ): Promise<response<void>> {
     try {
       await this.vehicleService.updateVehicles(vehicles);
       return {
         success: true,
-        message: Messages.vehicle.updateBulkSuccess, // Using constant message
+        message: Messages.vehicle.updateBulkSuccess,
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [updateVehicles] Error: ${error.message}`);
-      return {
-        success: false,
-        message: Messages.vehicle.updateBulkFailure,
-      };
+      throw new HttpException(Messages.vehicle.updateBulkFailure, HttpStatus.BAD_REQUEST);
     }
   }
 
-  /**
-   * Endpoint to clear the vehicle table and insert new data
-   * @param vehicles - array of new vehicles to be inserted
-   */
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<{ success: boolean; message: string }> {
+  async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
     try {
       const vehicles = await this.uploadService.readExcel(file, 'vehicle');
       // Save vehicles to the database
@@ -175,13 +129,10 @@ export class VehicleController {
       return {
         success: true,
         message: Messages.vehicle.updateBulkSuccess,
-      };  // Return the read vehicles or any response you prefer
-    } catch (error) {
-      console.error("[VehicleController] [uploadExcel] error:", error)
-      return {
-        success: false,
-        message: Messages.vehicle.updateBulkFailure,
       };
+    } catch (error) {
+      this.logger.error(`[VehicleController] [uploadExcel] Error: ${error.message}`);
+      throw new HttpException(Messages.vehicle.updateBulkFailure, HttpStatus.BAD_REQUEST);
     }
   }
 }
