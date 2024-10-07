@@ -13,6 +13,8 @@ import { Location } from './modules/location/entities/location.entity';
 import { Employee } from './modules/employee/entities/employee.entity';
 import { Transaction } from './modules/transaction/entities/transaction.entity';
 import { CommonModule } from './common/common.module';
+import { SheetModule } from './modules/sheet/sheet.module';
+import { Sheet } from './modules/sheet/entities/sheet.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,7 +28,7 @@ import { CommonModule } from './common/common.module';
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [Vehicle, Location, Employee, Transaction],
+        entities: [Vehicle, Location, Employee, Transaction, Sheet],
         synchronize: true, // Set to false in production
       }),
       async dataSourceFactory(options) {
@@ -40,6 +42,7 @@ import { CommonModule } from './common/common.module';
     LocationModule,
     TransactionModule,
     CommonModule,
+    SheetModule,
   ],
   controllers: [AppController],
   providers: [AppService],

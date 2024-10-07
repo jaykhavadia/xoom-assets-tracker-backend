@@ -76,6 +76,10 @@ export class VehicleService {
      */
     async remove(id: number): Promise<void> {
         try {
+            let vehicle = await this.findOne(id);
+            if (!vehicle) {
+                throw new InternalServerErrorException(`No data with id: ${id}`);
+            }
             await this.vehicleRepository.delete(id);
         } catch (error) {
             this.logger.error(`[VehicleService] [remove] Error: ${error.message}`);

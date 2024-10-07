@@ -4,6 +4,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Employee } from './entities/employee.entity';
 import { UploadService } from 'src/common/upload/upload.service';
 import { Messages } from 'src/constants/messages.constants';
+import { Sheet } from '../sheet/entities/sheet.entity';
+import { format } from 'date-fns';
+import { SheetService } from '../sheet/sheet.service';
 
 @Controller('employee')
 export class EmployeeController {
@@ -12,6 +15,7 @@ export class EmployeeController {
   constructor(
     private readonly employeeService: EmployeeService,
     private readonly uploadService: UploadService,
+    private readonly sheetService: SheetService,
   ) { }
 
   @Post()
@@ -114,6 +118,17 @@ export class EmployeeController {
       const employees = await this.uploadService.readExcel(file, 'employee');
       // Save employees to the database (this part needs to be implemented in the service)
       await this.employeeService.updateEmployees(employees as Employee[]); // Assuming you have a createBulk method
+
+      // Prepare data for the Sheet entity
+      const sheetData:  Partial<Sheet> = {
+        uploadedAt: new Date(), // Current date and time
+        uploadedAtTime: format(new Date(), 'hh:mm a'), // Format the time as '10:30 AM'
+        fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
+        type: 'Employee', // Assuming the file path is stored in 'file.path'
+      };
+
+      // Save the Sheet entry to the database
+      await this.sheetService.create(sheetData); // Create a new Sheet entry
       return {
         success: true,
         message: Messages.employee.updateBulkSuccess,

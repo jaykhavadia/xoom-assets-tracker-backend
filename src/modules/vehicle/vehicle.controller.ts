@@ -4,6 +4,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Vehicle } from './entities/vehical.entity';
 import { UploadService } from 'src/common/upload/upload.service';
 import { Messages } from 'src/constants/messages.constants';
+import { SheetService } from '../sheet/sheet.service';
+import { Sheet } from '../sheet/entities/sheet.entity';
+import { format } from 'date-fns';
 
 // Controller for handling vehicle-related requests
 @Controller('vehicle')
@@ -13,6 +16,7 @@ export class VehicleController {
   constructor(
     private readonly vehicleService: VehicleService, // Inject VehicleService for business logic
     private readonly uploadService: UploadService,   // Inject UploadService for handling file uploads
+    private readonly sheetService: SheetService,
   ) {}
 
   // Endpoint for creating a new vehicle record
@@ -117,6 +121,18 @@ export class VehicleController {
     try {
       const vehicles = await this.uploadService.readExcel(file, 'vehicle'); // Parse Excel file and get vehicle data
       await this.vehicleService.updateVehicles(vehicles as Vehicle[]); // Call service to update vehicles in bulk
+     
+      // Prepare data for the Sheet entity
+      const sheetData:  Partial<Sheet> = {
+        uploadedAt: new Date(), // Current date and time
+        uploadedAtTime: format(new Date(), 'hh:mm a'), // Format the time as '10:30 AM'
+        fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
+        type: 'Vehicle', // Assuming the file path is stored in 'file.path'
+      };
+
+      // Save the Sheet entry to the database
+      await this.sheetService.create(sheetData); // Create a new Sheet entry
+
       return {
         success: true,
         message: Messages.vehicle.updateBulkSuccess, // Success message

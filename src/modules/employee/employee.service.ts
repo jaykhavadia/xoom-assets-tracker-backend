@@ -76,6 +76,10 @@ export class EmployeeService {
      */
     async remove(id: number): Promise<void> {
         try {
+            let employee = await this.findOne(id);
+            if (!employee) {
+                throw new InternalServerErrorException(`No data with id: ${id}`);
+            }
             await this.employeeRepository.delete(id);
         } catch (error) {
             this.logger.error(`[EmployeeService] [remove] Error: ${error.message}`);

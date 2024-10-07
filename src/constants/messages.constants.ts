@@ -46,4 +46,20 @@ export const Messages = {
         removeSuccess: (id: number) => `Location with ID ${id} removed successfully`,
         removeFailure: (id: number) => `Failed to remove location with ID ${id}`,
     },
+    sheet: {
+        createSuccess: 'Sheet created successfully',
+        createFailure: 'Failed to create sheet',
+        findAllSuccess: 'Sheets retrieved successfully',
+        findAllFailure: 'Failed to retrieve sheets',
+        findOneSuccess: (id: number) => `Sheet with ID ${id} retrieved successfully`,
+        findOneFailure: (id: number) => `Failed to retrieve sheet with ID ${id}`,
+        updateSuccess: (id: number) => `Sheet with ID ${id} updated successfully`,
+        updateFailure: (id: number) => `Failed to update sheet with ID ${id}`,
+        removeSuccess: (id: number) => `Sheet with ID ${id} removed successfully`,
+        removeFailure: (id: number) => `Failed to remove sheet with ID ${id}`,
+        uploadSuccess: 'Sheet uploaded successfully',
+        uploadFailure: 'Failed to upload sheet',
+        updateBulkSuccess: 'Sheets updated successfully', // New message for bulk update
+        updateBulkFailure: 'Failed to update sheets', // New message for bulk update failure
+      },
 };
