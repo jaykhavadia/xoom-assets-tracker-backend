@@ -17,7 +17,7 @@ export const Messages = {
         updateBulkSuccess: 'Employees updated successfully',
         updateBulkFailure: 'Failed to update employees',
     },
-    
+
     // Vehicle Messages
     vehicle: {
         createSuccess: 'Vehicle created successfully',
@@ -32,5 +32,18 @@ export const Messages = {
         removeFailure: (id: number) => `Failed to delete vehicle with id: ${id}`,
         updateBulkSuccess: 'Vehicles updated successfully',
         updateBulkFailure: 'Failed to update vehicles',
+    },
+    // Location Messages
+    location: {
+        createSuccess: 'Location created successfully',
+        createFailure: 'Failed to create location',
+        findAllSuccess: 'Locations retrieved successfully',
+        findAllFailure: 'Failed to retrieve locations',
+        findOneSuccess: (id: number) => `Location with ID ${id} retrieved successfully`,
+        findOneFailure: (id: number) => `Failed to retrieve location with ID ${id}`,
+        updateSuccess: (id: number) => `Location with ID ${id} updated successfully`,
+        updateFailure: (id: number) => `Failed to update location with ID ${id}`,
+        removeSuccess: (id: number) => `Location with ID ${id} removed successfully`,
+        removeFailure: (id: number) => `Failed to remove location with ID ${id}`,
     },
 };

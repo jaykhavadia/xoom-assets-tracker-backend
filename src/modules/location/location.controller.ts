@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, ValidationPipe } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { Location } from './entities/location.entity';
+import { Messages } from 'src/constants/messages.constants';
 
 @Controller('location')
 export class LocationController {
@@ -23,12 +24,12 @@ export class LocationController {
       const response = await this.locationService.create(location);
       return {
         success: true,
-        message: 'Location created successfully',
+        message: Messages.location.createSuccess,
         data: response,
       };
     } catch (error) {
       this.logger.error(`[LocationController] [create] Error: ${error.message}`);
-      throw new HttpException('Failed to create location', HttpStatus.BAD_REQUEST);
+      throw new HttpException(Messages.location.createFailure, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -42,12 +43,12 @@ export class LocationController {
       const response = await this.locationService.findAll();
       return {
         success: true,
-        message: 'Locations retrieved successfully',
+        message: Messages.location.findAllSuccess,
         data: response,
       };
     } catch (error) {
       this.logger.error(`[LocationController] [findAll] Error: ${error.message}`);
-      throw new HttpException('Failed to retrieve locations', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(Messages.location.findAllFailure, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -64,16 +65,16 @@ export class LocationController {
     try {
       const response = await this.locationService.findOne(locationId);
       if (!response) {
-        throw new HttpException(`Location with ID ${locationId} not found`, HttpStatus.NOT_FOUND);
+        throw new HttpException(Messages.location.findOneFailure(locationId), HttpStatus.NOT_FOUND);
       }
       return {
         success: true,
-        message: `Location with ID ${locationId} retrieved successfully`,
+        message: Messages.location.findOneSuccess(locationId),
         data: response,
       };
     } catch (error) {
       this.logger.error(`[LocationController] [findOne] Error: ${error.message}`);
-      throw new HttpException(`Failed to retrieve location with ID ${locationId}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(Messages.location.findOneFailure(locationId), HttpStatus.NOT_FOUND);
     }
   }
 
@@ -93,12 +94,12 @@ export class LocationController {
       const response = await this.locationService.update(locationId, location);
       return {
         success: true,
-        message: `Location with ID ${locationId} updated successfully`,
+        message: Messages.location.updateSuccess(locationId),
         data: response,
       };
     } catch (error) {
       this.logger.error(`[LocationController] [update] Error: ${error.message}`);
-      throw new HttpException(`Failed to update location with ID ${locationId}`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(Messages.location.updateFailure(locationId), HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -116,11 +117,11 @@ export class LocationController {
       await this.locationService.remove(locationId);
       return {
         success: true,
-        message: `Location with ID ${locationId} removed successfully`,
+        message: Messages.location.removeSuccess(locationId),
       };
     } catch (error) {
       this.logger.error(`[LocationController] [remove] Error: ${error.message}`);
-      throw new HttpException(`Failed to remove location with ID ${locationId}`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(Messages.location.removeFailure(locationId), HttpStatus.BAD_REQUEST);
     }
   }
 }
