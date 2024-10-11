@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Transaction } from 'src/modules/transaction/entities/transaction.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, OneToMany } from 'typeorm';
 
 @Entity()
 export class Location {
@@ -15,4 +16,7 @@ export class Location {
   @IsString()
   @IsNotEmpty()
   fullAddress: string;
+
+  @OneToMany(() => Transaction, (transaction) => transaction.location)
+  transactions: Transaction[];
 }

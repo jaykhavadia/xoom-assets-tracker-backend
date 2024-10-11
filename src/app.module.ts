@@ -15,8 +15,13 @@ import { Transaction } from './modules/transaction/entities/transaction.entity';
 import { CommonModule } from './common/common.module';
 import { SheetModule } from './modules/sheet/sheet.module';
 import { Sheet } from './modules/sheet/entities/sheet.entity';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'), // Path to your public folder
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),

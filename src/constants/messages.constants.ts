@@ -61,5 +61,17 @@ export const Messages = {
         uploadFailure: 'Failed to upload sheet',
         updateBulkSuccess: 'Sheets updated successfully', // New message for bulk update
         updateBulkFailure: 'Failed to update sheets', // New message for bulk update failure
+    },
+    transaction: {
+        createSuccess: 'Transaction created successfully',
+        createFailure: 'Failed to create transaction',
+        findAllSuccess: 'Transactions retrieved successfully',
+        findAllFailure: 'Failed to retrieve transactions',
+        findOneSuccess: (id: number) => `Transaction with ID ${id} retrieved successfully`,
+        findOneFailure: (id: number) => `Failed to retrieve transaction with ID ${id}`,
+        updateSuccess: (id: number) => `Transaction with ID ${id} updated successfully`,
+        updateFailure: (id: number) => `Failed to update transaction with ID ${id}`,
+        removeSuccess: (id: number) => `Transaction with ID ${id} removed successfully`,
+        removeFailure: (id: number) => `Failed to remove transaction with ID ${id}`,
       },
 };

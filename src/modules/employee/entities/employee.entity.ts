@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { IsString, IsNotEmpty, IsEnum, IsBoolean } from 'class-validator';
+import { Transaction } from 'src/modules/transaction/entities/transaction.entity';
+import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Employee {
@@ -23,4 +24,7 @@ export class Employee {
   @Column({ name: 'isDeleted', type: 'boolean', default: false })
   @IsBoolean()
   isDeleted: boolean;
+
+  @OneToMany(() => Transaction, (transaction) => transaction.employee)
+  transactions: Transaction[];
 }

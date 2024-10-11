@@ -12,5 +12,6 @@ import { Sheet } from '../sheet/entities/sheet.entity';
   imports: [TypeOrmModule.forFeature([Employee, Sheet]),CommonModule, SheetModule],
   controllers: [EmployeeController],
   providers: [EmployeeService, SheetService],
+  exports: [EmployeeService]
 })
 export class EmployeeModule {}
