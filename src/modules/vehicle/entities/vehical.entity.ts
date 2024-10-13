@@ -22,9 +22,9 @@ export class Vehicle {
   @IsNotEmpty()
   from: string;
 
-  @Column({ type: 'enum', enum: ['active', 'inactive'] })
-  @IsEnum(['active', 'inactive'])
-  status: 'active' | 'inactive';
+  @Column({ type: 'enum', enum: ['available', 'occupied'] })
+  @IsEnum(['available', 'occupied'])
+  status: 'available' | 'occupied';
 
   @Column({ name: 'isDeleted', type: 'boolean', default: false })
   @IsBoolean()

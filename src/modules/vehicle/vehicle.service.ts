@@ -31,9 +31,17 @@ export class VehicleService {
      * Retrieves all vehicles from the database
      * @returns an array of vehicles
      */
-    async findAll(): Promise<Vehicle[]> {
+    async findAll(status?: "available" | "occupied"): Promise<Vehicle[]> {
         try {
-            return await this.vehicleRepository.find();
+            let vehicles: Vehicle[];
+            if (status) {
+                // Filter vehicles by status
+                vehicles = await this.vehicleRepository.find({ where: { status } });
+            } else {
+                // Get all vehicles if no status is provided
+                vehicles = await this.vehicleRepository.find();
+            }
+            return vehicles;
         } catch (error) {
             this.logger.error(`[VehicleService] [findAll] Error: ${error.message}`);
             throw new InternalServerErrorException('Failed to retrieve vehicles.');

@@ -28,7 +28,7 @@ export class UploadService {
                         vehicle.vehicleNo = item['Vehicle No.'];
                         vehicle.from = item['From'];
                         vehicle.model = item['Model'];
-                        vehicle.status = item['Status'] || 'Active';
+                        vehicle.status = item['Status'] || 'available';
                         vehicle.isDeleted = item['isDeleted'] || false; // Default to false if not present
                         return vehicle;
                     }));

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, Query, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { VehicleService } from './vehicle.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Vehicle } from './entities/vehical.entity';
@@ -17,7 +17,7 @@ export class VehicleController {
     private readonly vehicleService: VehicleService, // Inject VehicleService for business logic
     private readonly uploadService: UploadService,   // Inject UploadService for handling file uploads
     private readonly sheetService: SheetService,
-  ) {}
+  ) { }
 
   // Endpoint for creating a new vehicle record
   @Post()
@@ -39,9 +39,12 @@ export class VehicleController {
 
   // Endpoint for fetching all vehicles
   @Get()
-  async findAll(): Promise<response<Vehicle[]>> {
+  async findAll(@Query('status') status?: string): Promise<response<Vehicle[]>> {
+    if (status && status !== "available" && status !== "occupied") {
+      throw new HttpException(Messages.vehicle.invalidStatus, HttpStatus.BAD_REQUEST);
+    }
     try {
-      const response = await this.vehicleService.findAll(); // Call service to get all vehicles
+      const response = await this.vehicleService.findAll(status as "available" | "occupied"); // Pass status to the service
       return {
         success: true,
         message: Messages.vehicle.findAllSuccess, // Success message

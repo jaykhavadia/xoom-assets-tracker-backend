@@ -24,6 +24,7 @@ export const Messages = {
         createFailure: 'Failed to create vehicle',
         findAllSuccess: 'Vehicles retrieved successfully',
         findAllFailure: 'Failed to retrieve vehicles',
+        invalidStatus: 'Invalid status',
         findOneSuccess: (id: number) => `Vehicle with id: ${id} retrieved successfully`,
         findOneFailure: (id: number) => `Failed to retrieve vehicle with id: ${id}`,
         updateSuccess: (id: number) => `Vehicle with id: ${id} updated successfully`,
