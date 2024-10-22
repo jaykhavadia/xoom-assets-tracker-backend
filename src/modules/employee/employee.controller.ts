@@ -7,6 +7,10 @@ import { Messages } from 'src/constants/messages.constants';
 import { Sheet } from '../sheet/entities/sheet.entity';
 import { format } from 'date-fns';
 import { SheetService } from '../sheet/sheet.service';
+import { GoogleDriveService } from 'src/common/google-drive/google-drive.service';
+import * as fs from 'fs';
+import * as mkdirp from 'mkdirp';
+import * as path from 'path';
 
 @Controller('employee')
 export class EmployeeController {
@@ -16,6 +20,7 @@ export class EmployeeController {
     private readonly employeeService: EmployeeService,
     private readonly uploadService: UploadService,
     private readonly sheetService: SheetService,
+    private readonly googleDriveService: GoogleDriveService,
   ) { }
 
   @Post()
@@ -120,7 +125,7 @@ export class EmployeeController {
       await this.employeeService.updateEmployees(employees as Employee[]); // Assuming you have a createBulk method
 
       // Prepare data for the Sheet entity
-      const sheetData:  Partial<Sheet> = {
+      const sheetData: Partial<Sheet> = {
         uploadedAt: new Date(), // Current date and time
         uploadedAtTime: format(new Date(), 'hh:mm a'), // Format the time as '10:30 AM'
         fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
@@ -128,7 +133,31 @@ export class EmployeeController {
       };
 
       // Save the Sheet entry to the database
-      await this.sheetService.create(sheetData); // Create a new Sheet entry
+      const sheetDetails = await this.sheetService.create(sheetData); // Create a new Sheet entry
+      const sheetId = sheetDetails.id;
+      // The ID of the parent folder where the new folder should be created
+      const parentFolderId = '1ksRPuN_aGdLS7NeRKdbH7br1E1vaB7Nl'; // Replace with your folder ID
+
+      // Create the folder named {sheetId} inside the specified parent folder
+      const sheetFolderId = await this.googleDriveService.getOrCreateFolder(sheetId.toString(), parentFolderId);
+
+      const directoryPath = path.join('src', 'uploads', 'employee');
+      const fileName = file.originalname;
+      // Ensure the directory exists (create it recursively if it doesn't)
+      mkdirp.sync(directoryPath);
+      // Write the image data to the file
+      const filePath = path.join(directoryPath, fileName);
+      fs.writeFileSync(filePath, file.buffer);
+
+      console.log("Checking if file exists at:", filePath);
+      if (!fs.existsSync(filePath)) {
+        console.error("File does not exist:", filePath);
+        throw new Error("File not found");
+      }
+      const uploadedFile = await this.googleDriveService.uploadFile(filePath, sheetFolderId);
+      // Clean up the temporary file after uploading
+      await fs.promises.unlink(filePath);
+
       return {
         success: true,
         message: Messages.employee.updateBulkSuccess,

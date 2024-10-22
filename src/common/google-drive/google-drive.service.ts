@@ -1,37 +1,41 @@
-// google-drive.service.ts
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { google, drive_v3 } from 'googleapis';
 import * as fs from 'fs';
-import { GoogleAuthService } from '../google-auth/google-auth.service';
+import * as path from 'path';
 
 @Injectable()
-export class GoogleDriveService {
-  private drive: drive_v3.Drive;
+export class GoogleDriveService implements OnModuleInit {
   private readonly logger = new Logger(GoogleDriveService.name);
+  private drive: drive_v3.Drive;
+  private oAuth2Client: any; // To hold the OAuth2 client
 
-  constructor(private readonly googleAuthService: GoogleAuthService) {
-    // Initialize the Google Drive client using the authenticated OAuth2 client
-    const oAuth2Client = this.googleAuthService.getOAuth2Client();
-    this.drive = google.drive({ version: 'v3', auth: oAuth2Client });
+  constructor(private readonly configService: ConfigService) { }
 
-    // Set the OAuth2 client credentials
-    const tokens = {
-      access_token: process.env.GOOGLE_ACCESS_TOKEN,
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-    };
-    oAuth2Client.setCredentials(tokens);
+  async onModuleInit(): Promise<void> {
+    this.oAuth2Client = new google.auth.OAuth2(
+      this.configService.get('GOOGLE_CLIENT_ID'),
+      this.configService.get('GOOGLE_CLIENT_SECRET'),
+      this.configService.get('GOOGLE_REDIRECT_URI'),
+    );
+
+    this.oAuth2Client.setCredentials({
+      access_token: this.configService.get('GOOGLE_ACCESS_TOKEN'),
+      refresh_token: this.configService.get('GOOGLE_REFRESH_TOKEN'),
+    });
+
+    this.drive = google.drive({ version: 'v3', auth: this.oAuth2Client });
   }
 
   /**
    * Ensure that the OAuth2 client has valid credentials.
    */
   private async ensureAuthenticated() {
-    const oAuth2Client = this.googleAuthService.getOAuth2Client();
-    const tokenInfo = await oAuth2Client.getAccessToken();
-    
+    const tokenInfo = await this.oAuth2Client.getAccessToken();
+
     if (!tokenInfo.token) {
       this.logger.warn('Access token is missing or expired. Attempting to refresh.');
-      await oAuth2Client.getAccessToken();
+      await this.oAuth2Client.getAccessToken();
     }
   }
 
@@ -45,8 +49,13 @@ export class GoogleDriveService {
     try {
       await this.ensureAuthenticated(); // Ensure authentication
 
+      // Ensure file exists before attempting to upload
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
       const fileMetadata = {
-        name: filePath.split('/').pop(),
+        name: path.basename(filePath), // Use path.basename to extract the file name
         parents: [folderId],
       };
       const media = {
@@ -112,7 +121,6 @@ export class GoogleDriveService {
         q: query,
         fields: 'files(id, name)',
       });
-
       if (response.data.files && response.data.files.length > 0) {
         this.logger.log(`Folder already exists: ${folderName}`);
         return response.data.files[0].id;

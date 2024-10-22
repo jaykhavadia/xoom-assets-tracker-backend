@@ -9,9 +9,9 @@ import { SheetService } from '../sheet/sheet.service';
 import { Sheet } from '../sheet/entities/sheet.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Employee, Sheet]),CommonModule, SheetModule],
+  imports: [TypeOrmModule.forFeature([Employee, Sheet]), CommonModule, SheetModule],
   controllers: [EmployeeController],
   providers: [EmployeeService, SheetService],
   exports: [EmployeeService]
 })
-export class EmployeeModule {}
+export class EmployeeModule { }
