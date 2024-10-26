@@ -53,8 +53,6 @@ export class FilesHelperService {
 
                         const savedFile = await this.googleDriveService.uploadFile(filePath, sheetFolderId);
 
-                        // Clean up the temporary file after uploading
-                        await fs.promises.unlink(filePath);
                         return { [position]: { url: savedFile.url } };
                     } catch (fileError) {
                         this.logger.error(`[FilesHelper] Error writing file for position ${position}: ${fileError.message}`);
@@ -67,6 +65,8 @@ export class FilesHelperService {
                     // No file provided for this position
                 }
             });
+            // Clean up the temporary file after uploading
+            await fs.promises.unlink(folderPath);
             return Promise.all(savedFiles); // Return an object mapping positions to their file URLs
         } catch (error) {
             this.logger.error(`[FilesHelper] [saveTransactionFiles] Error: ${error.message}`); // Log error
