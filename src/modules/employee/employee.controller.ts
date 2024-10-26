@@ -154,7 +154,7 @@ export class EmployeeController {
         console.error("File does not exist:", filePath);
         throw new Error("File not found");
       }
-      const uploadedFile = await this.googleDriveService.uploadFile(filePath, sheetFolderId);
+      await this.googleDriveService.uploadFile(filePath, sheetFolderId);
       // Clean up the temporary file after uploading
       await fs.promises.unlink(filePath);
 

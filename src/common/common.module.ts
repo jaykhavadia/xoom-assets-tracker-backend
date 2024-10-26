@@ -6,6 +6,6 @@ import { GoogleDriveService } from './google-drive/google-drive.service';
 
 @Module({
   providers: [UploadService, FilesHelperService, GoogleAuthService, GoogleDriveService],
-  exports: [UploadService, GoogleDriveService],
+  exports: [UploadService, GoogleDriveService, FilesHelperService],
 })
-export class CommonModule {}
+export class CommonModule { }

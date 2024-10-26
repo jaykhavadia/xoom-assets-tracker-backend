@@ -6,12 +6,16 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Transaction } from './entities/transaction.entity';
 import { FilesHelperService } from 'src/common/files-helper/files-helper.service';
 import { Messages } from 'src/constants/messages.constants';
+import { CreateTransactionDto } from './dto/CreateTransaction.dto';
 @Controller('transaction')
 export class TransactionController {
   private readonly logger = new Logger(TransactionController.name);
 
-  constructor(private readonly transactionService: TransactionService) { }
- 
+  constructor(
+    private readonly transactionService: TransactionService,
+    private readonly filesHelperService: FilesHelperService,
+  ) { }
+
   /**
    * Creates a new transaction.
    * @param transactionDto - The transaction data.
@@ -26,24 +30,17 @@ export class TransactionController {
     { name: 'vehiclePictures[right]', maxCount: 1 },
   ]))
   async create(
-    @Body(new ValidationPipe()) body: any,
+    @Body(new ValidationPipe()) body: CreateTransactionDto,
     @UploadedFiles() files: { [key: string]: Express.Multer.File[] }
   ): Promise<response<Transaction>> {
     try {
-      
-      const transactionData = JSON.parse(body.transaction);
+      // const transactionData = JSON.parse(body);
       // Create the transaction first without saving the pictures yet
-      const transaction = await this.transactionService.create(transactionData);
-      console.log("🚀 ~ TransactionController ~ transaction:", transaction)
-
+      const transaction = await this.transactionService.create(body);
       // Save the files using the generated transactionId
-      const savedFiles = FilesHelperService.saveTransactionFiles(files, transaction.id);
-      console.log("🚀 ~ TransactionController ~ savedFiles:", savedFiles)
-
+      const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
       // Update the transaction with the saved file URLs
-      const updatedTransaction = await this.transactionService.update(transaction.id, { ...transactionData, pictures: savedFiles });
-      console.log("🚀 ~ TransactionController ~ updatedTransaction:", updatedTransaction)
-
+      const updatedTransaction = await this.transactionService.update(transaction.id, { ...body, pictures: savedFiles });
       this.logger.log(Messages.transaction.createSuccess); // Log success message
       return {
         success: true,

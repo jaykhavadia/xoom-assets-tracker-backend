@@ -9,6 +9,7 @@ import { Location } from '../location/entities/location.entity';
 import { VehicleService } from '../vehicle/vehicle.service';
 import { EmployeeService } from '../employee/employee.service';
 import { LocationService } from '../location/location.service';
+import { CreateTransactionDto } from './dto/CreateTransaction.dto';
 
 @Injectable()
 export class TransactionService {
@@ -26,7 +27,7 @@ export class TransactionService {
      * @param transactionDto - The transaction data to create.
      * @returns The created transaction.
      */
-    async create(transactionDto: any): Promise<Transaction> {
+    async create(transactionDto: CreateTransactionDto): Promise<Transaction> {
         try {
             // Find the related entities using their IDs
             const vehicle = await this.vehicleService.findOne(transactionDto.vehicle);

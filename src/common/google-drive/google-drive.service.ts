@@ -70,7 +70,21 @@ export class GoogleDriveService implements OnModuleInit {
       });
 
       this.logger.log(`File uploaded successfully: ${response.data.name}`);
-      return response.data;
+      const fileId = response.data.id;
+      console.log(`File uploaded successfully: ${fileId}`);
+
+      // Set the file permissions to "Anyone with the link" can view
+      await this.drive.permissions.create({
+        fileId: fileId,
+        requestBody: {
+          role: 'reader',
+          type: 'anyone',
+        },
+      });
+
+      // Return the file's public URL
+      const publicUrl = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      return { id: fileId, url: publicUrl };
     } catch (error) {
       this.logger.error(`Error uploading file: ${error.message}`);
       throw error;
