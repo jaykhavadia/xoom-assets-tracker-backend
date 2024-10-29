@@ -17,6 +17,8 @@ import { SheetModule } from './modules/sheet/sheet.module';
 import { Sheet } from './modules/sheet/entities/sheet.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronService } from './cronservice';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -28,7 +30,7 @@ import { join } from 'path';
     TypeOrmModule.forRootAsync({
       useFactory: async () => ({
         type: 'mysql',
-        host: process.env.DB_HOST,  
+        host: process.env.DB_HOST,
         port: Number(process.env.DB_PORT),
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
@@ -42,6 +44,7 @@ import { join } from 'path';
         return dataSource;
       },
     }),
+    ScheduleModule.forRoot(),
     VehicleModule,
     EmployeeModule,
     LocationModule,
@@ -50,6 +53,6 @@ import { join } from 'path';
     SheetModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, CronService],
 })
 export class AppModule { }
