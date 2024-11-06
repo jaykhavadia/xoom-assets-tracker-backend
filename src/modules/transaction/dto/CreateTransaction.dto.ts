@@ -8,7 +8,7 @@ export class CreateTransactionDto {
     @IsNotEmpty()
     date: string;
 
-    @IsDateString()
+    @IsString()
     @IsNotEmpty()
     action: string;
 
