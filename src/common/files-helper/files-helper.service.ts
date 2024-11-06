@@ -29,7 +29,6 @@ export class FilesHelperService {
 
             // Create the folder named {transaction} inside the specified parent folder
             const sheetFolderId = await this.googleDriveService.getOrCreateFolder(transactionId.toString(), parentFolderId);
-
             // Save files based on their positions
             const savedFiles = await Promise.allSettled(this.positions.map(async (position) => {
                 const file = files[`vehiclePictures[${position}]`] && files[`vehiclePictures[${position}]`][0];

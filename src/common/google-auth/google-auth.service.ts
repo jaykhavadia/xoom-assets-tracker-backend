@@ -3,13 +3,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { google } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
 import { googleConfig } from 'google.config';
+import { AuthTokenService } from '../auth-token/auth-token.service';
 
 @Injectable()
 export class GoogleAuthService {
   private oAuth2Client;
   private readonly logger = new Logger(GoogleAuthService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, private authTokenService: AuthTokenService) {
     const { clientId, clientSecret, redirectUri } = googleConfig(this.configService);
     this.oAuth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
@@ -62,12 +63,14 @@ export class GoogleAuthService {
    * Refreshes the access token using the refresh token.
    * @returns The refreshed tokens object
    */
-  async refreshAccessToken(): Promise<any> {
+  async refreshAccessToken(): Promise<void> {
     try {
-      const newTokens = await this.oAuth2Client.getAccessToken();
-      this.oAuth2Client.setCredentials(newTokens.res);
-      this.logger.log('Access token refreshed successfully');
-      return newTokens;
+      const tokens = await this.oAuth2Client.getAccessToken();
+      if (tokens?.token) {
+        const expirationTime = Date.now() + 3600 * 1000;
+        await this.authTokenService.saveTokens(tokens.token, this.oAuth2Client.credentials.refresh_token, expirationTime);
+        this.logger.log('Access token refreshed and saved successfully');
+      }
     } catch (error) {
       this.logger.error('Error refreshing access token: ' + error.message);
       throw error;

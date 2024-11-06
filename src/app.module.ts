@@ -19,6 +19,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronService } from './cronservice';
+import { AuthToken } from './common/auth-token/auth-token.entity';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -35,7 +36,7 @@ import { CronService } from './cronservice';
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [Vehicle, Location, Employee, Transaction, Sheet],
+        entities: [Vehicle, Location, Employee, Transaction, Sheet, AuthToken],
         synchronize: true, // Set to false in production
       }),
       async dataSourceFactory(options) {

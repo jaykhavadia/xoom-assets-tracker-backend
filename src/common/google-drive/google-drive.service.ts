@@ -4,6 +4,7 @@ import { google, drive_v3 } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GoogleAuthService } from '../google-auth/google-auth.service';
+import { AuthTokenService } from '../auth-token/auth-token.service';
 
 @Injectable()
 export class GoogleDriveService implements OnModuleInit {
@@ -11,13 +12,18 @@ export class GoogleDriveService implements OnModuleInit {
   private drive: drive_v3.Drive;
   private oAuth2Client: any; // To hold the OAuth2 client
 
-  constructor(private readonly configService: ConfigService, private readonly googleAuthService: GoogleAuthService) { }
+  constructor(private readonly configService: ConfigService, private readonly googleAuthService: GoogleAuthService, private readonly authTokenService: AuthTokenService) { }
 
   async onModuleInit(): Promise<void> {
+    await this.setDriveCredentials()
+  }
+
+  async setDriveCredentials() {
     this.oAuth2Client = this.googleAuthService.getOAuth2Client();
+    const credentials = await this.authTokenService.getTokens();
     this.oAuth2Client.setCredentials({
-      access_token: this.configService.get('GOOGLE_ACCESS_TOKEN'),
-      refresh_token: this.configService.get('GOOGLE_REFRESH_TOKEN'),
+      access_token: credentials.accessToken,
+      refresh_token: credentials.refreshToken,
     });
 
     this.drive = google.drive({ version: 'v3', auth: this.oAuth2Client });
