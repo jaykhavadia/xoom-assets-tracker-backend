@@ -1,4 +1,9 @@
-import { IsString, IsDateString, IsNumberString, IsNotEmpty } from 'class-validator';
+import { IsString, IsDateString, IsNumberString, IsNotEmpty, IsEnum } from 'class-validator';
+
+export enum Action {
+    ENTRY = 'entry',
+    EXIT = 'exit',
+}
 
 export class CreateTransactionDto {
     @IsString()
@@ -8,9 +13,9 @@ export class CreateTransactionDto {
     @IsNotEmpty()
     date: string;
 
-    @IsString()
+    @IsEnum(Action, { message: 'Action must be either entry or exit' })
     @IsNotEmpty()
-    action: string;
+    action: Action;
 
     @IsNumberString()
     @IsNotEmpty()
@@ -27,5 +32,4 @@ export class CreateTransactionDto {
     @IsString()
     @IsNotEmpty()
     time: string;
-
 }
