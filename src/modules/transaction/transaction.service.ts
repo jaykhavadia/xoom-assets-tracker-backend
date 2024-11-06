@@ -30,14 +30,20 @@ export class TransactionService {
     async create(transactionDto: CreateTransactionDto): Promise<Transaction> {
         try {
             // Find the related entities using their IDs
-            const vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
-            if (transactionDto.action === 'entry' && vehicle.status !== 'available') {
-                throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
-            }else if (transactionDto.action === 'exit' && vehicle.status === 'available') {
-                throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
+            let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
+            if (transactionDto.action === 'entry') {
+                if (vehicle.status === 'occupied') {
+                    throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
+                }
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, status: 'occupied' })
+            } else if (transactionDto.action === 'exit') {
+                if (vehicle.status === 'available') {
+                    throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
+                }
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, status: 'available' })
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
-            if(employee.status === 'inactive'){
+            if (employee.status === 'inactive') {
                 throw new InternalServerErrorException(Messages.employee.inactive(employee.id)); // Handle error
             }
             const location = await this.locationService.findOne(transactionDto.location);
@@ -58,7 +64,7 @@ export class TransactionService {
             });
         } catch (error) {
             this.logger.error(`[TransactionService] [create] Error: ${error.message}`); // Log error
-            throw new InternalServerErrorException(Messages.transaction.createFailure); // Handle error
+            throw new InternalServerErrorException(error.message || Messages.transaction.createFailure); // Handle error
         }
     }
 

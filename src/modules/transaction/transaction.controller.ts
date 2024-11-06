@@ -49,7 +49,7 @@ export class TransactionController {
       };
     } catch (error) {
       this.logger.error(`[TransactionController] [create] Error: ${error.message}`); // Log error
-      throw new HttpException(Messages.transaction.createFailure, HttpStatus.BAD_REQUEST); // Handle error
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Handle error
     }
   }
 

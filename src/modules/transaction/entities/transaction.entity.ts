@@ -1,7 +1,7 @@
 import { Employee } from 'src/modules/employee/entities/employee.entity';
 import { Location } from 'src/modules/location/entities/location.entity';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, OneToOne, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 
 // Define the enum for picture position
 export enum PicturePosition {
@@ -9,6 +9,12 @@ export enum PicturePosition {
   FRONT = 'front',
   LEFT = 'left',
   RIGHT = 'right',
+}
+
+// Define the enum for action types
+export enum Action {
+  ENTRY = 'entry',
+  EXIT = 'exit',
 }
 
 @Entity()
@@ -22,7 +28,9 @@ export class Transaction {
   @Column({ type: 'time' })
   time: string;
 
-  // Updated pictures array with position as enum
+  @Column({ type: 'enum', enum: Action, nullable: false })
+  action: Action; // Add action column with Action enum type
+
   @Column({ type: 'json', nullable: true })
   pictures: Array<{ url: string; position?: PicturePosition }>;
 
@@ -38,4 +46,3 @@ export class Transaction {
   @ManyToOne(() => Location, (location) => location.transactions, { cascade: true })
   location: Location;
 }
-
