@@ -30,14 +30,12 @@ export class Transaction {
   comments: string;
 
   @ManyToOne(() => Vehicle, (vehicle) => vehicle.transactions, { cascade: true })
-  @JoinTable()
   vehicle: Vehicle;
 
   @ManyToOne(() => Employee, (employee) => employee.transactions, { cascade: true })
-  @JoinTable()
   employee: Employee;
 
   @ManyToOne(() => Location, (location) => location.transactions, { cascade: true })
-  @JoinTable()
   location: Location;
 }
+

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { google, drive_v3 } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
+import { GoogleAuthService } from '../google-auth/google-auth.service';
 
 @Injectable()
 export class GoogleDriveService implements OnModuleInit {
@@ -10,15 +11,10 @@ export class GoogleDriveService implements OnModuleInit {
   private drive: drive_v3.Drive;
   private oAuth2Client: any; // To hold the OAuth2 client
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService, private readonly googleAuthService: GoogleAuthService) { }
 
   async onModuleInit(): Promise<void> {
-    this.oAuth2Client = new google.auth.OAuth2(
-      this.configService.get('GOOGLE_CLIENT_ID'),
-      this.configService.get('GOOGLE_CLIENT_SECRET'),
-      this.configService.get('GOOGLE_REDIRECT_URI'),
-    );
-
+    this.oAuth2Client = this.googleAuthService.getOAuth2Client();
     this.oAuth2Client.setCredentials({
       access_token: this.configService.get('GOOGLE_ACCESS_TOKEN'),
       refresh_token: this.configService.get('GOOGLE_REFRESH_TOKEN'),
@@ -35,7 +31,8 @@ export class GoogleDriveService implements OnModuleInit {
 
     if (!tokenInfo.token) {
       this.logger.warn('Access token is missing or expired. Attempting to refresh.');
-      await this.oAuth2Client.getAccessToken();
+      const newTokens = await this.googleAuthService.refreshAccessToken(); // Use GoogleAuthService
+      this.oAuth2Client.setCredentials(newTokens);
     }
   }
 

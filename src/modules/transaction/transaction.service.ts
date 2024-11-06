@@ -31,10 +31,18 @@ export class TransactionService {
         try {
             // Find the related entities using their IDs
             const vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
+            if (transactionDto.action === 'entry' && vehicle.status !== 'available') {
+                throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
+            }else if (transactionDto.action === 'exit' && vehicle.status === 'available') {
+                throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
+            }
             const employee = await this.employeeService.findOne(transactionDto.employee);
+            if(employee.status === 'inactive'){
+                throw new InternalServerErrorException(Messages.employee.inactive(employee.id)); // Handle error
+            }
             const location = await this.locationService.findOne(transactionDto.location);
             // Create a new Transaction instance with the relevant properties
-            const transaction = this.transactionRepository.create({
+            let transaction = this.transactionRepository.create({
                 date: transactionDto.date,
                 time: transactionDto.time,
                 comments: transactionDto.comments,
@@ -43,7 +51,11 @@ export class TransactionService {
                 location,
                 pictures: [],
             });
-            return await this.transactionRepository.save(transaction); // Save the transaction
+            transaction = await this.transactionRepository.save(transaction); // Save the transaction
+            return this.transactionRepository.findOne({
+                where: { id: transaction.id },
+                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+            });
         } catch (error) {
             this.logger.error(`[TransactionService] [create] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(Messages.transaction.createFailure); // Handle error
@@ -60,7 +72,10 @@ export class TransactionService {
         console.log("🚀 ~ TransactionService ~ update ~ updateDto:", updateDto)
         try {
             await this.transactionRepository.update({ id }, updateDto); // Update the transaction
-            return await this.transactionRepository.findOneBy({ id }); // Fetch the updated transaction
+            return this.transactionRepository.findOne({
+                where: { id },
+                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+            }); // Fetch the updated transaction
         } catch (error) {
             this.logger.error(`[TransactionService] [update] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(Messages.transaction.updateFailure(id)); // Handle error
@@ -74,8 +89,10 @@ export class TransactionService {
      */
     async findOne(id: number): Promise<Transaction> {
         try {
-            const transaction = await this.transactionRepository.findOneBy({ id }); // Fetch transaction by ID
-            return transaction; // Return the found transaction
+            return this.transactionRepository.findOne({
+                where: { id },
+                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+            });
         } catch (error) {
             this.logger.error(`[TransactionService] [findOne] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(Messages.transaction.findOneFailure(id)); // Handle error
@@ -88,7 +105,7 @@ export class TransactionService {
      */
     async findAll(): Promise<Transaction[]> {
         try {
-            return await this.transactionRepository.find(); // Fetch all transactions
+            return await this.transactionRepository.find({ relations: ['vehicle', 'employee', 'location'] }); // Fetch all transactions
         } catch (error) {
             this.logger.error(`[TransactionService] [findAll] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(Messages.transaction.findAllFailure); // Handle error

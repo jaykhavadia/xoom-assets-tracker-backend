@@ -14,6 +14,7 @@ export const Messages = {
         updateFailure: (id: number) => `Failed to update employee with id: ${id}`,
         removeSuccess: (id: number) => `Employee with id: ${id} deleted successfully`,
         removeFailure: (id: number) => `Failed to delete employee with id: ${id}`,
+        inactive: (id: number) => `Employee with id: ${id} is inactive`,
         updateBulkSuccess: 'Employees updated successfully',
         updateBulkFailure: 'Failed to update employees',
     },
@@ -33,6 +34,8 @@ export const Messages = {
         removeFailure: (id: number) => `Failed to delete vehicle with id: ${id}`,
         updateBulkSuccess: 'Vehicles updated successfully',
         updateBulkFailure: 'Failed to update vehicles',
+        occupied: (id: number) => `Vehicle with ID ${id} is already occupied`,
+        available: (id: number) => `Vehicle with ID ${id} is already available`,
     },
     // Location Messages
     location: {

@@ -8,6 +8,10 @@ export class CreateTransactionDto {
     @IsNotEmpty()
     date: string;
 
+    @IsDateString()
+    @IsNotEmpty()
+    action: string;
+
     @IsNumberString()
     @IsNotEmpty()
     employee: number;
