@@ -19,9 +19,9 @@ export class GoogleDriveService implements OnModuleInit {
   }
 
   async setDriveCredentials() {
-    this.oAuth2Client = this.googleAuthService.getOAuth2Client();
+    this.oAuth2Client = await this.googleAuthService.getOAuth2Client();
     const credentials = await this.authTokenService.getTokens();
-    this.oAuth2Client.setCredentials({
+    await this.oAuth2Client.setCredentials({
       access_token: credentials.accessToken,
       refresh_token: credentials.refreshToken,
     });
@@ -34,12 +34,16 @@ export class GoogleDriveService implements OnModuleInit {
    */
   private async ensureAuthenticated() {
     const tokenInfo = await this.oAuth2Client.getAccessToken();
-
     if (!tokenInfo.token) {
       this.logger.warn('Access token is missing or expired. Attempting to refresh.');
-      const newTokens = await this.googleAuthService.refreshAccessToken(); // Use GoogleAuthService
-      this.oAuth2Client.setCredentials(newTokens);
+      this.resetAccessToken();
     }
+  }
+
+  private async resetAccessToken() {
+    const newTokens = await this.googleAuthService.refreshAccessToken(); // Use GoogleAuthService
+    await this.oAuth2Client.setCredentials(newTokens);
+    await this.setDriveCredentials();
   }
 
   /**
