@@ -29,6 +29,7 @@ export class TransactionController {
     { name: 'vehiclePictures[left]', maxCount: 1 },
     { name: 'vehiclePictures[right]', maxCount: 1 },
   ]))
+  // {vehiclePictures: {back: 'File'}, {front: 'File'}, {left: 'File'}, ...}
   async create(
     @Body(new ValidationPipe()) body: CreateTransactionDto,
     @UploadedFiles() files: { [key: string]: Express.Multer.File[] }

@@ -13,8 +13,8 @@ export enum PicturePosition {
 
 // Define the enum for action types
 export enum Action {
-  ENTRY = 'entry',
-  EXIT = 'exit',
+  IN = 'in',
+  OUT = 'out',
 }
 
 @Entity()

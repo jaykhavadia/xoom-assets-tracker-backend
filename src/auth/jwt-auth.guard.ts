@@ -28,7 +28,7 @@ export class JwtAuthGuard implements CanActivate {
                 // Viewer can only access 'GET' requests
                 const request = context.switchToHttp().getRequest();
                 if (request.method !== 'GET') {
-                    throw new ForbiddenException('Access denied: Viewers can only access GET endpoints.');
+                    throw new ForbiddenException('Access denied: Viewers can only View Data.');
                 }
                 return true;
             }
@@ -48,8 +48,8 @@ export class JwtAuthGuard implements CanActivate {
 
             // If none of the above conditions match, deny access
             throw new ForbiddenException('Access denied');
-        } catch {
-            throw new UnauthorizedException('Invalid token');
+        } catch (error) {
+            throw new error;
         }
     }
 }

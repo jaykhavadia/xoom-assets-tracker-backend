@@ -7,9 +7,13 @@ import { Vehicle } from './entities/vehical.entity';
 import { SheetService } from '../sheet/sheet.service';
 import { SheetModule } from '../sheet/sheet.module';
 import { Sheet } from '../sheet/entities/sheet.entity';
+import { VehicleType } from '../vehicle-type/entities/vehicle-type.entity';
+import { Model } from '../model/entities/model.entity';
+import { OwnedBy } from '../owned-by/entities/owned_by.entity';
+import { Aggregator } from '../aggregator/entities/aggregator.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vehicle, Sheet]), CommonModule, SheetModule],
+  imports: [TypeOrmModule.forFeature([Vehicle, Sheet, VehicleType, Model, OwnedBy, Aggregator]), CommonModule, SheetModule],
   controllers: [VehicleController],
   providers: [VehicleService, SheetService],
   exports: [VehicleService]

@@ -77,5 +77,30 @@ export const Messages = {
         updateFailure: (id: number) => `Failed to update transaction with ID ${id}`,
         removeSuccess: (id: number) => `Transaction with ID ${id} removed successfully`,
         removeFailure: (id: number) => `Failed to remove transaction with ID ${id}`,
-      },
+    },
+
+    vehicleType: {
+        createFailure: 'Failed to create vehicle type.',
+        fetchFailure: 'Failed to fetch vehicle types.',
+        updateFailure: 'Failed to update vehicle type.',
+        deleteFailure: 'Failed to delete vehicle type.',
+    },
+    aggregator: {
+        createFailure: 'Failed to create aggregator.',
+        fetchFailure: 'Failed to fetch aggregators.',
+        updateFailure: 'Failed to update aggregator.',
+        deleteFailure: 'Failed to delete aggregator.',
+    },
+    model: {
+        createFailure: 'Failed to create model.',
+        fetchFailure: 'Failed to fetch models.',
+        updateFailure: 'Failed to update model.',
+        deleteFailure: 'Failed to delete model.',
+    },
+    ownedBy: {
+        createFailure: 'Failed to create ownership.',
+        fetchFailure: 'Failed to fetch ownerships.',
+        updateFailure: 'Failed to update ownership.',
+        deleteFailure: 'Failed to delete ownership.',
+    },
 };

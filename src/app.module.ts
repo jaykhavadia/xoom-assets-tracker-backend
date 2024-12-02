@@ -23,6 +23,14 @@ import { AuthToken } from './common/auth-token/auth-token.entity';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/user/entities/user.entity';
+import { VehicleTypeModule } from './modules/vehicle-type/vehicle-type.module';
+import { AggregatorModule } from './modules/aggregator/aggregator.module';
+import { ModelModule } from './modules/model/model.module';
+import { OwnedByModule } from './modules/owned-by/owned-by.module';
+import { Aggregator } from './modules/aggregator/entities/aggregator.entity';
+import { OwnedBy } from './modules/owned-by/entities/owned_by.entity';
+import { Model } from './modules/model/entities/model.entity';
+import { VehicleType } from './modules/vehicle-type/entities/vehicle-type.entity';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -39,7 +47,7 @@ import { User } from './modules/user/entities/user.entity';
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [Vehicle, Location, Employee, Transaction, Sheet, AuthToken, User],
+        entities: [Vehicle, Location, Employee, Transaction, Sheet, AuthToken, User, VehicleType, Model, OwnedBy, Aggregator],
         synchronize: true, // Set to false in production
       }),
       async dataSourceFactory(options) {
@@ -57,6 +65,10 @@ import { User } from './modules/user/entities/user.entity';
     SheetModule,
     UserModule,
     AuthModule,
+    VehicleTypeModule,
+    AggregatorModule,
+    ModelModule,
+    OwnedByModule,
   ],
   controllers: [AppController],
   providers: [AppService, CronService],
