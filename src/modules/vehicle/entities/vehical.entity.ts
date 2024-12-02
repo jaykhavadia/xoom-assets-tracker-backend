@@ -6,12 +6,13 @@ import {
   OneToMany,
   Unique
 } from 'typeorm';
-import { IsString, IsNotEmpty, IsEnum, IsBoolean, IsDate } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsBoolean, IsDate, Matches } from 'class-validator';
 import { Transaction } from 'src/modules/transaction/entities/transaction.entity';
 import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
 import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 import { OwnedBy } from 'src/modules/owned-by/entities/owned_by.entity';
 import { Model } from 'src/modules/model/entities/model.entity';
+import moment from 'moment';
 
 export enum Emirates {
   AbuDhabi = 'AbuDhabi',
@@ -46,8 +47,23 @@ export class Vehicle {
   @ManyToOne(() => Aggregator, (aggregator) => aggregator, { eager: true, cascade: true })
   aggregator: Aggregator;
 
-  @Column({ type: 'date' })
-  @IsDate()
+  @Column({
+    type: 'date',
+    nullable: true,
+    transformer: {
+      to(value: Date): Date {
+        // Convert string (dd-mm-yyyy) to a Date object
+        return value ? moment(value, 'DD-MM-YYYY').toDate() : value;
+      },
+      from(value: Date): string {
+        // Convert Date object to dd-mm-yyyy format
+        return value ? moment(value).format('DD-MM-YYYY') : null;
+      },
+    },
+  })
+  @Matches(/^\d{2}-\d{2}-\d{4}$/, {
+    message: 'Date must be in the format dd-mm-yyyy',
+  }) // Validates input format
   registrationExpiry: Date;
 
   @Column({ type: 'enum', enum: Emirates })
@@ -70,4 +86,9 @@ export class Vehicle {
 
   @OneToMany(() => Transaction, (transaction) => transaction.vehicle)
   transactions: Transaction[];
+
+  @Column({ type: 'varchar', length: 100 })
+  @IsString()
+  @IsNotEmpty()
+  from: string;
 }
