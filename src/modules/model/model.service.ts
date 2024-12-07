@@ -12,7 +12,7 @@ export class ModelService {
   constructor(
     @InjectRepository(Model)
     private readonly modelRepository: Repository<Model>,
-  ) {}
+  ) { }
 
   async create(model: Partial<Model>) {
     try {
@@ -20,7 +20,7 @@ export class ModelService {
       return await this.modelRepository.save(newModel);
     } catch (error) {
       this.logger.error('[ModelService] [create] Error:', error);
-      throw new HttpException(Messages.model.createFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -58,7 +58,7 @@ export class ModelService {
       return { message: 'Model deleted successfully.' };
     } catch (error) {
       this.logger.error('[ModelService] [remove] Error:', error);
-      throw new HttpException(Messages.model.deleteFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 }

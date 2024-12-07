@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, Query, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, Query, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { VehicleService } from './vehicle.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Vehicle } from './entities/vehical.entity';
@@ -62,31 +62,8 @@ export class VehicleController {
     }
   }
 
-  // Endpoint for fetching a single vehicle by its ID
-  @Get(':id')
-  async findOne(
-    @Param('id') id: string // Get vehicle ID from request parameters
-  ): Promise<response<Vehicle>> {
-    const vehicleId = id; // Convert ID to a number
-    try {
-      const response = await this.vehicleService.findOne(vehicleId); // Call service to get vehicle by ID
-      if (!response) {
-        // If vehicle not found, throw 404 error
-        throw new HttpException(Messages.vehicle.findOneFailure(vehicleId), HttpStatus.NOT_FOUND);
-      }
-      return {
-        success: true,
-        message: Messages.vehicle.findOneSuccess(vehicleId), // Success message
-        data: response, // Return vehicle data
-      };
-    } catch (error) {
-      this.logger.error(`[VehicleController] [findOne] Error: ${error.message}`); // Log error
-      throw new HttpException(Messages.vehicle.findOneFailure(vehicleId), HttpStatus.NOT_FOUND); // Not found error
-    }
-  }
-
   // Endpoint for updating an existing vehicle by its ID
-  @Put(':id')
+  @Patch(':id')
   async update(
     @Param('id') id: string, // Get vehicle ID from request parameters
     @Body(new ValidationPipe()) vehicle: VehicleDto // Validate and parse the vehicle object from request body
@@ -174,6 +151,109 @@ export class VehicleController {
     } catch (error) {
       this.logger.error(`[VehicleController] [uploadExcel] Error: ${error.message}`); // Log error
       throw new HttpException(Messages.vehicle.updateBulkFailure, HttpStatus.BAD_REQUEST); // Bad request error
+    }
+  }
+
+  @Get('aggregator-count')
+  async getVehicleCountByAggregator(): Promise<response<any>> {
+    try {
+      const data = await this.vehicleService.getVehicleCountByAggregator();
+      return {
+        success: true,
+        message: 'Vehicle count by aggregator fetched successfully.',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [getVehicleCountByAggregator] Error: ${error.message}`
+      );
+      throw new HttpException(
+        'Failed to fetch vehicle count by aggregator.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  @Get('model-count')
+  async getVehicleCountByModel(): Promise<response<any>> {
+    try {
+      const data = await this.vehicleService.getVehicleCountByModel();
+      return {
+        success: true,
+        message: 'Vehicle count by model fetched successfully.',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [getVehicleCountByModel] Error: ${error.message}`
+      );
+      throw new HttpException(
+        'Failed to fetch vehicle count by model.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  @Get('owner-count')
+  async getVehicleCountByOwner(): Promise<response<any>> {
+    try {
+      const data = await this.vehicleService.getVehicleCountByOwner();
+      return {
+        success: true,
+        message: 'Vehicle count by owner fetched successfully.',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [getVehicleCountByOwner] Error: ${error.message}`
+      );
+      throw new HttpException(
+        'Failed to fetch vehicle count by owner.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  @Get('vehicle-type-count')
+  async getVehicleCountByVehicleType(): Promise<response<any>> {
+    try {
+      const data = await this.vehicleService.getVehicleCountByType();
+      return {
+        success: true,
+        message: 'Vehicle count by type fetched successfully.',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [getVehicleCountByType] Error: ${error.message}`
+      );
+      throw new HttpException(
+        'Failed to fetch vehicle count by type.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  // Endpoint for fetching a single vehicle by its ID
+  @Get(':id')
+  async findOne(
+    @Param('id') id: string // Get vehicle ID from request parameters
+  ): Promise<response<Vehicle>> {
+    const vehicleId = id; // Convert ID to a number
+    try {
+      const response = await this.vehicleService.findOne(vehicleId); // Call service to get vehicle by ID
+      if (!response) {
+        // If vehicle not found, throw 404 error
+        throw new HttpException(Messages.vehicle.findOneFailure(vehicleId), HttpStatus.NOT_FOUND);
+      }
+      return {
+        success: true,
+        message: Messages.vehicle.findOneSuccess(vehicleId), // Success message
+        data: response, // Return vehicle data
+      };
+    } catch (error) {
+      this.logger.error(`[VehicleController] [findOne] Error: ${error.message}`); // Log error
+      throw new HttpException(Messages.vehicle.findOneFailure(vehicleId), HttpStatus.NOT_FOUND); // Not found error
     }
   }
 

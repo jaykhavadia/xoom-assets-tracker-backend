@@ -1,9 +1,8 @@
-// src/modules/vehicle-type/entities/vehicle-type.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, Unique } from 'typeorm';
 import { IsString, IsEnum, IsNotEmpty } from 'class-validator';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
 
-enum Fuel {
+export enum Fuel {
   Petrol = 'Petrol',
   Diesel = 'Diesel',
   Electric = 'Electric',
@@ -12,6 +11,7 @@ enum Fuel {
 }
 
 @Entity('vehicle_type')
+@Unique(['name', 'fuel'])  // Composite unique constraint on name and fuel
 export class VehicleType {
   @PrimaryGeneratedColumn()
   id: number;

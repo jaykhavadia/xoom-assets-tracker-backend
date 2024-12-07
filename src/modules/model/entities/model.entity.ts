@@ -8,7 +8,7 @@ export class Model {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   @IsString()
   @IsNotEmpty()
   brand: string;

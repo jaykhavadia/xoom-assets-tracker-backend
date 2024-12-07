@@ -12,7 +12,7 @@ export class VehicleTypeService {
   constructor(
     @InjectRepository(VehicleType)
     private readonly vehicleTypeRepository: Repository<VehicleType>,
-  ) {}
+  ) { }
 
   async create(vehicleType: Partial<VehicleType>) {
     try {
@@ -20,16 +20,33 @@ export class VehicleTypeService {
       return await this.vehicleTypeRepository.save(newVehicleType);
     } catch (error) {
       this.logger.error('[VehicleTypeService] [create] Error:', error);
-      throw new HttpException(Messages.vehicleType.createFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async findAll() {
+  async findAll(name?: string, fuel?: string) {
     try {
-      return await this.vehicleTypeRepository.find();
+      const filters: any = {};  // Initialize an empty object to hold the filters
+
+      // Add filter for 'name' if provided
+      if (name) {
+        filters.name = name;
+      }
+
+      // Add filter for 'fuel' if provided
+      if (fuel) {
+        filters.fuel = fuel;
+      }
+
+      // Find vehicle types based on the provided filters
+      const vehicleTypes = await this.vehicleTypeRepository.find({
+        where: filters,  // Apply the filters to the query
+      });
+
+      return vehicleTypes;
     } catch (error) {
       this.logger.error('[VehicleTypeService] [findAll] Error:', error);
-      throw new HttpException(Messages.vehicleType.fetchFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException('Error fetching vehicle types', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -48,7 +65,7 @@ export class VehicleTypeService {
       return this.findOne(id);
     } catch (error) {
       this.logger.error('[VehicleTypeService] [update] Error:', error);
-      throw new HttpException(Messages.vehicleType.updateFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -58,7 +75,7 @@ export class VehicleTypeService {
       return { message: 'Vehicle type deleted successfully.' };
     } catch (error) {
       this.logger.error('[VehicleTypeService] [remove] Error:', error);
-      throw new HttpException(Messages.vehicleType.deleteFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 }

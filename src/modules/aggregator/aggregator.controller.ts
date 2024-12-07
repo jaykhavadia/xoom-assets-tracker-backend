@@ -1,5 +1,16 @@
 // src/modules/aggregator/aggregator.controller.ts
-import { Controller, Get, Post, Patch, Delete, Param, Body, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Logger,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { AggregatorService } from './aggregator.service';
 import { Aggregator } from './entities/aggregator.entity';
 
@@ -9,53 +20,83 @@ export class AggregatorController {
 
   constructor(private readonly aggregatorService: AggregatorService) {}
 
+  // Endpoint for creating a new aggregator
   @Post()
-  async create(@Body() aggregator: Partial<Aggregator>) {
+  async create(@Body() aggregator: Partial<Aggregator>): Promise<response<Aggregator>> {
     try {
-      return await this.aggregatorService.create(aggregator);
+      const response = await this.aggregatorService.create(aggregator);
+      return {
+        success: true,
+        message: 'Aggregator created successfully.',
+        data: response,
+      };
     } catch (error) {
-      this.logger.error('[AggregatorController] [create] Error:', error);
-      throw error;
+      this.logger.error(`[AggregatorController] [create] Error: ${error.message}`);
+      throw new HttpException('Failed to create aggregator.', HttpStatus.BAD_REQUEST);
     }
   }
 
+  // Endpoint for retrieving all aggregators
   @Get()
-  async findAll() {
+  async findAll(): Promise<response<Aggregator[]>> {
     try {
-      return await this.aggregatorService.findAll();
+      const response = await this.aggregatorService.findAll();
+      return {
+        success: true,
+        message: 'Aggregators retrieved successfully.',
+        data: response,
+      };
     } catch (error) {
-      this.logger.error('[AggregatorController] [findAll] Error:', error);
-      throw error;
+      this.logger.error(`[AggregatorController] [findAll] Error: ${error.message}`);
+      throw new HttpException('Failed to retrieve aggregators.', HttpStatus.BAD_REQUEST);
     }
   }
 
+  // Endpoint for retrieving a specific aggregator by ID
   @Get(':id')
-  async findOne(@Param('id') id: number) {
+  async findOne(@Param('id') id: number): Promise<response<Aggregator>> {
     try {
-      return await this.aggregatorService.findOne(id);
+      const response = await this.aggregatorService.findOne(id);
+      return {
+        success: true,
+        message: 'Aggregator retrieved successfully.',
+        data: response,
+      };
     } catch (error) {
-      this.logger.error('[AggregatorController] [findOne] Error:', error);
-      throw error;
+      this.logger.error(`[AggregatorController] [findOne] Error: ${error.message}`);
+      throw new HttpException('Failed to retrieve aggregator.', HttpStatus.BAD_REQUEST);
     }
   }
 
+  // Endpoint for updating a specific aggregator by ID
   @Patch(':id')
-  async update(@Param('id') id: number, @Body() updateData: Partial<Aggregator>) {
+  async update(@Param('id') id: number, @Body() updateData: Partial<Aggregator>): Promise<response<Aggregator>> {
     try {
-      return await this.aggregatorService.update(id, updateData);
+      const response = await this.aggregatorService.update(id, updateData);
+      return {
+        success: true,
+        message: 'Aggregator updated successfully.',
+        data: response,
+      };
     } catch (error) {
-      this.logger.error('[AggregatorController] [update] Error:', error);
-      throw error;
+      this.logger.error(`[AggregatorController] [update] Error: ${error.message}`);
+      throw new HttpException('Failed to update aggregator.', HttpStatus.BAD_REQUEST);
     }
   }
 
+  // Endpoint for deleting a specific aggregator by ID
   @Delete(':id')
-  async remove(@Param('id') id: number) {
+  async remove(@Param('id') id: number): Promise<response<null>> {
     try {
-      return await this.aggregatorService.remove(id);
+      await this.aggregatorService.remove(id);
+      return {
+        success: true,
+        message: 'Aggregator removed successfully.',
+        data: null,
+      };
     } catch (error) {
-      this.logger.error('[AggregatorController] [remove] Error:', error);
-      throw error;
+      this.logger.error(`[AggregatorController] [remove] Error: ${error.message}`);
+      throw new HttpException('Failed to remove aggregator.', HttpStatus.BAD_REQUEST);
     }
   }
 }

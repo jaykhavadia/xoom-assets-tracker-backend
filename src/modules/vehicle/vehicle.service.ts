@@ -150,14 +150,14 @@ export class VehicleService {
         const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: checkRelationDto.vehicleTypeId } });
         const model = await this.modelRepository.findOne({ where: { id: checkRelationDto.modelId } });
         const ownedBy = await this.ownedByRepository.findOne({ where: { id: checkRelationDto.ownedById } });
-        const aggregator = await this.aggregatorRepository.findOne({ where: { id: checkRelationDto.aggregatorId } });
+        let aggregator = await this.aggregatorRepository.findOne({ where: { id: checkRelationDto.aggregatorId } });
 
         const missingFields = [];
 
         if (!vehicleType) missingFields.push(`vehicleType (ID: ${checkRelationDto.vehicleTypeId})`);
         if (!model) missingFields.push(`model (ID: ${checkRelationDto.modelId})`);
         if (!ownedBy) missingFields.push(`ownedBy (ID: ${checkRelationDto.ownedById})`);
-        if (!aggregator) missingFields.push(`aggregator (ID: ${checkRelationDto.aggregatorId})`);
+        if (!aggregator) { aggregator = await this.aggregatorRepository.findOne({ where: { id: 1 } }); }
 
         if (missingFields.length > 0) {
             throw new BadRequestException(`Invalid or missing fields: ${missingFields.join(', ')}`);
@@ -171,4 +171,44 @@ export class VehicleService {
             ...vehicleDto
         };
     }
+
+    async getVehicleCountByAggregator() {
+        return this.vehicleRepository
+        .createQueryBuilder('vehicle')
+        .leftJoinAndSelect('vehicle.aggregator', 'aggregator')
+        .select('aggregator.name', 'aggregatorName')
+        .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+        .groupBy('aggregator.name')
+        .getRawMany();
+      }
+    
+      async getVehicleCountByModel() {
+        return this.vehicleRepository
+          .createQueryBuilder('vehicle')
+          .leftJoin('vehicle.model', 'model')
+          .select('model.brand', 'modelBrand')
+          .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+          .groupBy('model.brand')
+          .getRawMany();
+      }
+    
+      async getVehicleCountByOwner() {
+        return this.vehicleRepository
+          .createQueryBuilder('vehicle')
+          .leftJoin('vehicle.ownedBy', 'ownedBy')
+          .select('ownedBy.name', 'ownerName')
+          .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+          .groupBy('ownedBy.name')
+          .getRawMany();
+      }
+    
+      async getVehicleCountByType() {
+        return this.vehicleRepository
+          .createQueryBuilder('vehicle')
+          .leftJoin('vehicle.vehicleType', 'vehicleType')
+          .select('CONCAT(vehicleType.name, \' - \', vehicleType.fuel)', 'vehicleTypeName')
+          .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+          .groupBy('vehicleType.name, vehicleType.fuel')
+          .getRawMany();
+      }
 }

@@ -8,7 +8,7 @@ export class OwnedBy {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   @IsString()
   @IsNotEmpty()
   name: string;

@@ -8,7 +8,7 @@ export class Aggregator {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ default: 'Idel' })
+  @Column({ unique: true })
   @IsString()
   @IsNotEmpty()
   name: string;
