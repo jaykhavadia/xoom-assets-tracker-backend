@@ -11,7 +11,7 @@ import { GoogleDriveService } from 'src/common/google-drive/google-drive.service
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
-import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { VehicleDto } from './dto/create-vehicle.dto';
 
 // Controller for handling vehicle-related requests
 @Controller('vehicle')
@@ -28,7 +28,7 @@ export class VehicleController {
   // Endpoint for creating a new vehicle record
   @Post()
   async create(
-    @Body(new ValidationPipe()) vehicle: CreateVehicleDto // Validate and parse the vehicle object from request body
+    @Body(new ValidationPipe()) vehicle: VehicleDto // Validate and parse the vehicle object from request body
   ): Promise<response<Vehicle>> {
     try {
       const response = await this.vehicleService.create(vehicle); // Call service to create vehicle
@@ -89,7 +89,7 @@ export class VehicleController {
   @Put(':id')
   async update(
     @Param('id') id: string, // Get vehicle ID from request parameters
-    @Body(new ValidationPipe()) vehicle: Vehicle // Validate and parse the vehicle object from request body
+    @Body(new ValidationPipe()) vehicle: VehicleDto // Validate and parse the vehicle object from request body
   ): Promise<response<Vehicle>> {
     const vehicleId = id; // Convert ID to a number
     try {

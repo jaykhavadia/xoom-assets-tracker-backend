@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehical.entity';
 import { Repository } from 'typeorm';
-import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { VehicleDto } from './dto/create-vehicle.dto';
 import { VehicleType } from '../vehicle-type/entities/vehicle-type.entity';
 import { Model } from '../model/entities/model.entity';
 import { Aggregator } from '../aggregator/entities/aggregator.entity';
@@ -32,24 +32,11 @@ export class VehicleService {
      * @param vehicle - the vehicle object to be created
      * @returns the created vehicle
      */
-    async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
+    async create(createVehicleDto: VehicleDto): Promise<Vehicle> {
         try {
-            // Fetch the related entities based on the IDs
-            const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: createVehicleDto.vehicleTypeId } });
-            const model = await this.modelRepository.findOne({ where: { id: createVehicleDto.modelId } });
-            const ownedBy = await this.ownedByRepository.findOne({ where: { id: createVehicleDto.ownedById } });
-            const aggregator = await this.aggregatorRepository.findOne({ where: { id: createVehicleDto.aggregatorId } });
-            if (!vehicleType || !model || !ownedBy || !aggregator) {
-                throw new BadRequestException('Invalid ids provided for related entities');
-            }
+            const createVehicle = await this.checkRelation(createVehicleDto);
 
-            const vehicle = this.vehicleRepository.create({
-                ...createVehicleDto,
-                vehicleType,
-                model,
-                ownedBy,
-                aggregator,
-            });
+            const vehicle = this.vehicleRepository.create(createVehicle);
             return await this.vehicleRepository.save(vehicle);
         } catch (error) {
             this.logger.error(`[VehicleService] [create] Error: ${error.message}`);
@@ -95,12 +82,13 @@ export class VehicleService {
     /**
      * Updates an existing vehicle in the database
      * @param id - the ID of the vehicle to update
-     * @param vehicle - the vehicle object with updated information
+     * @param updateVehicleDto - the vehicle object with updated information
      * @returns the updated vehicle
      */
-    async update(id: string, vehicle: Vehicle): Promise<Vehicle> {
+    async update(id: string, updateVehicleDto: VehicleDto): Promise<Vehicle> {
         try {
-            await this.vehicleRepository.update(id, vehicle);
+            const updatedVehicle = await this.checkRelation(updateVehicleDto);
+            await this.vehicleRepository.update(id, updatedVehicle);
             return await this.findOne(id);
         } catch (error) {
             this.logger.error(`[VehicleService] [update] Error: ${error.message}`);
@@ -150,5 +138,37 @@ export class VehicleService {
             this.logger.error(`[VehicleService] [updateVehicles] Error: ${error.message}`);
             throw new InternalServerErrorException('Failed to update vehicles.');
         }
+    }
+
+    async checkRelation(checkRelationDto: VehicleDto): Promise<{
+        vehicleType: VehicleType,
+        model: Model,
+        ownedBy: OwnedBy,
+        aggregator: Aggregator
+    }> {
+        // Fetch the related entities based on the IDs
+        const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: checkRelationDto.vehicleTypeId } });
+        const model = await this.modelRepository.findOne({ where: { id: checkRelationDto.modelId } });
+        const ownedBy = await this.ownedByRepository.findOne({ where: { id: checkRelationDto.ownedById } });
+        const aggregator = await this.aggregatorRepository.findOne({ where: { id: checkRelationDto.aggregatorId } });
+
+        const missingFields = [];
+
+        if (!vehicleType) missingFields.push(`vehicleType (ID: ${checkRelationDto.vehicleTypeId})`);
+        if (!model) missingFields.push(`model (ID: ${checkRelationDto.modelId})`);
+        if (!ownedBy) missingFields.push(`ownedBy (ID: ${checkRelationDto.ownedById})`);
+        if (!aggregator) missingFields.push(`aggregator (ID: ${checkRelationDto.aggregatorId})`);
+
+        if (missingFields.length > 0) {
+            throw new BadRequestException(`Invalid or missing fields: ${missingFields.join(', ')}`);
+        }
+        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
+        return {
+            vehicleType,
+            model,
+            ownedBy,
+            aggregator,
+            ...vehicleDto
+        };
     }
 }

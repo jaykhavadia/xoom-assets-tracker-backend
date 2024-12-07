@@ -3,9 +3,6 @@ import { Transaction } from './entities/transaction.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Messages } from 'src/constants/messages.constants';
-import { Vehicle } from '../vehicle/entities/vehical.entity';
-import { Employee } from '../employee/entities/employee.entity';
-import { Location } from '../location/entities/location.entity';
 import { VehicleService } from '../vehicle/vehicle.service';
 import { EmployeeService } from '../employee/employee.service';
 import { LocationService } from '../location/location.service';
@@ -31,16 +28,17 @@ export class TransactionService {
         try {
             // Find the related entities using their IDs
             let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
+            const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
             if (transactionDto.action === 'entry') {
                 if (vehicle.status === 'occupied') {
                     throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, status: 'occupied' })
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregator.id), status: 'occupied' })
             } else if (transactionDto.action === 'exit') {
                 if (vehicle.status === 'available') {
                     throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, status: 'available' })
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregator.id), status: 'available' })
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
             if (employee.status === 'inactive') {

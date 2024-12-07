@@ -3,7 +3,7 @@ import { Type, Transform } from 'class-transformer';
 import * as moment from 'moment'; // Corrected import
 import { Emirates } from '../entities/vehical.entity';
 
-export class CreateVehicleDto {
+export class VehicleDto {
     @IsString()
     @IsNotEmpty()
     vehicleNo: string;
@@ -25,11 +25,10 @@ export class CreateVehicleDto {
     aggregatorId: number;
 
     @Transform(({ value }) => {
-        console.log("🚀 ~ CreateVehicleDto ~ @Transform ~ value:", value)
         return value ? moment(value, 'DD-MM-YYYY').format('DD-MM-YYYY') : null;
     })
     @IsNotEmpty()
-    registrationExpiry: string;
+    registrationExpiry: Date;
 
     @IsEnum(Emirates)
     emirates: Emirates;
