@@ -42,8 +42,11 @@ export class UserService {
 
     async update(id: string, updateData: Partial<User>): Promise<User> {
         try {
+            if(updateData?.email){
+                throw new Error("User Cant update Email");
+            }
             const user = await this.findOne(id);
-            if (updateData.password) {
+            if (updateData?.password) {
                 const salt = await bcrypt.genSalt();
                 updateData.password = await bcrypt.hash(updateData.password, salt);
             }

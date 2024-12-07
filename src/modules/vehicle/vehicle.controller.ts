@@ -11,6 +11,7 @@ import { GoogleDriveService } from 'src/common/google-drive/google-drive.service
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
 
 // Controller for handling vehicle-related requests
 @Controller('vehicle')
@@ -27,7 +28,7 @@ export class VehicleController {
   // Endpoint for creating a new vehicle record
   @Post()
   async create(
-    @Body(new ValidationPipe()) vehicle: Vehicle // Validate and parse the vehicle object from request body
+    @Body(new ValidationPipe()) vehicle: CreateVehicleDto // Validate and parse the vehicle object from request body
   ): Promise<response<Vehicle>> {
     try {
       const response = await this.vehicleService.create(vehicle); // Call service to create vehicle
@@ -38,7 +39,7 @@ export class VehicleController {
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [create] Error: ${error.message}`); // Log error
-      throw new HttpException(Messages.vehicle.createFailure, HttpStatus.BAD_REQUEST); // Return bad request error
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Return bad request error
     }
   }
 
@@ -66,7 +67,7 @@ export class VehicleController {
   async findOne(
     @Param('id') id: string // Get vehicle ID from request parameters
   ): Promise<response<Vehicle>> {
-    const vehicleId = parseInt(id, 10); // Convert ID to a number
+    const vehicleId = id; // Convert ID to a number
     try {
       const response = await this.vehicleService.findOne(vehicleId); // Call service to get vehicle by ID
       if (!response) {
@@ -90,7 +91,7 @@ export class VehicleController {
     @Param('id') id: string, // Get vehicle ID from request parameters
     @Body(new ValidationPipe()) vehicle: Vehicle // Validate and parse the vehicle object from request body
   ): Promise<response<Vehicle>> {
-    const vehicleId = parseInt(id, 10); // Convert ID to a number
+    const vehicleId = id; // Convert ID to a number
     try {
       const response = await this.vehicleService.update(vehicleId, vehicle); // Call service to update vehicle
       return {
@@ -100,7 +101,7 @@ export class VehicleController {
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [update] Error: ${error.message}`); // Log error
-      throw new HttpException(Messages.vehicle.updateFailure(vehicleId), HttpStatus.BAD_REQUEST); // Bad request error
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Bad request error
     }
   }
 
@@ -109,7 +110,7 @@ export class VehicleController {
   async remove(
     @Param('id') id: string // Get vehicle ID from request parameters
   ): Promise<response<void>> {
-    const vehicleId = parseInt(id, 10); // Convert ID to a number
+    const vehicleId = id; // Convert ID to a number
     try {
       await this.vehicleService.remove(vehicleId); // Call service to delete vehicle
       return {
@@ -148,7 +149,7 @@ export class VehicleController {
 
       // Create the folder named {sheetId} inside the specified parent folder
       const sheetFolderId = await this.googleDriveService.getOrCreateFolder(sheetId.toString(), parentFolderId);
-      
+
       const directoryPath = path.join('src', 'uploads', 'vehicle');
       const fileName = file.originalname;
       // Ensure the directory exists (create it recursively if it doesn't)

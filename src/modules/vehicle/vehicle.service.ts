@@ -1,7 +1,13 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehical.entity';
 import { Repository } from 'typeorm';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { VehicleType } from '../vehicle-type/entities/vehicle-type.entity';
+import { Model } from '../model/entities/model.entity';
+import { Aggregator } from '../aggregator/entities/aggregator.entity';
+import { OwnedBy } from '../owned-by/entities/owned_by.entity';
+import * as moment from 'moment';
 
 @Injectable()
 export class VehicleService {
@@ -11,6 +17,14 @@ export class VehicleService {
     constructor(
         @InjectRepository(Vehicle)
         private vehicleRepository: Repository<Vehicle>,
+        @InjectRepository(VehicleType)
+        private readonly vehicleTypeRepository: Repository<VehicleType>,
+        @InjectRepository(Model)
+        private readonly modelRepository: Repository<Model>,
+        @InjectRepository(Aggregator)
+        private readonly aggregatorRepository: Repository<Aggregator>,
+        @InjectRepository(OwnedBy)
+        private readonly ownedByRepository: Repository<OwnedBy>,
     ) { }
 
     /**
@@ -18,12 +32,28 @@ export class VehicleService {
      * @param vehicle - the vehicle object to be created
      * @returns the created vehicle
      */
-    async create(vehicle: Vehicle): Promise<Vehicle> {
+    async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
         try {
+            // Fetch the related entities based on the IDs
+            const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: createVehicleDto.vehicleTypeId } });
+            const model = await this.modelRepository.findOne({ where: { id: createVehicleDto.modelId } });
+            const ownedBy = await this.ownedByRepository.findOne({ where: { id: createVehicleDto.ownedById } });
+            const aggregator = await this.aggregatorRepository.findOne({ where: { id: createVehicleDto.aggregatorId } });
+            if (!vehicleType || !model || !ownedBy || !aggregator) {
+                throw new BadRequestException('Invalid ids provided for related entities');
+            }
+
+            const vehicle = this.vehicleRepository.create({
+                ...createVehicleDto,
+                vehicleType,
+                model,
+                ownedBy,
+                aggregator,
+            });
             return await this.vehicleRepository.save(vehicle);
         } catch (error) {
             this.logger.error(`[VehicleService] [create] Error: ${error.message}`);
-            throw new InternalServerErrorException('Failed to create vehicle.');
+            throw new InternalServerErrorException(error.message);
         }
     }
 
@@ -53,7 +83,7 @@ export class VehicleService {
      * @param id - the ID of the vehicle to retrieve
      * @returns the found vehicle
      */
-    async findOne(id: number): Promise<Vehicle> {
+    async findOne(id: string): Promise<Vehicle> {
         try {
             return await this.vehicleRepository.findOneBy({ id });
         } catch (error) {
@@ -68,7 +98,7 @@ export class VehicleService {
      * @param vehicle - the vehicle object with updated information
      * @returns the updated vehicle
      */
-    async update(id: number, vehicle: Vehicle): Promise<Vehicle> {
+    async update(id: string, vehicle: Vehicle): Promise<Vehicle> {
         try {
             await this.vehicleRepository.update(id, vehicle);
             return await this.findOne(id);
@@ -82,7 +112,7 @@ export class VehicleService {
      * Removes a vehicle by its ID
      * @param id - the ID of the vehicle to remove
      */
-    async remove(id: number): Promise<void> {
+    async remove(id: string): Promise<void> {
         try {
             let vehicle = await this.findOne(id);
             if (!vehicle) {

@@ -25,9 +25,9 @@ export class CreateTransactionDto {
     @IsNotEmpty()
     location: number;
 
-    @IsNumberString()
+    @IsString()
     @IsNotEmpty()
-    vehicle: number;
+    vehicle: string;
 
     @IsString()
     @IsNotEmpty()

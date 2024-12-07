@@ -12,7 +12,7 @@ import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.enti
 import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 import { OwnedBy } from 'src/modules/owned-by/entities/owned_by.entity';
 import { Model } from 'src/modules/model/entities/model.entity';
-import moment from 'moment';
+import * as moment from 'moment';
 
 export enum Emirates {
   AbuDhabi = 'AbuDhabi',
@@ -27,13 +27,18 @@ export enum Emirates {
 @Entity('vehicle')
 @Unique(['chasisNumber']) // Ensures chasisNumber is unique
 export class Vehicle {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ name: 'vehicleNo', type: 'varchar', length: 50 })
   @IsString()
   @IsNotEmpty()
   vehicleNo: string;
+  
+  @Column({ name: 'code', type: 'varchar', length: 50 })
+  @IsString()
+  @IsNotEmpty()
+  code: string;
 
   @ManyToOne(() => VehicleType, (vehicleType) => vehicleType, { eager: true, cascade: true })
   vehicleType: VehicleType;

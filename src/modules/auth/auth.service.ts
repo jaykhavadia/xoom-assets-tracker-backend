@@ -25,10 +25,11 @@ export class AuthService {
         }
     }
 
-    async login(user: any): Promise<{ accessToken: string }> {
+    async login(user: any): Promise<{ user: any, accessToken: string }> {
         try {
             const payload = { email: user.email, sub: user.id, role: user.role };
             return {
+                user,
                 accessToken: this.jwtService.sign(payload),
             };
         } catch (error) {
