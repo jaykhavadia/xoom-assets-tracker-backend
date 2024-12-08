@@ -29,12 +29,12 @@ export class TransactionService {
             // Find the related entities using their IDs
             let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
-            if (transactionDto.action === 'entry') {
+            if (transactionDto.action === 'in') {
                 if (vehicle.status === 'occupied') {
                     throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
                 }
                 vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregator.id), status: 'occupied' })
-            } else if (transactionDto.action === 'exit') {
+            } else if (transactionDto.action === 'out') {
                 if (vehicle.status === 'available') {
                     throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
                 }
@@ -73,7 +73,6 @@ export class TransactionService {
      * @returns The updated transaction.
      */
     async update(id: number, updateDto: any): Promise<Transaction> {
-        console.log("🚀 ~ TransactionService ~ update ~ updateDto:", updateDto)
         try {
             await this.transactionRepository.update({ id }, updateDto); // Update the transaction
             return this.transactionRepository.findOne({

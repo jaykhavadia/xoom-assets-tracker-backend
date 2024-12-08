@@ -32,16 +32,16 @@ export class TransactionController {
   // {vehiclePictures: {back: 'File'}, {front: 'File'}, {left: 'File'}, ...}
   async create(
     @Body(new ValidationPipe()) body: CreateTransactionDto,
-    @UploadedFiles() files: { [key: string]: Express.Multer.File[] }
+    @UploadedFiles() files?: { [key: string]: Express.Multer.File[] }
   ): Promise<response<Transaction>> {
     try {
       // const transactionData = JSON.parse(body);
       // Create the transaction first without saving the pictures yet
       const transaction = await this.transactionService.create(body);
       // Save the files using the generated transactionId
-      const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
+      // const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
       // Update the transaction with the saved file URLs
-      const updatedTransaction = await this.transactionService.update(transaction.id, { ...body, pictures: savedFiles });
+      const updatedTransaction = await this.transactionService.update(transaction.id, { ...body, pictures: null });
       this.logger.log(Messages.transaction.createSuccess); // Log success message
       return {
         success: true,

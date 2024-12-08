@@ -1,9 +1,5 @@
 import { IsString, IsDateString, IsNumberString, IsNotEmpty, IsEnum } from 'class-validator';
-
-export enum Action {
-    ENTRY = 'entry',
-    EXIT = 'exit',
-}
+import { Action } from '../entities/transaction.entity';
 
 export class CreateTransactionDto {
     @IsString()
