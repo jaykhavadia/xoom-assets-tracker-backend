@@ -12,7 +12,7 @@ export class OwnedByService {
   constructor(
     @InjectRepository(OwnedBy)
     private readonly ownedByRepository: Repository<OwnedBy>,
-  ) {}
+  ) { }
 
   async create(ownedBy: Partial<OwnedBy>) {
     try {
@@ -20,7 +20,7 @@ export class OwnedByService {
       return await this.ownedByRepository.save(newOwnedBy);
     } catch (error) {
       this.logger.error('[OwnedByService] [create] Error:', error);
-      throw new HttpException(Messages.ownedBy.createFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.Messages, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -58,7 +58,7 @@ export class OwnedByService {
       return { message: 'OwnedBy deleted successfully.' };
     } catch (error) {
       this.logger.error('[OwnedByService] [remove] Error:', error);
-      throw new HttpException(Messages.ownedBy.deleteFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.Messages, HttpStatus.BAD_REQUEST);
     }
   }
 }
