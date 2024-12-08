@@ -129,7 +129,6 @@ export class VehicleService {
 
             // Re-enable foreign key checks after clearing the table
             await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 1');
-
             // Insert the new vehicle data
             await this.vehicleRepository.save(vehicles);
 

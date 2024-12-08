@@ -6,10 +6,14 @@ import { GoogleDriveService } from './google-drive/google-drive.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthToken } from './auth-token/auth-token.entity';
 import { AuthTokenService } from './auth-token/auth-token.service';
+import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
+import { Model } from 'src/modules/model/entities/model.entity';
+import { OwnedBy } from 'src/modules/owned-by/entities/owned_by.entity';
+import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AuthToken])],
-  providers: [UploadService, FilesHelperService, GoogleAuthService, GoogleDriveService,  AuthTokenService],
-  exports: [UploadService, GoogleDriveService, FilesHelperService,  AuthTokenService],
+  imports: [TypeOrmModule.forFeature([AuthToken, VehicleType, Model, OwnedBy, Aggregator])],
+  providers: [UploadService, FilesHelperService, GoogleAuthService, GoogleDriveService, AuthTokenService],
+  exports: [UploadService, GoogleDriveService, FilesHelperService, AuthTokenService],
 })
 export class CommonModule { }

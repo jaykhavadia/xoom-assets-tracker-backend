@@ -106,7 +106,7 @@ export class VehicleController {
   async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
     try {
       const vehicles = await this.uploadService.readExcel(file, 'vehicle'); // Parse Excel file and get vehicle data
-      await this.vehicleService.updateVehicles(vehicles as Vehicle[]); // Call service to update vehicles in bulk
+      await this.vehicleService.updateVehicles(await Promise.all(vehicles) as Vehicle[]); // Call service to update vehicles in bulk
 
       // Prepare data for the Sheet entity
       const sheetData: Partial<Sheet> = {
@@ -118,31 +118,31 @@ export class VehicleController {
 
       // Save the Sheet entry to the database
       const sheetDetails = await this.sheetService.create(sheetData); // Create a new Sheet entry
-      // Get the sheet ID
-      const sheetId = sheetDetails.id;
+      // // Get the sheet ID
+      // const sheetId = sheetDetails.id;
 
-      // The ID of the parent folder where the new folder should be created
-      const parentFolderId = '164V3u9WSG6PjoQdcwbmTWGbqHgjRaU22'; // Replace with your folder ID
+      // // The ID of the parent folder where the new folder should be created
+      // const parentFolderId = '164V3u9WSG6PjoQdcwbmTWGbqHgjRaU22'; // Replace with your folder ID
 
-      // Create the folder named {sheetId} inside the specified parent folder
-      const sheetFolderId = await this.googleDriveService.getOrCreateFolder(sheetId.toString(), parentFolderId);
+      // // Create the folder named {sheetId} inside the specified parent folder
+      // const sheetFolderId = await this.googleDriveService.getOrCreateFolder(sheetId.toString(), parentFolderId);
 
-      const directoryPath = path.join('src', 'uploads', 'vehicle');
-      const fileName = file.originalname;
-      // Ensure the directory exists (create it recursively if it doesn't)
-      mkdirp.sync(directoryPath);
-      // Write the image data to the file
-      const filePath = path.join(directoryPath, fileName);
-      fs.writeFileSync(filePath, file.buffer);
+      // const directoryPath = path.join('src', 'uploads', 'vehicle');
+      // const fileName = file.originalname;
+      // // Ensure the directory exists (create it recursively if it doesn't)
+      // mkdirp.sync(directoryPath);
+      // // Write the image data to the file
+      // const filePath = path.join(directoryPath, fileName);
+      // fs.writeFileSync(filePath, file.buffer);
 
-      console.log("Checking if file exists at:", filePath);
-      if (!fs.existsSync(filePath)) {
-        console.error("File does not exist:", filePath);
-        throw new Error("File not found");
-      }
-      const uploadedFile = await this.googleDriveService.uploadFile(filePath, sheetFolderId);
-      // Clean up the temporary file after uploading
-      await fs.promises.unlink(filePath);
+      // console.log("Checking if file exists at:", filePath);
+      // if (!fs.existsSync(filePath)) {
+      //   console.error("File does not exist:", filePath);
+      //   throw new Error("File not found");
+      // }
+      // const uploadedFile = await this.googleDriveService.uploadFile(filePath, sheetFolderId);
+      // // Clean up the temporary file after uploading
+      // await fs.promises.unlink(filePath);
 
       return {
         success: true,
