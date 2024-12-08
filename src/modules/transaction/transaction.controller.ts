@@ -1,5 +1,6 @@
 import {
   Controller, Post, Put, Get, Delete, Param, Body, UploadedFiles, UseInterceptors, ValidationPipe, HttpException, HttpStatus, Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -7,7 +8,10 @@ import { Transaction } from './entities/transaction.entity';
 import { FilesHelperService } from 'src/common/files-helper/files-helper.service';
 import { Messages } from 'src/constants/messages.constants';
 import { CreateTransactionDto } from './dto/CreateTransaction.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+
 @Controller('transaction')
+@UseGuards(JwtAuthGuard)
 export class TransactionController {
   private readonly logger = new Logger(TransactionController.name);
 

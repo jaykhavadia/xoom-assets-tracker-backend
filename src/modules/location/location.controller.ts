@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UseGuards, ValidationPipe } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { Location } from './entities/location.entity';
 import { Messages } from 'src/constants/messages.constants';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('location')
+@UseGuards(JwtAuthGuard)
 export class LocationController {
   private readonly logger = new Logger(LocationController.name); // Initialize logger
 

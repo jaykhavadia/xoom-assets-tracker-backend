@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UploadedFile, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Employee } from './entities/employee.entity';
@@ -11,8 +11,10 @@ import { GoogleDriveService } from 'src/common/google-drive/google-drive.service
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('employee')
+@UseGuards(JwtAuthGuard)
 export class EmployeeController {
   private readonly logger = new Logger(EmployeeController.name);
 

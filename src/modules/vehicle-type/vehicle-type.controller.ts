@@ -11,11 +11,14 @@ import {
   HttpException,
   HttpStatus,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { VehicleTypeService } from './vehicle-type.service';
 import { Fuel, VehicleType } from './entities/vehicle-type.entity';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('vehicle-type')
+@UseGuards(JwtAuthGuard)
 export class VehicleTypeController {
   private readonly logger = new Logger(VehicleTypeController.name);
 

@@ -10,11 +10,14 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ModelService } from './model.service';
 import { Model } from './entities/model.entity';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('model')
+@UseGuards(JwtAuthGuard)
 export class ModelController {
   private readonly logger = new Logger(ModelController.name);
 

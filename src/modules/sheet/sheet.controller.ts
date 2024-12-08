@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UseGuards, ValidationPipe } from '@nestjs/common';
 import { SheetService } from './sheet.service';
 import { Sheet } from './entities/sheet.entity';
 import { Messages } from 'src/constants/messages.constants';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('sheet')
+@UseGuards(JwtAuthGuard)
 export class SheetController {
   private readonly logger = new Logger(SheetController.name);
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, Query, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { VehicleService } from './vehicle.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Vehicle } from './entities/vehical.entity';
@@ -12,9 +12,11 @@ import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import { VehicleDto } from './dto/create-vehicle.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 // Controller for handling vehicle-related requests
 @Controller('vehicle')
+@UseGuards(JwtAuthGuard)
 export class VehicleController {
   private readonly logger = new Logger(VehicleController.name); // Logger for logging errors and information
 

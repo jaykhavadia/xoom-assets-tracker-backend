@@ -10,11 +10,14 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { AggregatorService } from './aggregator.service';
 import { Aggregator } from './entities/aggregator.entity';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('aggregator')
+@UseGuards(JwtAuthGuard)
 export class AggregatorController {
   private readonly logger = new Logger(AggregatorController.name);
 

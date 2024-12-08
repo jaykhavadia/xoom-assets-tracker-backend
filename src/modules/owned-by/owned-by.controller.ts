@@ -10,11 +10,14 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { OwnedByService } from './owned-by.service';
 import { OwnedBy } from './entities/owned_by.entity';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('owned-by')
+@UseGuards(JwtAuthGuard)
 export class OwnedByController {
   private readonly logger = new Logger(OwnedByController.name);
 
