@@ -3,12 +3,16 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Forbi
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Role } from 'src/modules/user/entities/user.entity';
+import { UserService } from 'src/modules/user/user.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-    constructor(private readonly jwtService: JwtService) { }
+    constructor(
+        private readonly jwtService: JwtService,
+        private readonly userService: UserService,
+    ) { }
 
-    canActivate(context: ExecutionContext): boolean {
+    async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
         const token = request.headers['authorization']?.split(' ')[1];
         if (!token) {
@@ -17,7 +21,7 @@ export class JwtAuthGuard implements CanActivate {
         try {
             const decoded = this.jwtService.verify(token);
             request['user'] = decoded;
-            const user = request['user']
+            const user = await this.userService.findOne(request['user']['sub']);
             // Role-based conditions
             if (user.role === Role.Owner) {
                 // Owner has no limitations, full access
@@ -49,7 +53,7 @@ export class JwtAuthGuard implements CanActivate {
             // If none of the above conditions match, deny access
             throw new ForbiddenException('Access denied');
         } catch (error) {
-            throw new error;
+            throw new ForbiddenException(error.message);
         }
     }
 }
