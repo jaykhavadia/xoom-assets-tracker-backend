@@ -7,9 +7,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SheetModule } from '../sheet/sheet.module';
 import { SheetService } from '../sheet/sheet.service';
 import { Sheet } from '../sheet/entities/sheet.entity';
+import { JwtAuthModule } from 'src/auth/jwt-auth.module';
+import { User } from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Employee, Sheet]), CommonModule, SheetModule],
+  imports: [TypeOrmModule.forFeature([Employee, Sheet, User]), CommonModule, SheetModule, JwtAuthModule],
   controllers: [EmployeeController],
   providers: [EmployeeService, SheetService],
   exports: [EmployeeService]

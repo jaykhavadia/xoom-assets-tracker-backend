@@ -10,9 +10,11 @@ import { Location } from '../location/entities/location.entity';
 import { VehicleModule } from '../vehicle/vehicle.module';
 import { EmployeeModule } from '../employee/employee.module';
 import { LocationModule } from '../location/location.module';
+import { JwtAuthModule } from 'src/auth/jwt-auth.module';
+import { User } from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vehicle, Transaction, Employee, Location]), CommonModule, VehicleModule, EmployeeModule, LocationModule],
+  imports: [TypeOrmModule.forFeature([Vehicle, Transaction, Employee, Location, User]), CommonModule, VehicleModule, EmployeeModule, LocationModule, JwtAuthModule],
   controllers: [TransactionController],
   providers: [TransactionService],
 })

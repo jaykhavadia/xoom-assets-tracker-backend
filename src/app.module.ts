@@ -31,6 +31,7 @@ import { Aggregator } from './modules/aggregator/entities/aggregator.entity';
 import { OwnedBy } from './modules/owned-by/entities/owned_by.entity';
 import { Model } from './modules/model/entities/model.entity';
 import { VehicleType } from './modules/vehicle-type/entities/vehicle-type.entity';
+import { JwtAuthModule } from './auth/jwt-auth.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -69,6 +70,7 @@ import { VehicleType } from './modules/vehicle-type/entities/vehicle-type.entity
     AggregatorModule,
     ModelModule,
     OwnedByModule,
+    JwtAuthModule
   ],
   controllers: [AppController],
   providers: [AppService, CronService],

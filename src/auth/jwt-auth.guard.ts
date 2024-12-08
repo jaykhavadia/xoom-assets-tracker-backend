@@ -1,15 +1,16 @@
-// src/auth/jwt-auth.guard.ts
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
-import { Role } from 'src/modules/user/entities/user.entity';
-import { UserService } from 'src/modules/user/user.service';
+import { Role, User } from 'src/modules/user/entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
     constructor(
         private readonly jwtService: JwtService,
-        private readonly userService: UserService,
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>,
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -18,41 +19,39 @@ export class JwtAuthGuard implements CanActivate {
         if (!token) {
             throw new UnauthorizedException('No token provided');
         }
+
         try {
             const decoded = this.jwtService.verify(token);
             request['user'] = decoded;
-            const user = await this.userService.findOne(request['user']['sub']);
-            // Role-based conditions
-            if (user.role === Role.Owner) {
-                // Owner has no limitations, full access
-                return true;
+
+            const user = await this.userRepository.findOne({ where: { id: decoded.sub } });
+            if (!user) {
+                throw new UnauthorizedException('User not found');
             }
 
-            if (user.role === Role.Viewer) {
-                // Viewer can only access 'GET' requests
-                const request = context.switchToHttp().getRequest();
-                if (request.method !== 'GET') {
-                    throw new ForbiddenException('Access denied: Viewers can only View Data.');
-                }
-                return true;
+            // Role-based logic
+            switch (user.role) {
+                case Role.Owner:
+                    return true; // Full access
+                case Role.Viewer:
+                    if (request.method !== 'GET') {
+                        throw new ForbiddenException('Viewers can only view data.');
+                    }
+                    return true;
+                case Role.Editor:
+                    const allowedModules = ['vehicles', 'locations'];
+                    const routePath = request.baseUrl || request.url;
+                    if (!allowedModules.some((path) => routePath.includes(path))) {
+                        throw new ForbiddenException('Editors can only manage vehicles and locations.');
+                    }
+                    return true;
+                default:
+                    throw new ForbiddenException('Access denied');
             }
-
-            if (user.role === Role.Editor) {
-                // Editor can access CRUD for vehicle and location
-                const allowedRoutes = ['vehicles', 'locations']; // Define accessible modules
-                const request = context.switchToHttp().getRequest();
-                const routePath = request.route.path; // Get the route path
-                const isAllowed = allowedRoutes.some((path) => routePath.includes(path));
-
-                if (!isAllowed) {
-                    throw new ForbiddenException('Access denied: Editors can only manage vehicles and locations.');
-                }
-                return true;
-            }
-
-            // If none of the above conditions match, deny access
-            throw new ForbiddenException('Access denied');
         } catch (error) {
+            if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+                throw new UnauthorizedException(error.message);
+            }
             throw new ForbiddenException(error.message);
         }
     }
