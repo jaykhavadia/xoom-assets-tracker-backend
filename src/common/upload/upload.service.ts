@@ -109,7 +109,6 @@ export class UploadService {
                         employee.name = item['Name'];
                         employee.code = item['E code'];
                         employee.status = item['Status'] || 'Active';
-                        employee.isDeleted = item['isDeleted'] || false; // Default to false if not present
                         return employee;
                     }));
                     return employees;

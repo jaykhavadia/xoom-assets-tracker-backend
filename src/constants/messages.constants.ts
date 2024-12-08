@@ -15,8 +15,8 @@ export const Messages = {
         removeSuccess: (id: number) => `Employee with id: ${id} deleted successfully`,
         removeFailure: (id: number) => `Failed to delete employee with id: ${id}`,
         inactive: (id: number) => `Employee with id: ${id} is inactive`,
-        updateBulkSuccess: 'Employees updated successfully',
-        updateBulkFailure: 'Failed to update employees',
+        updateBulkSuccess: 'Bulk Employees Added successfully',
+        updateBulkFailure: 'Failed to Added Bulk Employees',
     },
 
     // Vehicle Messages
@@ -32,7 +32,7 @@ export const Messages = {
         updateFailure: (id: string) => `Failed to update vehicle with id: ${id}`,
         removeSuccess: (id: string) => `Vehicle with id: ${id} deleted successfully`,
         removeFailure: (id: string) => `Failed to delete vehicle with id: ${id}`,
-        updateBulkSuccess: 'Vehicles updated successfully',
+        updateBulkSuccess: 'Bulk Vehicles Added successfully',
         updateBulkFailure: 'Failed to update vehicles',
         occupied: (id: string) => `Vehicle with ID ${id} is already occupied`,
         available: (id: string) => `Vehicle with ID ${id} is already available`,

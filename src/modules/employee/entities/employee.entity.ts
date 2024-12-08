@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsBoolean, IsOptional } from 'class-validator';
 import { Transaction } from 'src/modules/transaction/entities/transaction.entity';
 import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -7,7 +7,7 @@ export class Employee {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 50, unique: true })
   @IsString()
   @IsNotEmpty()
   code: string;
@@ -23,6 +23,7 @@ export class Employee {
 
   @Column({ name: 'isDeleted', type: 'boolean', default: false })
   @IsBoolean()
+  @IsOptional()
   isDeleted: boolean;
 
   @OneToMany(() => Transaction, (transaction) => transaction.employee)
@@ -30,5 +31,6 @@ export class Employee {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   @IsString()
+  @IsOptional()
   currentVehicle: string;
 }

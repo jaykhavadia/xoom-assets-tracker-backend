@@ -95,14 +95,14 @@ export class EmployeeService {
         try {
             this.logger.log('Starting updateEmployees function.');
 
-            // Disable foreign key checks before truncating the table
-            await this.employeeRepository.query('SET FOREIGN_KEY_CHECKS = 0');
+            // // Disable foreign key checks before truncating the table
+            // await this.employeeRepository.query('SET FOREIGN_KEY_CHECKS = 0');
 
-            // Clear the employee table
-            await this.employeeRepository.clear();
+            // // Clear the employee table
+            // await this.employeeRepository.clear();
 
-            // Re-enable foreign key checks after clearing the table
-            await this.employeeRepository.query('SET FOREIGN_KEY_CHECKS = 1');
+            // // Re-enable foreign key checks after clearing the table
+            // await this.employeeRepository.query('SET FOREIGN_KEY_CHECKS = 1');
 
             // Insert the new employee data
             await this.employeeRepository.save(employees);
@@ -110,7 +110,7 @@ export class EmployeeService {
             this.logger.log('Successfully updated employees.');
         } catch (error) {
             this.logger.error(`[EmployeeService] [updateEmployees] Error: ${error.message}`);
-            throw new InternalServerErrorException('Failed to update employees.');
+            throw new InternalServerErrorException(error.message);
         }
     }
 }
