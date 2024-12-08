@@ -43,7 +43,4 @@ export class VehicleDto {
     @IsBoolean()
     isDeleted: boolean;
 
-    @IsString()
-    @IsNotEmpty()
-    from: string;
 }

@@ -174,41 +174,60 @@ export class VehicleService {
 
     async getVehicleCountByAggregator() {
         return this.vehicleRepository
-        .createQueryBuilder('vehicle')
-        .leftJoinAndSelect('vehicle.aggregator', 'aggregator')
-        .select('aggregator.name', 'aggregatorName')
-        .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-        .groupBy('aggregator.name')
-        .getRawMany();
-      }
-    
-      async getVehicleCountByModel() {
+            .createQueryBuilder('vehicle')
+            .leftJoinAndSelect('vehicle.aggregator', 'aggregator')
+            .select('aggregator.name', 'aggregatorName')
+            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+            .groupBy('aggregator.name')
+            .getRawMany();
+    }
+
+    async getVehicleCountByModel() {
         return this.vehicleRepository
-          .createQueryBuilder('vehicle')
-          .leftJoin('vehicle.model', 'model')
-          .select('model.brand', 'modelBrand')
-          .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-          .groupBy('model.brand')
-          .getRawMany();
-      }
-    
-      async getVehicleCountByOwner() {
+            .createQueryBuilder('vehicle')
+            .leftJoin('vehicle.model', 'model')
+            .select('model.brand', 'modelBrand')
+            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
+            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
+            .groupBy('model.brand')
+            .setParameters({
+                available: 'available',
+                occupied: 'occupied',
+            })
+            .getRawMany();
+    }
+
+    async getVehicleCountByOwner() {
         return this.vehicleRepository
-          .createQueryBuilder('vehicle')
-          .leftJoin('vehicle.ownedBy', 'ownedBy')
-          .select('ownedBy.name', 'ownerName')
-          .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-          .groupBy('ownedBy.name')
-          .getRawMany();
-      }
-    
-      async getVehicleCountByType() {
+            .createQueryBuilder('vehicle')
+            .leftJoin('vehicle.ownedBy', 'ownedBy')
+            .select('ownedBy.name', 'ownerName')
+            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
+            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
+            .groupBy('ownedBy.name')
+            .setParameters({
+                available: 'available',
+                occupied: 'occupied',
+            })
+            .getRawMany();
+    }
+
+
+    async getVehicleCountByType() {
         return this.vehicleRepository
-          .createQueryBuilder('vehicle')
-          .leftJoin('vehicle.vehicleType', 'vehicleType')
-          .select('CONCAT(vehicleType.name, \' - \', vehicleType.fuel)', 'vehicleTypeName')
-          .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-          .groupBy('vehicleType.name, vehicleType.fuel')
-          .getRawMany();
-      }
+            .createQueryBuilder('vehicle')
+            .leftJoin('vehicle.vehicleType', 'vehicleType')
+            .select('CONCAT(vehicleType.name, \' - \', vehicleType.fuel)', 'vehicleTypeName')
+            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
+            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
+            .groupBy('vehicleType.name, vehicleType.fuel')
+            .setParameters({
+                available: 'available',
+                occupied: 'occupied',
+            })
+            .getRawMany();
+    }
 }

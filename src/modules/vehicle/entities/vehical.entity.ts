@@ -91,9 +91,4 @@ export class Vehicle {
 
   @OneToMany(() => Transaction, (transaction) => transaction.vehicle)
   transactions: Transaction[];
-
-  @Column({ type: 'varchar', length: 100 })
-  @IsString()
-  @IsNotEmpty()
-  from: string;
 }

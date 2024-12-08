@@ -27,4 +27,8 @@ export class Employee {
 
   @OneToMany(() => Transaction, (transaction) => transaction.employee)
   transactions: Transaction[];
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  @IsString()
+  currentVehicle: string;
 }

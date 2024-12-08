@@ -26,7 +26,7 @@ export class UploadService {
                     vehicles.push(...jsonData.map(item => {
                         const vehicle = new Vehicle(); // Create an instance of the Vehicle class
                         vehicle.vehicleNo = item['Vehicle No.'];
-                        vehicle.from = item['From'];
+                        // vehicle.from = item['From'];
                         vehicle.model = item['Model'];
                         vehicle.status = item['Status'] || 'available';
                         vehicle.isDeleted = item['isDeleted'] || false; // Default to false if not present
