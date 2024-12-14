@@ -172,4 +172,21 @@ export class TransactionService {
 
         return transactions;
     }
+
+    /**
+        * Clears the Transaction table and inserts new transaction data
+        * @param transaction - array of new transaction to be inserted
+        */
+    async updateTransactions(transaction: Transaction[]): Promise<void> {
+        try {
+            this.logger.log('Starting updateTransactions function.');
+            // Insert the new employee data
+            await this.transactionRepository.save(transaction);
+
+            this.logger.log('Successfully updated transaction.');
+        } catch (error) {
+            this.logger.error(`[TransactionService] [updateTransactions] Error: ${error.message}`);
+            throw new InternalServerErrorException(error.message);
+        }
+    }
 }

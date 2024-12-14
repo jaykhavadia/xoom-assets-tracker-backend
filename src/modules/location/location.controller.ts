@@ -31,7 +31,7 @@ export class LocationController {
       };
     } catch (error) {
       this.logger.error(`[LocationController] [create] Error: ${error.message}`);
-      throw new HttpException(Messages.location.createFailure, HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 

@@ -7,7 +7,7 @@ export class Location {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, unique: true })
   @IsString()
   @IsNotEmpty()
   name: string;

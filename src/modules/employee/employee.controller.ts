@@ -122,10 +122,14 @@ export class EmployeeController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
     try {
-      const employees = await this.uploadService.readExcel(file, 'employee');
+      const fileResponse = await this.uploadService.readExcel(file, 'employee');
       // Save employees to the database (this part needs to be implemented in the service)
-      await this.employeeService.updateEmployees(employees as Employee[]); // Assuming you have a createBulk method
-
+      if ('employees' in fileResponse) {
+        // Save employees to the database
+        await this.employeeService.updateEmployees(fileResponse.employees.filter((item) => item !== undefined) as Employee[]);
+      } else {
+        throw new Error('Unexpected file response type for employees.');
+      }
       // Prepare data for the Sheet entity
       const sheetData: Partial<Sheet> = {
         uploadedAt: new Date(), // Current date and time
@@ -163,6 +167,7 @@ export class EmployeeController {
       return {
         success: true,
         message: Messages.employee.updateBulkSuccess,
+        errorArray: fileResponse.errorArray
       };
     } catch (error) {
       this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);

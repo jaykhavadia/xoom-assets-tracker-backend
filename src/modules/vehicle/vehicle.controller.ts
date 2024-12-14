@@ -107,8 +107,13 @@ export class VehicleController {
   @UseInterceptors(FileInterceptor('file')) // Use file interceptor for handling file uploads
   async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
     try {
-      const vehicles = await this.uploadService.readExcel(file, 'vehicle'); // Parse Excel file and get vehicle data
-      await this.vehicleService.updateVehicles(await Promise.all(vehicles) as Vehicle[]); // Call service to update vehicles in bulk
+      const fileResponse = await this.uploadService.readExcel(file, 'vehicle'); // Parse Excel file and get vehicle data
+      if ('vehicles' in fileResponse) {
+        // Save vehicles to the database
+        await this.vehicleService.updateVehicles(await Promise.all(fileResponse.vehicles.filter((item) => item !== undefined)) as Vehicle[]); // Call service to update vehicles in bulk
+      } else {
+        throw new Error('Unexpected file response type for vehicles.');
+      }
 
       // Prepare data for the Sheet entity
       const sheetData: Partial<Sheet> = {
@@ -149,6 +154,7 @@ export class VehicleController {
       return {
         success: true,
         message: Messages.vehicle.updateBulkSuccess, // Success message
+        errorArray: fileResponse.errorArray
       };
     } catch (error) {
       this.logger.error(`[VehicleController] [uploadExcel] Error: ${error.message}`); // Log error
@@ -268,31 +274,31 @@ export class VehicleController {
   }
 
   @Get('by-location')
-async getVehiclesByLocationName(
-  @Query('locationName') locationName: string
-): Promise<response<Vehicle[]>> {
-  try {
-    if (!locationName) {
-      throw new HttpException('Location name is required', HttpStatus.BAD_REQUEST);
+  async getVehiclesByLocationName(
+    @Query('locationName') locationName: string
+  ): Promise<response<Vehicle[]>> {
+    try {
+      if (!locationName) {
+        throw new HttpException('Location name is required', HttpStatus.BAD_REQUEST);
+      }
+
+      const data = await this.vehicleService.getVehiclesByLocationName(locationName);
+
+      return {
+        success: true,
+        message: `Vehicles fetched successfully for location: ${locationName}`,
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [getVehiclesByLocationName] Error: ${error.message}`
+      );
+      throw new HttpException(
+        error.message || 'Failed to fetch vehicles by location name',
+        error.status || HttpStatus.BAD_REQUEST
+      );
     }
-
-    const data = await this.vehicleService.getVehiclesByLocationName(locationName);
-
-    return {
-      success: true,
-      message: `Vehicles fetched successfully for location: ${locationName}`,
-      data,
-    };
-  } catch (error) {
-    this.logger.error(
-      `[VehicleController] [getVehiclesByLocationName] Error: ${error.message}`
-    );
-    throw new HttpException(
-      error.message || 'Failed to fetch vehicles by location name',
-      error.status || HttpStatus.BAD_REQUEST
-    );
   }
-}
 
 
   // Endpoint for fetching a single vehicle by its ID

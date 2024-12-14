@@ -14,10 +14,11 @@ import { JwtAuthModule } from 'src/auth/jwt-auth.module';
 import { User } from '../user/entities/user.entity';
 import { Aggregator } from '../aggregator/entities/aggregator.entity';
 import { AggregatorModule } from '../aggregator/aggregator.module';
+import { SheetModule } from '../sheet/sheet.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vehicle, Transaction, Employee, Location, User, Aggregator]), CommonModule, VehicleModule, EmployeeModule, LocationModule, JwtAuthModule, AggregatorModule],
-  controllers: [TransactionController], 
+  imports: [TypeOrmModule.forFeature([Vehicle, Transaction, Employee, Location, User, Aggregator]), CommonModule, VehicleModule, EmployeeModule, LocationModule, JwtAuthModule, AggregatorModule, SheetModule],
+  controllers: [TransactionController],
   providers: [TransactionService],
 })
 export class TransactionModule { }
