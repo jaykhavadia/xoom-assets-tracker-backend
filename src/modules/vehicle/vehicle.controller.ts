@@ -156,6 +156,37 @@ export class VehicleController {
     }
   }
 
+  @Get('filtered')
+  async getFilteredVehicles(
+    @Query('model') model?: string,
+    @Query('ownedBy') ownedBy?: string,
+    @Query('vehicleType') vehicleType?: string,
+    @Query('aggregator') aggregatorName?: string
+  ): Promise<response<Vehicle[]>> {
+    try {
+      const data = await this.vehicleService.getFilteredVehicles(
+        model,
+        ownedBy,
+        vehicleType,
+        aggregatorName
+      );
+      return {
+        success: true,
+        message: 'Filtered vehicles fetched successfully.',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [getFilteredVehicles] Error: ${error.message}`
+      );
+      throw new HttpException(
+        'Failed to fetch filtered vehicles.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+
   @Get('aggregator-count')
   async getVehicleCountByAggregator(): Promise<response<any>> {
     try {

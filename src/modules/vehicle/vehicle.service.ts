@@ -171,6 +171,51 @@ export class VehicleService {
         };
     }
 
+    async getFilteredVehicles(
+        model?: string,
+        ownedBy?: string,
+        vehicleType?: string,
+        aggregatorName?: string
+    ): Promise<any> {
+        const queryBuilder = this.vehicleRepository
+            .createQueryBuilder('vehicle')
+            .leftJoinAndSelect('vehicle.model', 'model')
+            .leftJoinAndSelect('vehicle.ownedBy', 'owner')
+            .leftJoinAndSelect('vehicle.vehicleType', 'type')
+            .leftJoinAndSelect('vehicle.aggregator', 'aggregator');
+
+        if (model) {
+            queryBuilder.andWhere('model.brand = :model', { model });
+        }
+        if (ownedBy) {
+            queryBuilder.andWhere('owner.name = :ownedBy', { ownedBy });
+        }
+        if (vehicleType) {
+            if (!vehicleType || vehicleType.split('-').length !== 2) {
+                throw new Error(`Invalid vehicleType format. Expected 'name - fuel', got '${vehicleType}'`);
+            }
+
+            const [vehicleTypeName, vehicleFuel] = vehicleType.split('-');
+            queryBuilder.andWhere(
+                "type.name = :vehicleTypeName AND type.fuel = :vehicleFuel",
+                {
+                    vehicleTypeName,
+                    vehicleFuel,
+                }
+            );
+        }
+        if (aggregatorName) {
+            queryBuilder.andWhere("aggregator.name = :aggregatorName", {
+                aggregatorName,
+            });
+        }
+
+        const vehicles = await queryBuilder.getMany();
+
+        // Return an empty array if no vehicles match the filters.
+        return vehicles;
+    }
+
     async getVehicleCountByAggregator() {
         return this.vehicleRepository
             .createQueryBuilder('vehicle')
