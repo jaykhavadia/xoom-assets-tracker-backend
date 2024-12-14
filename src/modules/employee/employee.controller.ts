@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UploadedFile, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, UploadedFile, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Employee } from './entities/employee.entity';
@@ -78,7 +78,7 @@ export class EmployeeController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   async update(
     @Param('id') id: string, // Get id as string
     @Body(new ValidationPipe()) employee: Employee
