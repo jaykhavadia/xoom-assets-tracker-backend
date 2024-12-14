@@ -7,6 +7,8 @@ import { VehicleService } from '../vehicle/vehicle.service';
 import { EmployeeService } from '../employee/employee.service';
 import { LocationService } from '../location/location.service';
 import { CreateTransactionDto } from './dto/CreateTransaction.dto';
+import { subMonths, format } from 'date-fns'; // Install date-fns for date manipulation
+import { AggregatorService } from '../aggregator/aggregator.service';
 
 @Injectable()
 export class TransactionService {
@@ -17,6 +19,7 @@ export class TransactionService {
         private readonly vehicleService: VehicleService,
         private readonly employeeService: EmployeeService,
         private readonly locationService: LocationService,
+        private readonly aggregatorService: AggregatorService,
     ) { }
 
     /**
@@ -28,17 +31,18 @@ export class TransactionService {
         try {
             // Find the related entities using their IDs
             let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
+            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto?.aggregator || 'idle');
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
-            if (transactionDto.action === 'in') {
+            if (transactionDto.action === 'out') {
                 if (vehicle.status === 'occupied') {
                     throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregator.id), status: 'occupied' })
-            } else if (transactionDto.action === 'out') {
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'occupied' })
+            } else if (transactionDto.action === 'in') {
                 if (vehicle.status === 'available') {
                     throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregator.id), status: 'available' })
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'available' })
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
             if (employee.status === 'inactive') {
@@ -126,5 +130,46 @@ export class TransactionService {
             this.logger.error(`[TransactionService] [remove] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(Messages.transaction.removeFailure(id)); // Handle error
         }
+    }
+
+    async getTransactionsByDateRange(
+        from?: string,
+        to?: string,
+        months?: number,
+        date?: string
+    ): Promise<Transaction[]> {
+        const queryBuilder = this.transactionRepository
+            .createQueryBuilder('transaction')
+            .leftJoinAndSelect('transaction.vehicle', 'vehicle')
+            .leftJoinAndSelect('transaction.employee', 'employee')
+            .leftJoinAndSelect('transaction.location', 'location');
+
+        // Filter by specific date
+        if (date) {
+            queryBuilder.andWhere('transaction.date = :date', { date });
+        }
+
+        // Filter by date range
+        if (from && to) {
+            queryBuilder.andWhere('transaction.date BETWEEN :from AND :to', { from, to });
+        }
+
+        // Filter by past months
+        if (months && months > 0) {
+            const startDate = format(subMonths(new Date(), months), 'yyyy-MM-dd'); // Calculate past months
+            const endDate = format(new Date(), 'yyyy-MM-dd'); // Today
+            queryBuilder.andWhere('transaction.date BETWEEN :startDate AND :endDate', { startDate, endDate });
+        }
+
+        // Order by date and time
+        queryBuilder.orderBy('transaction.date', 'DESC').addOrderBy('transaction.time', 'DESC');
+
+        const transactions = await queryBuilder.getMany();
+
+        if (!transactions.length) {
+            throw new Error('No transactions found for the given filters.');
+        }
+
+        return transactions;
     }
 }

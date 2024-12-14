@@ -10,5 +10,6 @@ import { User } from '../user/entities/user.entity';
   imports: [TypeOrmModule.forFeature([Aggregator, User]), JwtAuthModule],
   controllers: [AggregatorController],
   providers: [AggregatorService],
+  exports: [AggregatorService]
 })
-export class AggregatorModule {}
+export class AggregatorModule { }

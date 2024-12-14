@@ -1,6 +1,7 @@
 import {
   Controller, Post, Put, Get, Delete, Param, Body, UploadedFiles, UseInterceptors, ValidationPipe, HttpException, HttpStatus, Logger,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -45,7 +46,7 @@ export class TransactionController {
       // Save the files using the generated transactionId
       // const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
       // Update the transaction with the saved file URLs
-      const updatedTransaction = await this.transactionService.update(transaction.id, { ...body, pictures: null });
+      const updatedTransaction = await this.transactionService.update(transaction.id, { ...transaction, pictures: null });
       this.logger.log(Messages.transaction.createSuccess); // Log success message
       return {
         success: true,
@@ -55,28 +56,6 @@ export class TransactionController {
     } catch (error) {
       this.logger.error(`[TransactionController] [create] Error: ${error.message}`); // Log error
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Handle error
-    }
-  }
-
-  /**
-   * Retrieves a transaction by its ID.
-   * @param id - The ID of the transaction to retrieve.
-   * @returns The found transaction.
-   */
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<response<Transaction>> {
-    const transactionId = parseInt(id, 10); // Parse the ID from the URL
-    try {
-      const transaction = await this.transactionService.findOne(transactionId); // Fetch transaction by ID
-      this.logger.log(Messages.transaction.findOneSuccess(transactionId)); // Log success message
-      return {
-        success: true,
-        message: Messages.transaction.findOneSuccess(transactionId),
-        data: transaction, // Return the found transaction
-      };
-    } catch (error) {
-      this.logger.error(`[TransactionController] [findOne] Error: ${error.message}`); // Log error
-      throw new HttpException(Messages.transaction.findOneFailure(transactionId), HttpStatus.BAD_REQUEST); // Handle error
     }
   }
 
@@ -119,4 +98,56 @@ export class TransactionController {
       throw new HttpException(Messages.transaction.removeFailure(transactionId), HttpStatus.BAD_REQUEST); // Handle error
     }
   }
+
+  @Get('filter')
+  async getTransactionsByDate(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('months') months?: number,
+    @Query('date') date?: string
+  ): Promise<response<Transaction[]>> {
+    try {
+      const transactions = await this.transactionService.getTransactionsByDateRange(
+        from,
+        to,
+        months,
+        date
+      );
+
+      return {
+        success: true,
+        message: 'Transactions fetched successfully.',
+        data: transactions,
+      };
+    } catch (error) {
+      this.logger.error(`[TransactionController] [getTransactionsByDate] Error: ${error.message}`);
+      throw new HttpException(
+        'Failed to fetch transactions.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  /**
+   * Retrieves a transaction by its ID.
+   * @param id - The ID of the transaction to retrieve.
+   * @returns The found transaction.
+   */
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<response<Transaction>> {
+    const transactionId = parseInt(id, 10); // Parse the ID from the URL
+    try {
+      const transaction = await this.transactionService.findOne(transactionId); // Fetch transaction by ID
+      this.logger.log(Messages.transaction.findOneSuccess(transactionId)); // Log success message
+      return {
+        success: true,
+        message: Messages.transaction.findOneSuccess(transactionId),
+        data: transaction, // Return the found transaction
+      };
+    } catch (error) {
+      this.logger.error(`[TransactionController] [findOne] Error: ${error.message}`); // Log error
+      throw new HttpException(Messages.transaction.findOneFailure(transactionId), HttpStatus.BAD_REQUEST); // Handle error
+    }
+  }
+
 }

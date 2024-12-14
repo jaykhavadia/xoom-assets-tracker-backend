@@ -267,6 +267,34 @@ export class VehicleController {
     }
   }
 
+  @Get('by-location')
+async getVehiclesByLocationName(
+  @Query('locationName') locationName: string
+): Promise<response<Vehicle[]>> {
+  try {
+    if (!locationName) {
+      throw new HttpException('Location name is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const data = await this.vehicleService.getVehiclesByLocationName(locationName);
+
+    return {
+      success: true,
+      message: `Vehicles fetched successfully for location: ${locationName}`,
+      data,
+    };
+  } catch (error) {
+    this.logger.error(
+      `[VehicleController] [getVehiclesByLocationName] Error: ${error.message}`
+    );
+    throw new HttpException(
+      error.message || 'Failed to fetch vehicles by location name',
+      error.status || HttpStatus.BAD_REQUEST
+    );
+  }
+}
+
+
   // Endpoint for fetching a single vehicle by its ID
   @Get(':id')
   async findOne(

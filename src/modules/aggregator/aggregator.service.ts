@@ -12,7 +12,7 @@ export class AggregatorService {
   constructor(
     @InjectRepository(Aggregator)
     private readonly aggregatorRepository: Repository<Aggregator>,
-  ) {}
+  ) { }
 
   async create(aggregator: Partial<Aggregator>) {
     try {
@@ -36,6 +36,15 @@ export class AggregatorService {
   async findOne(id: number) {
     try {
       return await this.aggregatorRepository.findOne({ where: { id } });
+    } catch (error) {
+      this.logger.error('[AggregatorService] [findOne] Error:', error);
+      throw new HttpException(Messages.aggregator.fetchFailure, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async findOneByName(name: string) {
+    try {
+      return await this.aggregatorRepository.findOne({ where: { name: name || "idle" } });
     } catch (error) {
       this.logger.error('[AggregatorService] [findOne] Error:', error);
       throw new HttpException(Messages.aggregator.fetchFailure, HttpStatus.BAD_REQUEST);

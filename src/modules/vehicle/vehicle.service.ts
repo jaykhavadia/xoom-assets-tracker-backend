@@ -274,4 +274,22 @@ export class VehicleService {
             })
             .getRawMany();
     }
+
+    async getVehiclesByLocationName(locationName: string): Promise<Vehicle[]> {
+        const vehicles = await this.vehicleRepository
+            .createQueryBuilder('vehicle')
+            .leftJoinAndSelect('vehicle.transactions', 'transaction')
+            .leftJoinAndSelect('transaction.location', 'location')
+            .where('location.name = :locationName', { locationName })
+            .getMany();
+
+        // Check if no vehicles are found
+        if (!vehicles || vehicles.length === 0) {
+            throw new Error(`No vehicles found for location: ${locationName}`);
+        }
+
+        return vehicles;
+    }
+
+
 }

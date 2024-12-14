@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Post, Put, UseGuards, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, UseGuards, ValidationPipe } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { Location } from './entities/location.entity';
 import { Messages } from 'src/constants/messages.constants';
@@ -86,7 +86,7 @@ export class LocationController {
    * @param location - The updated location data
    * @returns The updated location or an error message
    */
-  @Put(':id')
+  @Patch(':id')
   async update(
     @Param('id') id: string, // ID as a string
     @Body(new ValidationPipe()) location: Location
