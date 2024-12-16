@@ -1,10 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Messages } from 'src/constants/messages.constants';
 import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 import { Employee } from 'src/modules/employee/entities/employee.entity';
 import { Location } from 'src/modules/location/entities/location.entity';
 import { Model } from 'src/modules/model/entities/model.entity';
 import { OwnedBy } from 'src/modules/owned-by/entities/owned_by.entity';
+import { CreateTransactionDto } from 'src/modules/transaction/dto/CreateTransaction.dto';
 import { Action, Transaction } from 'src/modules/transaction/entities/transaction.entity';
 import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
@@ -33,7 +35,7 @@ export class UploadService {
         private readonly transactionRepository: Repository<Transaction>,
     ) { }
 
-    async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: Transaction[]; errorArray: string[] }> {
+    async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: CreateTransactionDto[]; errorArray: string[] }> {
         try {
             const workbook = XLSX.read(file.buffer, { type: 'buffer' });
             const sheetName = workbook.SheetNames[0]; // Get the first sheet name
@@ -41,6 +43,7 @@ export class UploadService {
             const jsonData = XLSX.utils.sheet_to_json(worksheet); // Convert sheet to JSON
 
             const vehicle = await this.vehicleRepository.find();
+            const transaction = await this.transactionRepository.find();
             const location = await this.locationRepository.find();
             const employee = await this.employeeRepository.find();
             const vehicleTypes = await this.vehicleTypeRepository.find();
@@ -68,6 +71,12 @@ export class UploadService {
                     }
 
                     return await this.processTransaction(jsonData, vehicle, employee, location);
+                } else if (Object.keys(jsonData[0]).includes('Trip Date')) {
+                    if (type !== 'fine') {
+                        throw new Error('INVALID_FILE')
+                    }
+
+                    await this.processFine(jsonData, vehicle, employee, transaction);
                 } else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
                 }
@@ -127,54 +136,111 @@ export class UploadService {
 
         // Format as HH:mm:ss
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
     }
 
-    processTransaction = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[]): Promise<{ transactions: Transaction[]; errorArray: string[] }> => {
+    processFine = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]): Promise<void> => {
         const errorArray = [];
-        const transactionPromises = jsonData.map(async (item) => {
+
+        const finesByEmployee: Record<string, number> = {};
+        const fineResponse = await jsonData.map(async (item) => {
+            const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
+            const date = this.excelDateToJSDate(tripDate);
+            const time = this.excelTimeTo24HourFormat(tripTime);
+
+            // Find the associated vehicle
+            const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
+            if (!vehicleMatch) {
+                errorArray.push(`Vehicle with number ${Plate} not found.`);
+                return;
+            }
+
+            const transaction = await this.transactionRepository.findOne({
+                where: {
+                    date,
+                    time,
+                    vehicle: vehicleMatch,
+                },
+                relations: ['employee'], // Ensure employee is fetched
+            });
+            if (transaction && transaction.employee) {
+                const employeeId = transaction.employee.id;
+
+                // Sum the fines
+                finesByEmployee[employeeId] = (finesByEmployee[employeeId] || 0) + amount;
+            }
+
+
+            // Step 4: Print or return the result
+            console.log(finesByEmployee);
+            // const transactionPromises = jsonData.map(async (item) => {
+        });
+    };
+
+    processTransaction = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[]): Promise<{ transactions: CreateTransactionDto[]; errorArray: string[] }> => {
+        const errorArray = [];
+        const transactionPromises = jsonData.map(async (item, index) => {
             // Initialize a new transaction entity
-            const transaction = new Transaction();
+            const transaction = new CreateTransactionDto();
+
+            // Set the action as "Check Out" or other enums as necessary
+            transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
 
             // Find the associated vehicle
             const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
             if (vehicleMatch) {
-                transaction.vehicle = vehicleMatch;
+                if (transaction.action === 'out') {
+                    if (vehicleMatch.status === 'occupied') {
+                        errorArray.push(`${Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index+1}`); // Handle error
+                        return
+                    }
+
+                    transaction.vehicle = vehicleMatch.id;
+                } else if (transaction.action === 'in') {
+                    if (vehicleMatch.status === 'available') {
+                        errorArray.push(`${Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index+1}`); // Handle error
+                        return;
+                    }
+
+                    transaction.vehicle = vehicleMatch.id;
+                }
             } else {
-                errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found.`);
+                errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index+1}`);
                 return;
             }
 
             // Find the associated employee
             const employeeMatch = employees.find((employee) => employee.code === item['XDS No.']);
             if (employeeMatch) {
-                transaction.employee = employeeMatch;
+                if (employeeMatch.status === 'inactive') {
+                    errorArray.push(`${Messages.employee.inactive(item['XDS No.'])} at Data No. ${index+1}`); // Handle error
+                    return;
+                }
+                transaction.employee = employeeMatch.id;
             } else {
-                errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found.`);
+                errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index+1}`);
                 return;
             }
 
             // Find the associated location
             const locationMatch = locations.find((location) => location.name === item['Location']);
             if (locationMatch) {
-                transaction.location = locationMatch;
+                transaction.location = locationMatch.id;
             } else {
-                errorArray.push(`Location with name ${item['Location']} not found.`);
+                errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index+1}`);
                 return;
             }
 
             // Parse the date and time
-            transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
+            transaction.date = this.excelDateToJSDate(item['Cut Off Date']).toString();
             transaction.time = this.excelTimeTo24HourFormat(item['Cut Off Time']); // Format as HH:mm:ss
 
-            // Set the action as "Check Out" or other enums as necessary
-            transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
-
             // Set additional fields if necessary
-            transaction.pictures = []; // Default empty pictures, add logic if needed
+            // transaction.pictures = []; // Default empty pictures, add logic if needed
             transaction.comments = ''; // Default empty comments, update if needed
 
             // Save the transaction (you need to use a repository or save logic here)
-            return await this.transactionRepository.save(transaction);
+            return transaction;
         });
 
         return { transactions: await Promise.all(transactionPromises), errorArray };

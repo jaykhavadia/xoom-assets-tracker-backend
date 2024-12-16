@@ -6,9 +6,12 @@ import { Messages } from 'src/constants/messages.constants';
 import { VehicleService } from '../vehicle/vehicle.service';
 import { EmployeeService } from '../employee/employee.service';
 import { LocationService } from '../location/location.service';
-import { CreateTransactionDto } from './dto/CreateTransaction.dto';
+import { CreateTransactionDto, UpdateTransactionDto } from './dto/CreateTransaction.dto';
 import { subMonths, format } from 'date-fns'; // Install date-fns for date manipulation
 import { AggregatorService } from '../aggregator/aggregator.service';
+import { Employee } from '../employee/entities/employee.entity';
+import { Location } from '../location/entities/location.entity';
+import { Vehicle } from '../vehicle/entities/vehical.entity';
 
 @Injectable()
 export class TransactionService {
@@ -29,26 +32,8 @@ export class TransactionService {
      */
     async create(transactionDto: CreateTransactionDto): Promise<Transaction> {
         try {
-            // Find the related entities using their IDs
-            let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
-            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto?.aggregator || 'idle');
-            const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
-            if (transactionDto.action === 'out') {
-                if (vehicle.status === 'occupied') {
-                    throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
-                }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'occupied' })
-            } else if (transactionDto.action === 'in') {
-                if (vehicle.status === 'available') {
-                    throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
-                }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'available' })
-            }
-            const employee = await this.employeeService.findOne(transactionDto.employee);
-            if (employee.status === 'inactive') {
-                throw new InternalServerErrorException(Messages.employee.inactive(employee.id)); // Handle error
-            }
-            const location = await this.locationService.findOne(transactionDto.location);
+            const { employee, location, vehicle } = await this.updateTransactionRelation(transactionDto);
+
             // Create a new Transaction instance with the relevant properties
             let transaction = this.transactionRepository.create({
                 date: transactionDto.date,
@@ -76,7 +61,41 @@ export class TransactionService {
      * @param updateDto - The updated transaction data.
      * @returns The updated transaction.
      */
-    async update(id: number, updateDto: any): Promise<Transaction> {
+    async update(id: number, updateDto: UpdateTransactionDto): Promise<Transaction> {
+        try {
+            const { comments, date, employee, location, time } = updateDto;
+            const transaction = await this.findOne(id);
+
+            let vehicle = await this.vehicleService.findOne(transaction.vehicle.id);
+
+            const aggregatorData = await this.aggregatorService.findOneByName(updateDto?.aggregator || 'idle');
+            const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
+
+            vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'occupied' })
+
+            const employeeData = await this.employeeService.findOne(updateDto.employee);
+            if (employeeData.status === 'inactive') {
+                throw new InternalServerErrorException(Messages.employee.inactive(employeeData.id)); // Handle error
+            }
+            const locationData = await this.locationService.findOne(updateDto.location);
+
+            await this.transactionRepository.update({ id },
+                {
+                    comments,
+                    date, employee: employeeData, location: locationData, time
+                }
+            ); // Update the transaction
+            return this.transactionRepository.findOne({
+                where: { id },
+                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+            }); // Fetch the updated transaction
+        } catch (error) {
+            this.logger.error(`[TransactionService] [update] Error: ${error.message}`); // Log error
+            throw new InternalServerErrorException(Messages.transaction.updateFailure(id)); // Handle error
+        }
+    }
+
+    async updateTransaction(id: number, updateDto: any): Promise<Transaction> {
         try {
             await this.transactionRepository.update({ id }, updateDto); // Update the transaction
             return this.transactionRepository.findOne({
@@ -177,7 +196,7 @@ export class TransactionService {
         * Clears the Transaction table and inserts new transaction data
         * @param transaction - array of new transaction to be inserted
         */
-    async updateTransactions(transaction: Transaction[]): Promise<void> {
+    async createBulkTransactions(transaction: Transaction[]): Promise<void> {
         try {
             this.logger.log('Starting updateTransactions function.');
             // Insert the new employee data
@@ -189,4 +208,37 @@ export class TransactionService {
             throw new InternalServerErrorException(error.message);
         }
     }
+    async updateTransactionRelation(transactionDto: any): Promise<{ employee: Employee, location: Location, vehicle: Vehicle }> {
+        try {
+            this.logger.log('Starting updateTransactions function.');
+            // Find the related entities using their IDs
+            let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
+            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto?.aggregator || 'idle');
+            const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
+            if (transactionDto.action === 'out') {
+                if (vehicle.status === 'occupied') {
+                    throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
+                }
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'occupied' })
+            } else if (transactionDto.action === 'in') {
+                if (vehicle.status === 'available') {
+                    throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
+                }
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'available' })
+            }
+            const employee = await this.employeeService.findOne(transactionDto.employee);
+            if (employee.status === 'inactive') {
+                throw new InternalServerErrorException(Messages.employee.inactive(employee.id)); // Handle error
+            }
+            const location = await this.locationService.findOne(transactionDto.location);
+
+            this.logger.log('Successfully updated transaction.');
+            return { employee, location, vehicle };
+        } catch (error) {
+            this.logger.error(`[TransactionService] [updateTransactions] Error: ${error.message}`);
+            throw new InternalServerErrorException(error.message);
+        }
+    }
+
+
 }

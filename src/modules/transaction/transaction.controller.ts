@@ -52,7 +52,7 @@ export class TransactionController {
       // Save the files using the generated transactionId
       // const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
       // Update the transaction with the saved file URLs
-      const updatedTransaction = await this.transactionService.update(transaction.id, { ...transaction, pictures: null });
+      const updatedTransaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: null });
       this.logger.log(Messages.transaction.createSuccess); // Log success message
       return {
         success: true,
@@ -186,7 +186,10 @@ export class TransactionController {
       // Save transaction to the database
       if ('transactions' in fileResponse) {
         // Save transaction to the database
-        await this.transactionService.updateTransactions(fileResponse.transactions.filter((item) => item !== undefined) as Transaction[]); // Assuming you have a createBulk method
+        const filteredTransaction = fileResponse.transactions.filter((item) => item !== undefined); // Assuming you have a createBulk method
+        filteredTransaction.map(async (transaction) => {
+          await this.transactionService.create(transaction);
+        });
       } else {
         throw new Error('Unexpected file response type for transaction.');
       }

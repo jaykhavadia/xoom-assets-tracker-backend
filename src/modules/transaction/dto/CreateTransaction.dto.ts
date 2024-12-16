@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsNumberString, IsNotEmpty, IsEnum, IsOptional, IsEmpty } from 'class-validator';
+import { IsString, IsDateString, IsNumberString, IsNotEmpty, IsEnum, IsOptional, IsEmpty, IsArray } from 'class-validator';
 import { Action } from '../entities/transaction.entity';
 
 export class CreateTransactionDto {
@@ -42,7 +42,7 @@ export class UpdateTransactionDto {
     @IsNotEmpty()
     date: string;
 
-    @IsEnum(Action, { message: 'Action must be either entry or exit' })
+    // @IsEnum(Action, { message: 'Action must be either entry or exit' })
     @IsEmpty({ message: "Can't update action" })
     action: Action;
 
@@ -54,7 +54,7 @@ export class UpdateTransactionDto {
     @IsNotEmpty()
     location: number;
 
-    @IsString()
+    // @IsString()
     @IsEmpty({ message: "Can't update vehicle" })
     vehicle: string;
 
@@ -65,4 +65,8 @@ export class UpdateTransactionDto {
     @IsString()
     @IsNotEmpty()
     time: string;
+
+    @IsArray()
+    @IsOptional()
+    pictures: [];
 }
