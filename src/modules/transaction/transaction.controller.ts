@@ -239,4 +239,65 @@ export class TransactionController {
     }
   }
 
+  @Post('upload-fine')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFineExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
+    try {
+      const fileResponse = await this.uploadService.readExcel(file, 'fine');
+      // Save transaction to the database
+      // if ('transactions' in fileResponse) {
+      //   // Save transaction to the database
+      //   const filteredTransaction = fileResponse.transactions.filter((item) => item !== undefined); // Assuming you have a createBulk method
+      //   filteredTransaction.map(async (transaction) => {
+      //     await this.transactionService.create(transaction);
+      //   });
+      // } else {
+      //   throw new Error('Unexpected file response type for transaction.');
+      // }
+
+      // Prepare data for the Sheet entity
+      // const sheetData: Partial<Sheet> = {
+      //   uploadedAt: new Date(), // Current date and time
+      //   uploadedAtTime: format(new Date(), 'hh:mm a'), // Format the time as '10:30 AM'
+      //   fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
+      //   type: 'Transaction', // Assuming the file path is stored in 'file.path'
+      // };
+
+      // Save the Sheet entry to the database
+      // const sheetDetails = await this.sheetService.create(sheetData); // Create a new Sheet entry
+      // const sheetId = sheetDetails.id;
+      // // The ID of the parent folder where the new folder should be created
+      // const parentFolderId = '1ksRPuN_aGdLS7NeRKdbH7br1E1vaB7Nl'; // Replace with your folder ID
+
+      // // Create the folder named {sheetId} inside the specified parent folder
+      // const sheetFolderId = await this.googleDriveService.getOrCreateFolder(sheetId.toString(), parentFolderId);
+
+      // const directoryPath = path.join('src', 'uploads', 'employee');
+      // const fileName = file.originalname;
+      // // Ensure the directory exists (create it recursively if it doesn't)
+      // mkdirp.sync(directoryPath);
+      // // Write the image data to the file
+      // const filePath = path.join(directoryPath, fileName);
+      // fs.writeFileSync(filePath, file.buffer);
+
+      // console.log("Checking if file exists at:", filePath);
+      // if (!fs.existsSync(filePath)) {
+      //   console.error("File does not exist:", filePath);
+      //   throw new Error("File not found");
+      // }
+      // await this.googleDriveService.uploadFile(filePath, sheetFolderId);
+      // // Clean up the temporary file after uploading
+      // await fs.promises.unlink(filePath);
+
+      return {
+        success: true,
+        message: Messages.employee.updateBulkSuccess,
+        errorArray: fileResponse.errorArray
+      };
+    } catch (error) {
+      this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
 }

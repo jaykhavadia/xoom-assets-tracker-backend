@@ -204,15 +204,18 @@ export class TransactionService {
 
             this.logger.log('Successfully updated transaction.');
         } catch (error) {
-            this.logger.error(`[TransactionService] [updateTransactions] Error: ${error.message}`);
+            this.logger.error(`[TransactionService] [createBulkTransactions] Error: ${error.message}`);
             throw new InternalServerErrorException(error.message);
         }
     }
-    async updateTransactionRelation(transactionDto: any): Promise<{ employee: Employee, location: Location, vehicle: Vehicle }> {
+    async updateTransactionRelation(transactionDto: CreateTransactionDto): Promise<{ employee: Employee, location: Location, vehicle: Vehicle }> {
         try {
             this.logger.log('Starting updateTransactions function.');
             // Find the related entities using their IDs
             let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
+            if (!vehicle) {
+                throw new InternalServerErrorException('Vehicle Not Found'); // Handle error
+            }
             const aggregatorData = await this.aggregatorService.findOneByName(transactionDto?.aggregator || 'idle');
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
             if (transactionDto.action === 'out') {
@@ -235,7 +238,7 @@ export class TransactionService {
             this.logger.log('Successfully updated transaction.');
             return { employee, location, vehicle };
         } catch (error) {
-            this.logger.error(`[TransactionService] [updateTransactions] Error: ${error.message}`);
+            this.logger.error(`[TransactionService] [updateTransactionRelation] Error: ${error.message}`);
             throw new InternalServerErrorException(error.message);
         }
     }
