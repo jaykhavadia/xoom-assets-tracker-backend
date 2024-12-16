@@ -3,13 +3,14 @@ import {
   UseGuards,
   Query,
   UploadedFile,
+  Patch,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { Transaction } from './entities/transaction.entity';
 import { FilesHelperService } from 'src/common/files-helper/files-helper.service';
 import { Messages } from 'src/constants/messages.constants';
-import { CreateTransactionDto } from './dto/CreateTransaction.dto';
+import { CreateTransactionDto, UpdateTransactionDto } from './dto/CreateTransaction.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UploadService } from 'src/common/upload/upload.service';
 import { Sheet } from '../sheet/entities/sheet.entity';
@@ -40,7 +41,6 @@ export class TransactionController {
     { name: 'vehiclePictures[left]', maxCount: 1 },
     { name: 'vehiclePictures[right]', maxCount: 1 },
   ]))
-  // {vehiclePictures: {back: 'File'}, {front: 'File'}, {left: 'File'}, ...}
   async create(
     @Body(new ValidationPipe()) body: CreateTransactionDto,
     @UploadedFiles() files?: { [key: string]: Express.Multer.File[] }
@@ -61,6 +61,24 @@ export class TransactionController {
       };
     } catch (error) {
       this.logger.error(`[TransactionController] [create] Error: ${error.message}`); // Log error
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Handle error
+    }
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body(new ValidationPipe()) body: UpdateTransactionDto,
+  ): Promise<response<Transaction>> {
+    try {
+      const updatedTransaction = await this.transactionService.update(Number(id), body);
+      return {
+        success: true,
+        message: Messages.transaction.updateSuccess(Number(id)),
+        data: updatedTransaction, // Return the updated transaction
+      };
+    } catch (error) {
+      this.logger.error(`[TransactionController] [update] Error: ${error.message}`); // Log error
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Handle error
     }
   }

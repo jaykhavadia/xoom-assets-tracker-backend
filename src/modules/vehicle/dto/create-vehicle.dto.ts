@@ -21,7 +21,7 @@ export class VehicleDto {
     @IsNotEmpty()
     ownedById: number;
 
-    @IsNotEmpty()
+    @IsOptional()
     aggregatorId: number;
 
     @Transform(({ value }) => {
