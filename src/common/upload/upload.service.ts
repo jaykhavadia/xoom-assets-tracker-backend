@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as moment from 'moment';
 import { Messages } from 'src/constants/messages.constants';
 import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 import { Employee } from 'src/modules/employee/entities/employee.entity';
@@ -90,10 +91,12 @@ export class UploadService {
 
     }
 
-    excelDateToJSDate = (serial: number) => {
-        const excelStartDate = new Date(1900, 0, 1); // Excel starts from 1900-01-01
-        const jsDate = new Date(excelStartDate.getTime() + (serial - 2) * 24 * 60 * 60 * 1000); // Adjust for leap year bug in Excel
-        return jsDate;
+
+    excelDateToJSDate = (serial: number): Date => {
+        // Excel's date system starts from 1900-01-01
+        const startDate = moment('1900-01-01');
+        const date = startDate.add(serial - 2, 'days'); // Subtract 2 to account for the starting offset
+        return date.toDate(); // Return the native JavaScript Date object
     };
 
     excelDateToJSDateTransaction = (serial: number | string): string => {
@@ -145,7 +148,7 @@ export class UploadService {
         const finesByEmployee: Record<string, number> = {};
         const fineResponse = await jsonData.map(async (item) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
-            const date = this.excelDateToJSDate(tripDate);
+            const date = new Date(this.excelDateToJSDate(tripDate));
             const time = this.excelTimeTo24HourFormat(tripTime);
 
             // Find the associated vehicle
@@ -186,26 +189,30 @@ export class UploadService {
             // Set the action as "Check Out" or other enums as necessary
             transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
 
+            // Parse the date and time
+            transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
+            transaction.time = item['Cut Off Time']; // Format as HH:mm:ss
+
             // Find the associated vehicle
             const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
             if (vehicleMatch) {
                 if (transaction.action === 'out') {
                     if (vehicleMatch.status === 'occupied') {
-                        errorArray.push(`${Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index+1}`); // Handle error
+                        errorArray.push(`${Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`); // Handle error
                         return
                     }
 
                     transaction.vehicle = vehicleMatch.id;
                 } else if (transaction.action === 'in') {
                     if (vehicleMatch.status === 'available') {
-                        errorArray.push(`${Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index+1}`); // Handle error
+                        errorArray.push(`${Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`); // Handle error
                         return;
                     }
 
                     transaction.vehicle = vehicleMatch.id;
                 }
             } else {
-                errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index+1}`);
+                errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index + 1}`);
                 return;
             }
 
@@ -213,12 +220,12 @@ export class UploadService {
             const employeeMatch = employees.find((employee) => employee.code === item['XDS No.']);
             if (employeeMatch) {
                 if (employeeMatch.status === 'inactive') {
-                    errorArray.push(`${Messages.employee.inactive(item['XDS No.'])} at Data No. ${index+1}`); // Handle error
+                    errorArray.push(`${Messages.employee.inactive(item['XDS No.'])} at Data No. ${index + 1}`); // Handle error
                     return;
                 }
                 transaction.employee = employeeMatch.id;
             } else {
-                errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index+1}`);
+                errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index + 1}`);
                 return;
             }
 
@@ -227,13 +234,9 @@ export class UploadService {
             if (locationMatch) {
                 transaction.location = locationMatch.id;
             } else {
-                errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index+1}`);
+                errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index + 1}`);
                 return;
             }
-
-            // Parse the date and time
-            transaction.date = this.excelDateToJSDate(item['Cut Off Date']).toString();
-            transaction.time = this.excelTimeTo24HourFormat(item['Cut Off Time']); // Format as HH:mm:ss
 
             // Set additional fields if necessary
             // transaction.pictures = []; // Default empty pictures, add logic if needed

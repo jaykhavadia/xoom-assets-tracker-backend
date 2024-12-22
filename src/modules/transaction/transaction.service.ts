@@ -255,22 +255,33 @@ export class TransactionService {
     }
 
     convertTo24HourFormat = (time: string): string => {
-        const [hour, minute, period] = time.split(/[:\s]/);
-        let hours = parseInt(hour, 10);
-        let minutes = minute;
-        let seconds = "00";
+        // Check if the time format is hh:mm:ss AM/PM or hh:mm AM/PM
+        const timeArray = time.split(/[:\s]/);
 
+        // Parse hour and minute
+        let hours: number = parseInt(timeArray[0], 10);
+        let minutes: string = timeArray[1], seconds: string, period: string;
+        if (timeArray.length === 3) {
+            seconds = "00";
+            period = timeArray[2]
+        } else {
+            seconds = timeArray[2];
+            period = timeArray[3];
+        }
+
+        // Adjust hours based on AM/PM
         if (period.toLowerCase() === 'am' && hours === 12) {
             hours = 0; // Midnight case: 12 AM is 00:00
         } else if (period.toLowerCase() === 'pm' && hours !== 12) {
             hours += 12; // PM case: Add 12 for afternoon/evening
         }
 
-        // Format hours and minutes with leading zeros if necessary
+        // Format hours, minutes, and seconds with leading zeros if necessary
         const formattedHour = hours.toString().padStart(2, '0');
         const formattedMinute = minutes.padStart(2, '0');
+        const formattedSeconds = seconds.padStart(2, '0');
 
-        return `${formattedHour}:${formattedMinute}:${seconds}`;
+        return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
     }
 
 }
