@@ -3,9 +3,7 @@ import { IsString, IsEnum, IsNotEmpty } from 'class-validator';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
 
 export enum Fuel {
-  Petrol = 'Petrol',
-  Diesel = 'Diesel',
-  Electric = 'Electric',
+  ICE = 'ICE',
   CNG = 'CNG',
   Hybrid = 'Hybrid',
 }
