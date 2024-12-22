@@ -50,7 +50,7 @@ export class TransactionController {
       // const transactionData = JSON.parse(body);
       // Create the transaction first without saving the pictures yet
       let transaction = await this.transactionService.create(body);
-      if (files) {
+     if (files && Object.keys(files).length > 0) {
         // Save the files using the generated transactionId
         const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
         // Update the transaction with the saved file URLs
@@ -246,7 +246,9 @@ export class TransactionController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadFineExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
     try {
+      console.log('file: ', file);
       const fileResponse = await this.uploadService.readExcel(file, 'fine');
+      console.log('fileResponse: ', fileResponse);
       // Save transaction to the database
       // if ('transactions' in fileResponse) {
       //   // Save transaction to the database

@@ -76,13 +76,14 @@ export class UploadService {
                     if (type !== 'fine') {
                         throw new Error('INVALID_FILE')
                     }
-
                     await this.processFine(jsonData, vehicle, employee, transaction);
                 } else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
+                        throw new Error('Unrecognized sheet format')
                 }
             } else {
                 console.warn('No data found in the uploaded Excel sheet.');
+                        throw new Error('No data found')
             }
         } catch (error) {
             console.log("[UploadService] [readExcel] error:", error)
@@ -149,7 +150,7 @@ export class UploadService {
         const fineResponse = await jsonData.map(async (item) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
             const date = new Date(this.excelDateToJSDate(tripDate));
-            const time = this.excelTimeTo24HourFormat(tripTime);
+            const time = this.convertTo24HourFormat(tripTime);
 
             // Find the associated vehicle
             const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
@@ -158,24 +159,89 @@ export class UploadService {
                 return;
             }
 
-            const transaction = await this.transactionRepository.findOne({
-                where: {
-                    date,
-                    time,
-                    vehicle: vehicleMatch,
-                },
-                relations: ['employee'], // Ensure employee is fetched
-            });
-            if (transaction && transaction.employee) {
-                const employeeId = transaction.employee.id;
+            const vehicleNo = vehicleMatch.vehicleNo;
+            const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
 
-                // Sum the fines
-                finesByEmployee[employeeId] = (finesByEmployee[employeeId] || 0) + amount;
-            }
+            const targetDateTime = `${targetISODate} ${time}`//'2024-12-02 10:20:20';
+            const targetDate =  `${targetISODate} ${time}`//'2024-12-02 10:20'; 
+            const targetDateOnly = targetISODate;
+
+        const query = `
+        SELECT 
+            t1.id AS transaction_id,
+            t1.date AS transaction_date,
+            t1.time AS transaction_time,
+            t1.action AS transaction_action,
+            t1.pictures AS transaction_pictures,
+            t1.comments AS transaction_comments,
+            t1.vehicleId AS transaction_vehicleId,
+            t1.employeeId AS transaction_employeeId,
+            t1.locationId AS transaction_locationId,
+            vehicle.id AS vehicle_id,
+            vehicle.vehicleNo AS vehicle_vehicleNo,
+            employee.id AS employee_id,
+            employee.name AS employee_name
+        FROM 
+            xoom.transaction t1
+        LEFT JOIN 
+            xoom.vehicle ON vehicle.id = t1.vehicleId
+        LEFT JOIN 
+            xoom.employee ON employee.id = t1.employeeId
+        WHERE 
+            vehicle.vehicleNo = ?
+            AND t1.date <= ?
+            AND (
+                (t1.action = 'out' AND CONCAT(t1.date, ' ', t1.time) <= ? AND 
+                EXISTS (
+                    SELECT 1
+                    FROM xoom.transaction t2
+                    WHERE t2.action = 'in' 
+                        AND CONCAT(t2.date, ' ', t2.time) >= ?
+                        AND t2.vehicleId = t1.vehicleId
+                        AND t2.employeeId = t1.employeeId
+                )
+                )
+                OR
+                (t1.action = 'in' AND CONCAT(t1.date, ' ', t1.time) >= ? AND 
+                EXISTS (
+                    SELECT 1
+                    FROM xoom.transaction t3
+                    WHERE t3.action = 'out' 
+                        AND CONCAT(t3.date, ' ', t3.time) <= ?
+                        AND t3.vehicleId = t1.vehicleId
+                        AND t3.employeeId = t1.employeeId
+                )
+                )
+            )
+        ORDER BY 
+            t1.date ASC, t1.time ASC;
+        `;
+
+        const parameters = [vehicleNo, targetDateOnly, targetDateTime, targetDate, targetDate, targetDate];
+        const result = await this.transactionRepository.query(query, parameters);
+        console.log('result: ', result);
+
+        return result;
 
 
-            // Step 4: Print or return the result
-            console.log(finesByEmployee);
+
+            // const transaction = await this.transactionRepository.findOne({
+            //     where: {
+            //         vehicle: vehicleMatch,
+            //     },
+            //     relations: ['employee'], // Ensure employee is fetched
+            // });
+            // console.log('transaction: ', transaction);
+            // if (transaction && transaction.employee) {
+            //     const employeeId = transaction.employee.id;
+
+            //     // Sum the fines
+            //     finesByEmployee[employeeId] = (finesByEmployee[employeeId] || 0) + amount;
+            // }
+
+
+            // // Step 4: Print or return the result
+            // console.log(finesByEmployee);
             // const transactionPromises = jsonData.map(async (item) => {
         });
     };
@@ -336,6 +402,36 @@ export class UploadService {
             }
         }));
         return { employees, errorArray };
+    }
+
+     convertTo24HourFormat = (time: string): string => {
+        // Check if the time format is hh:mm:ss AM/PM or hh:mm AM/PM
+        const timeArray = time.split(/[:\s]/);
+
+        // Parse hour and minute
+        let hours: number = parseInt(timeArray[0], 10);
+        let minutes: string = timeArray[1], seconds: string, period: string;
+        if (timeArray.length === 3) {
+            seconds = "00";
+            period = timeArray[2]
+        } else {
+            seconds = timeArray[2];
+            period = timeArray[3];
+        }
+
+        // Adjust hours based on AM/PM
+        if (period.toLowerCase() === 'am' && hours === 12) {
+            hours = 0; // Midnight case: 12 AM is 00:00
+        } else if (period.toLowerCase() === 'pm' && hours !== 12) {
+            hours += 12; // PM case: Add 12 for afternoon/evening
+        }
+
+        // Format hours, minutes, and seconds with leading zeros if necessary
+        const formattedHour = hours.toString().padStart(2, '0');
+        const formattedMinute = minutes.padStart(2, '0');
+        const formattedSeconds = seconds.padStart(2, '0');
+
+        return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
     }
 
 }

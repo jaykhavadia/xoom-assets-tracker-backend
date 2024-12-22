@@ -219,6 +219,7 @@ export class TransactionService {
             throw new InternalServerErrorException(error.message);
         }
     }
+
     async updateTransactionRelation(transactionDto: CreateTransactionDto): Promise<{ employee: Employee, location: Location, vehicle: Vehicle }> {
         try {
             this.logger.log('Starting updateTransactions function.');
