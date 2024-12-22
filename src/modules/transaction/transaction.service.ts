@@ -39,6 +39,7 @@ export class TransactionService {
                 date: transactionDto.date,
                 time: this.convertTo24HourFormat(transactionDto.time), // Date Formate
                 comments: transactionDto.comments,
+                action: transactionDto.action,
                 vehicle,
                 employee,
                 location,
