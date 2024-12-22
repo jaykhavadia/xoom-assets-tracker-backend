@@ -275,18 +275,15 @@ export class VehicleController {
 
   @Get('by-location')
   async getVehiclesByLocationName(
-    @Query('locationName') locationName: string
+    @Query('locationName') locationName?: string
   ): Promise<response<Vehicle[]>> {
     try {
-      if (!locationName) {
-        throw new HttpException('Location name is required', HttpStatus.BAD_REQUEST);
-      }
 
       const data = await this.vehicleService.getVehiclesByLocationName(locationName);
 
       return {
         success: true,
-        message: `Vehicles fetched successfully for location: ${locationName}`,
+        message: `Vehicles fetched successfully for location: ${locationName || "all"}`,
         data,
       };
     } catch (error) {

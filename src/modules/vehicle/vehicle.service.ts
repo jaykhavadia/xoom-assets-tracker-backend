@@ -276,12 +276,28 @@ export class VehicleService {
     }
 
     async getVehiclesByLocationName(locationName: string): Promise<Vehicle[]> {
-        const vehicles = await this.vehicleRepository
+        const queryBuilder = this.vehicleRepository
             .createQueryBuilder('vehicle')
-            .leftJoinAndSelect('vehicle.transactions', 'transaction')
-            .leftJoinAndSelect('transaction.location', 'location')
-            .where('location.name = :locationName', { locationName })
-            .getMany();
+            .leftJoin('vehicle.transactions', 'transaction')
+            .leftJoin('transaction.location', 'location')
+            .select('location.name', 'locationName')
+            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
+            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
+            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
+            .groupBy('location.name')
+            .setParameters({
+                available: 'available',
+                occupied: 'occupied',
+            });
+
+        // Ensure location.name is not null
+        queryBuilder.andWhere('location.name IS NOT NULL');
+
+        if (locationName && locationName !== 'null') {
+            queryBuilder.andWhere('location.name = :locationName', { locationName });
+        }
+
+        const vehicles = await queryBuilder.getRawMany();
 
         // Check if no vehicles are found
         if (!vehicles || vehicles.length === 0) {
