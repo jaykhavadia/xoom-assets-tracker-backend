@@ -49,16 +49,18 @@ export class TransactionController {
     try {
       // const transactionData = JSON.parse(body);
       // Create the transaction first without saving the pictures yet
-      const transaction = await this.transactionService.create(body);
-      // Save the files using the generated transactionId
-      const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
-      // Update the transaction with the saved file URLs
-      const updatedTransaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: savedFiles });
+      let transaction = await this.transactionService.create(body);
+      if (files) {
+        // Save the files using the generated transactionId
+        const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
+        // Update the transaction with the saved file URLs
+        transaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: savedFiles });
+      }
       this.logger.log(Messages.transaction.createSuccess); // Log success message
       return {
         success: true,
         message: Messages.transaction.createSuccess,
-        data: updatedTransaction, // Return the updated transaction
+        data: transaction, // Return the updated transaction
       };
     } catch (error) {
       this.logger.error(`[TransactionController] [create] Error: ${error.message}`); // Log error
