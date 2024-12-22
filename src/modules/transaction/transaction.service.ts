@@ -7,7 +7,7 @@ import { VehicleService } from '../vehicle/vehicle.service';
 import { EmployeeService } from '../employee/employee.service';
 import { LocationService } from '../location/location.service';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/CreateTransaction.dto';
-import { subMonths, format } from 'date-fns'; // Install date-fns for date manipulation
+import { subMonths, format, startOfMonth, endOfMonth } from 'date-fns'; // Install date-fns for date manipulation
 import { AggregatorService } from '../aggregator/aggregator.service';
 import { Employee } from '../employee/entities/employee.entity';
 import { Location } from '../location/entities/location.entity';
@@ -181,6 +181,16 @@ export class TransactionService {
             queryBuilder.andWhere('transaction.date BETWEEN :startDate AND :endDate', { startDate, endDate });
         }
 
+        // Filter by current month (if no specific date range or months are provided)
+        if (!from && !to && !months) {
+            const currentMonthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+            const currentMonthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+            queryBuilder.andWhere('transaction.date BETWEEN :currentMonthStart AND :currentMonthEnd', {
+                currentMonthStart,
+                currentMonthEnd,
+            });
+        }
+
         // Order by date and time
         queryBuilder.orderBy('transaction.date', 'DESC').addOrderBy('transaction.time', 'DESC');
 
@@ -249,18 +259,18 @@ export class TransactionService {
         let hours = parseInt(hour, 10);
         let minutes = minute;
         let seconds = "00";
-      
+
         if (period.toLowerCase() === 'am' && hours === 12) {
-          hours = 0; // Midnight case: 12 AM is 00:00
+            hours = 0; // Midnight case: 12 AM is 00:00
         } else if (period.toLowerCase() === 'pm' && hours !== 12) {
-          hours += 12; // PM case: Add 12 for afternoon/evening
+            hours += 12; // PM case: Add 12 for afternoon/evening
         }
-      
+
         // Format hours and minutes with leading zeros if necessary
         const formattedHour = hours.toString().padStart(2, '0');
         const formattedMinute = minutes.padStart(2, '0');
-        
+
         return `${formattedHour}:${formattedMinute}:${seconds}`;
-      }
+    }
 
 }
