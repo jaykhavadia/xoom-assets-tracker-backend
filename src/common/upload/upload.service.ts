@@ -76,14 +76,14 @@ export class UploadService {
                     if (type !== 'fine') {
                         throw new Error('INVALID_FILE')
                     }
-                    await this.processFine(jsonData, vehicle, employee, transaction);
+                    return await this.processFine(jsonData, vehicle, employee, transaction);
                 } else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
-                        throw new Error('Unrecognized sheet format')
+                    throw new Error('Unrecognized sheet format')
                 }
             } else {
                 console.warn('No data found in the uploaded Excel sheet.');
-                        throw new Error('No data found')
+                throw new Error('No data found')
             }
         } catch (error) {
             console.log("[UploadService] [readExcel] error:", error)
@@ -94,10 +94,14 @@ export class UploadService {
 
 
     excelDateToJSDate = (serial: number): Date => {
-        // Excel's date system starts from 1900-01-01
-        const startDate = moment('1900-01-01');
-        const date = startDate.add(serial - 2, 'days'); // Subtract 2 to account for the starting offset
-        return date.toDate(); // Return the native JavaScript Date object
+        // Excel's date system starts from 1900-01-01, but it's incorrectly considering 1900 as a leap year
+        const startDate = moment('1900-01-01'); // This is 1900-01-01 in UTC
+        const correctedDate = startDate.add(serial - 2, 'days'); // Adjust by -2 for the Excel offset and leap year bug
+
+        // Adjust the date to UTC and then apply your desired time offset
+        const adjustedDate = correctedDate.utcOffset(0, true); // Ensure we stay in UTC timezone
+
+        return adjustedDate.toDate(); // Return the JavaScript Date object
     };
 
     excelDateToJSDateTransaction = (serial: number | string): string => {
@@ -143,108 +147,121 @@ export class UploadService {
 
     }
 
-    processFine = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]): Promise<void> => {
+    processFine = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]): Promise<any> => {
         const errorArray = [];
-
-        const finesByEmployee: Record<string, number> = {};
+    
         const fineResponse = await jsonData.map(async (item) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
             const date = new Date(this.excelDateToJSDate(tripDate));
             const time = this.convertTo24HourFormat(tripTime);
-
+    
             // Find the associated vehicle
             const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
             if (!vehicleMatch) {
                 errorArray.push(`Vehicle with number ${Plate} not found.`);
-                return;
+                return null;  // Return null if vehicle not found
             }
-
+    
             const vehicleNo = vehicleMatch.vehicleNo;
             const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
-
-            const targetDateTime = `${targetISODate} ${time}`//'2024-12-02 10:20:20';
-            const targetDate =  `${targetISODate} ${time}`//'2024-12-02 10:20'; 
-            const targetDateOnly = targetISODate;
-
-        const query = `
-        SELECT 
-            t1.id AS transaction_id,
-            t1.date AS transaction_date,
-            t1.time AS transaction_time,
-            t1.action AS transaction_action,
-            t1.pictures AS transaction_pictures,
-            t1.comments AS transaction_comments,
-            t1.vehicleId AS transaction_vehicleId,
-            t1.employeeId AS transaction_employeeId,
-            t1.locationId AS transaction_locationId,
-            vehicle.id AS vehicle_id,
-            vehicle.vehicleNo AS vehicle_vehicleNo,
-            employee.id AS employee_id,
-            employee.name AS employee_name
-        FROM 
-            xoom.transaction t1
-        LEFT JOIN 
-            xoom.vehicle ON vehicle.id = t1.vehicleId
-        LEFT JOIN 
-            xoom.employee ON employee.id = t1.employeeId
-        WHERE 
-            vehicle.vehicleNo = ?
-            AND t1.date <= ?
-            AND (
-                (t1.action = 'out' AND CONCAT(t1.date, ' ', t1.time) <= ? AND 
-                EXISTS (
-                    SELECT 1
-                    FROM xoom.transaction t2
-                    WHERE t2.action = 'in' 
-                        AND CONCAT(t2.date, ' ', t2.time) >= ?
-                        AND t2.vehicleId = t1.vehicleId
-                        AND t2.employeeId = t1.employeeId
-                )
-                )
-                OR
-                (t1.action = 'in' AND CONCAT(t1.date, ' ', t1.time) >= ? AND 
-                EXISTS (
-                    SELECT 1
-                    FROM xoom.transaction t3
-                    WHERE t3.action = 'out' 
-                        AND CONCAT(t3.date, ' ', t3.time) <= ?
-                        AND t3.vehicleId = t1.vehicleId
-                        AND t3.employeeId = t1.employeeId
-                )
-                )
-            )
-        ORDER BY 
-            t1.date ASC, t1.time ASC;
+    
+            const targetDate = `${targetISODate} ${time}`; 
+    
+            const query = `
+          SELECT 
+              t1.id AS transaction_id,
+              t1.date AS transaction_date,
+              t1.time AS transaction_time,
+              t1.action AS transaction_action,
+              t1.pictures AS transaction_pictures,
+              t1.comments AS transaction_comments,
+              t1.vehicleId AS transaction_vehicleId,
+              t1.employeeId AS transaction_employeeId,
+              t1.locationId AS transaction_locationId,
+              vehicle.id AS vehicle_id,
+              vehicle.vehicleNo AS vehicle_vehicleNo,
+              employee.id AS employee_id,
+              employee.name AS employee_name
+          FROM 
+              local.transaction t1
+          LEFT JOIN 
+              local.vehicle ON vehicle.id = t1.vehicleId
+          LEFT JOIN 
+              local.employee ON employee.id = t1.employeeId
+          WHERE 
+              vehicle.vehicleNo = ${vehicleNo}
+              AND (
+                  -- Case 1: 'out' transactions before or on the target date
+                  (t1.action = 'out' AND CONCAT(t1.date, ' ', t1.time) <= '${targetDate}'
+                   AND EXISTS (
+                       -- Make sure there is a corresponding 'in' transaction after the target date
+                       SELECT 1
+                       FROM local.transaction t2
+                       WHERE t2.action = 'in'
+                         AND CONCAT(t2.date, ' ', t2.time) >= '${targetDate}'
+                         AND t2.vehicleId = t1.vehicleId
+                         AND t2.employeeId = t1.employeeId
+                   )
+                  )
+                  OR
+                  -- Case 2: 'in' transactions after the target date
+                  (t1.action = 'in' AND CONCAT(t1.date, ' ', t1.time) >= '${targetDate}'
+                   AND EXISTS (
+                       -- Make sure there is a corresponding 'out' transaction before or on the target date
+                       SELECT 1
+                       FROM local.transaction t3
+                       WHERE t3.action = 'out'
+                         AND CONCAT(t3.date, ' ', t3.time) <= '${targetDate}'
+                         AND t3.vehicleId = t1.vehicleId
+                         AND t3.employeeId = t1.employeeId
+                   )
+                  )
+              )
+          ORDER BY 
+              t1.date, t1.time ASC;
         `;
-
-        const parameters = [vehicleNo, targetDateOnly, targetDateTime, targetDate, targetDate, targetDate];
-        const result = await this.transactionRepository.query(query, parameters);
-        console.log('result: ', result);
-
-        return result;
-
-
-
-            // const transaction = await this.transactionRepository.findOne({
-            //     where: {
-            //         vehicle: vehicleMatch,
-            //     },
-            //     relations: ['employee'], // Ensure employee is fetched
-            // });
-            // console.log('transaction: ', transaction);
-            // if (transaction && transaction.employee) {
-            //     const employeeId = transaction.employee.id;
-
-            //     // Sum the fines
-            //     finesByEmployee[employeeId] = (finesByEmployee[employeeId] || 0) + amount;
-            // }
-
-
-            // // Step 4: Print or return the result
-            // console.log(finesByEmployee);
-            // const transactionPromises = jsonData.map(async (item) => {
+    
+            const results = await this.transactionRepository.query(query);
+    
+            return await results.map((result: any, index: number) => {
+                // Make sure there's a next transaction to compare
+                if (index < results.length - 1) {
+                    // Convert the current transaction date to "YYYY-MM-DD" format
+                    const currentTransactionDateFormatted = new Date(result.transaction_date).toISOString().split('T')[0];
+    
+    
+                    // Check if the current transaction action is "out" and the date is before or on targetISODate
+                    if (result.transaction_action === 'out' && currentTransactionDateFormatted <= targetISODate) {
+                        console.log('Current transaction is "out" and before or on targetISODate');
+    
+                        // Convert the next transaction date to "YYYY-MM-DD" format
+                        const nextTransactionDateFormatted = new Date(results[index + 1].transaction_date).toISOString().split('T')[0];
+    
+                        // Check if the next transaction action is "in" and it's after the current transaction date
+                        if (results[index + 1].transaction_action === 'in' && nextTransactionDateFormatted > currentTransactionDateFormatted) {
+                            console.log('Next transaction is "in" and after the current transaction');
+    
+                            // Return employee details when conditions are met
+                            const employeeDetails = {
+                                employee_id: result.employee_id,
+                                employee_name: result.employee_name,
+                                transaction_vehicleId: result.transaction_vehicleId,
+                                transaction_locationId: result.transaction_locationId,
+                            };
+    
+                            return { tripDate, tripTime, Plate, amount, employeeDetails };  // Return employee details if conditions met
+                        }
+                    }
+                }
+                return null; // Return null if no conditions met
+            });
         });
+    
+        const results = await Promise.all(fineResponse);
+    
+        return results.flat().filter(item => item !== null && item !== undefined);  // Flatten and filter out null/undefined
     };
+    
 
     processTransaction = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[]): Promise<{ transactions: CreateTransactionDto[]; errorArray: string[] }> => {
         const errorArray = [];
@@ -404,7 +421,7 @@ export class UploadService {
         return { employees, errorArray };
     }
 
-     convertTo24HourFormat = (time: string): string => {
+    convertTo24HourFormat = (time: string): string => {
         // Check if the time format is hh:mm:ss AM/PM or hh:mm AM/PM
         const timeArray = time.split(/[:\s]/);
 
