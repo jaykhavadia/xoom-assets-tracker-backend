@@ -7,7 +7,7 @@ export class CreateTransactionDto {
 
     @IsDateString()
     @IsNotEmpty()
-    date: string;
+    date: Date;
 
     @IsEnum(Action, { message: 'Action must be either entry or exit' })
     @IsNotEmpty()
