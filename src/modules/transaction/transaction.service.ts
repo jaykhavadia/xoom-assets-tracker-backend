@@ -37,7 +37,7 @@ export class TransactionService {
             // Create a new Transaction instance with the relevant properties
             let transaction = this.transactionRepository.create({
                 date: transactionDto.date,
-                time: transactionDto.time,
+                time: this.convertTo24HourFormat(transactionDto.time), // Date Formate
                 comments: transactionDto.comments,
                 vehicle,
                 employee,
@@ -243,5 +243,23 @@ export class TransactionService {
         }
     }
 
+    convertTo24HourFormat = (time: string): string => {
+        const [hour, minute, period] = time.split(/[:\s]/);
+        let hours = parseInt(hour, 10);
+        let minutes = minute;
+        let seconds = "00";
+      
+        if (period.toLowerCase() === 'am' && hours === 12) {
+          hours = 0; // Midnight case: 12 AM is 00:00
+        } else if (period.toLowerCase() === 'pm' && hours !== 12) {
+          hours += 12; // PM case: Add 12 for afternoon/evening
+        }
+      
+        // Format hours and minutes with leading zeros if necessary
+        const formattedHour = hours.toString().padStart(2, '0');
+        const formattedMinute = minutes.padStart(2, '0');
+        
+        return `${formattedHour}:${formattedMinute}:${seconds}`;
+      }
 
 }
