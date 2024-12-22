@@ -26,6 +26,7 @@ export class TransactionController {
     private readonly transactionService: TransactionService,
     private readonly uploadService: UploadService,
     private readonly sheetService: SheetService,
+    private readonly filesHelperService: FilesHelperService,
   ) { }
 
   /**
@@ -50,9 +51,9 @@ export class TransactionController {
       // Create the transaction first without saving the pictures yet
       const transaction = await this.transactionService.create(body);
       // Save the files using the generated transactionId
-      // const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
+      const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
       // Update the transaction with the saved file URLs
-      const updatedTransaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: null });
+      const updatedTransaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: savedFiles });
       this.logger.log(Messages.transaction.createSuccess); // Log success message
       return {
         success: true,

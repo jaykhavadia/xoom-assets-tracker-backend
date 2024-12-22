@@ -30,7 +30,7 @@ export class FilesHelperService {
             // Create the folder named {transaction} inside the specified parent folder
             const sheetFolderId = await this.googleDriveService.getOrCreateFolder(transactionId.toString(), parentFolderId);
             // Save files based on their positions
-            const savedFiles = await Promise.allSettled(this.positions.map(async (position) => {
+            const savedFiles = await Promise.all(this.positions.map(async (position) => {
                 const file = files[`vehiclePictures[${position}]`] && files[`vehiclePictures[${position}]`][0];
                 if (file) {
                     const fileName = `${position}.png`; // Use position as the filename
@@ -62,7 +62,6 @@ export class FilesHelperService {
             } catch (error) {
                 this.logger.error('Error deleting directory:', error);
             }
-
             return savedFiles; // Return an array of results from saving files
         } catch (error) {
             this.logger.error(`[FilesHelper] [saveTransactionFiles] Error: ${error.message}`);
