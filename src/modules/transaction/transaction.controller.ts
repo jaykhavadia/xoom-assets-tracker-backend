@@ -244,14 +244,20 @@ export class TransactionController {
 
   @Post('upload-fine')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFineExcel(@UploadedFile() file: Express.Multer.File): Promise<any> {
+  async uploadFineExcel(@UploadedFile() file: Express.Multer.File): Promise<response<any>> {
     try {
       const fileResponse = await this.uploadService.readExcel(file, 'fine');
-
+      // Save transaction to the database
+      if ('fine' in fileResponse) {
+        // Save transaction to the database
+        const filteredTransaction = fileResponse.fine.filter((item) => item !== undefined); // Assuming you have a createBulk method
+      } else {
+        throw new Error('Unexpected file response type for transaction.');
+      }
       return {
         success: true,
         message: 'Fine Allocated',
-        data: fileResponse,
+        data: fileResponse.fine,
         errorArray: fileResponse.errorArray
       };
     } catch (error) {

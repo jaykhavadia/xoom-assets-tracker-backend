@@ -36,7 +36,7 @@ export class UploadService {
         private readonly transactionRepository: Repository<Transaction>,
     ) { }
 
-    async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: CreateTransactionDto[]; errorArray: string[] }> {
+    async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: CreateTransactionDto[]; errorArray: string[] } | { fine: any[]; errorArray: string[] }> {
         try {
             const workbook = XLSX.read(file.buffer, { type: 'buffer' });
             const sheetName = workbook.SheetNames[0]; // Get the first sheet name
@@ -147,26 +147,26 @@ export class UploadService {
 
     }
 
-    processFine = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]): Promise<any> => {
+    processFine = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]): Promise<{ fine: any[]; errorArray: string[] }> => {
         const errorArray = [];
-    
+
         const fineResponse = await jsonData.map(async (item) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
             const date = new Date(this.excelDateToJSDate(tripDate));
             const time = this.convertTo24HourFormat(tripTime);
-    
+
             // Find the associated vehicle
             const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
             if (!vehicleMatch) {
                 errorArray.push(`Vehicle with number ${Plate} not found.`);
                 return null;  // Return null if vehicle not found
             }
-    
+
             const vehicleNo = vehicleMatch.vehicleNo;
             const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
-    
-            const targetDate = `${targetISODate} ${time}`; 
-    
+
+            const targetDate = `${targetISODate} ${time}`;
+
             const query = `
           SELECT 
               t1.id AS transaction_id,
@@ -220,27 +220,27 @@ export class UploadService {
           ORDER BY 
               t1.date, t1.time ASC;
         `;
-    
+
             const results = await this.transactionRepository.query(query);
-    
+
             return await results.map((result: any, index: number) => {
                 // Make sure there's a next transaction to compare
                 if (index < results.length - 1) {
                     // Convert the current transaction date to "YYYY-MM-DD" format
                     const currentTransactionDateFormatted = new Date(result.transaction_date).toISOString().split('T')[0];
-    
-    
+
+
                     // Check if the current transaction action is "out" and the date is before or on targetISODate
                     if (result.transaction_action === 'out' && currentTransactionDateFormatted <= targetISODate) {
                         console.log('Current transaction is "out" and before or on targetISODate');
-    
+
                         // Convert the next transaction date to "YYYY-MM-DD" format
                         const nextTransactionDateFormatted = new Date(results[index + 1].transaction_date).toISOString().split('T')[0];
-    
+
                         // Check if the next transaction action is "in" and it's after the current transaction date
                         if (results[index + 1].transaction_action === 'in' && nextTransactionDateFormatted > currentTransactionDateFormatted) {
                             console.log('Next transaction is "in" and after the current transaction');
-    
+
                             // Return employee details when conditions are met
                             const employeeDetails = {
                                 employee_id: result.employee_id,
@@ -248,7 +248,7 @@ export class UploadService {
                                 transaction_vehicleId: result.transaction_vehicleId,
                                 transaction_locationId: result.transaction_locationId,
                             };
-    
+
                             return { tripDate, tripTime, Plate, amount, employeeDetails };  // Return employee details if conditions met
                         }
                     }
@@ -256,12 +256,12 @@ export class UploadService {
                 return null; // Return null if no conditions met
             });
         });
-    
+
         const results = await Promise.all(fineResponse);
-    
-        return results.flat().filter(item => item !== null && item !== undefined);  // Flatten and filter out null/undefined
+
+        return { fine: results.flat().filter(item => item !== null && item !== undefined), errorArray };  // Flatten and filter out null/undefined
     };
-    
+
 
     processTransaction = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[]): Promise<{ transactions: CreateTransactionDto[]; errorArray: string[] }> => {
         const errorArray = [];
