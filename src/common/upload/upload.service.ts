@@ -181,7 +181,8 @@ export class UploadService {
               vehicle.id AS vehicle_id,
               vehicle.vehicleNo AS vehicle_vehicleNo,
               employee.id AS employee_id,
-              employee.name AS employee_name
+              employee.name AS employee_name,
+              employee.code AS employee_code
           FROM 
               local.transaction t1
           LEFT JOIN 
@@ -245,10 +246,11 @@ export class UploadService {
                             const employeeDetails = {
                                 employee_id: result.employee_id,
                                 employee_name: result.employee_name,
+                                employee_code: result.employee_code,
                                 transaction_vehicleId: result.transaction_vehicleId,
                                 transaction_locationId: result.transaction_locationId,
                             };
-
+                            console.log("🚀 ~ UploadService ~ returnawaitresults.map ~ result:", result)
                             return { tripDate, tripTime, Plate, amount, employeeDetails };  // Return employee details if conditions met
                         }
                     }
