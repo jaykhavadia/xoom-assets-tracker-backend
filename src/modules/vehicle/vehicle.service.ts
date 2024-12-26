@@ -35,7 +35,6 @@ export class VehicleService {
     async create(createVehicleDto: VehicleDto): Promise<Vehicle> {
         try {
             const createVehicle = await this.checkRelation(createVehicleDto);
-
             const vehicle = this.vehicleRepository.create(createVehicle);
             return await this.vehicleRepository.save(vehicle);
         } catch (error) {
@@ -145,23 +144,21 @@ export class VehicleService {
         ownedBy: OwnedBy,
         aggregator: Aggregator
     }> {
+        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
         // Fetch the related entities based on the IDs
-        const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: checkRelationDto.vehicleTypeId } });
-        const model = await this.modelRepository.findOne({ where: { id: checkRelationDto.modelId } });
-        const ownedBy = await this.ownedByRepository.findOne({ where: { id: checkRelationDto.ownedById } });
-        let aggregator = await this.aggregatorRepository.findOne({ where: { id: checkRelationDto.aggregatorId } });
-
+        const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: vehicleTypeId } });
+        const model = await this.modelRepository.findOne({ where: { id: modelId } });
+        const ownedBy = await this.ownedByRepository.findOne({ where: { id: ownedById } });
+        let aggregator = await this.aggregatorRepository.findOne({ where: vehicleDto.status === 'available' ? { id: aggregatorId } :{ name: 'idle' } });
         const missingFields = [];
-
-        if (!vehicleType) missingFields.push(`vehicleType (ID: ${checkRelationDto.vehicleTypeId})`);
-        if (!model) missingFields.push(`model (ID: ${checkRelationDto.modelId})`);
-        if (!ownedBy) missingFields.push(`ownedBy (ID: ${checkRelationDto.ownedById})`);
-        if (!aggregator) { aggregator = await this.aggregatorRepository.findOne({ where: { id: 1 } }); }
+        
+        if (!vehicleType) missingFields.push(`vehicleType (ID: ${vehicleTypeId})`);
+        if (!model) missingFields.push(`model (ID: ${modelId})`);
+        if (!ownedBy) missingFields.push(`ownedBy (ID: ${ownedById})`);
 
         if (missingFields.length > 0) {
             throw new BadRequestException(`Invalid or missing fields: ${missingFields.join(', ')}`);
         }
-        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
         return {
             vehicleType,
             model,

@@ -228,31 +228,21 @@ export class TransactionService {
             if (!vehicle) {
                 throw new InternalServerErrorException('Vehicle Not Found'); // Handle error
             }
-            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto?.aggregator || 'idle');
+            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === 'out' ? transactionDto?.aggregator : 'idle');
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
             if (transactionDto.action === 'out') {
                 if (vehicle.status === 'occupied') {
                     throw new InternalServerErrorException(Messages.vehicle.occupied(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'occupied' })
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ aggregatorData.id:", aggregatorData.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ ownedBy.id:", ownedBy.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ model.id:", model.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ vehicleType.id:", vehicleType.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ vehicle.id:", vehicle.id)
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id), status: 'occupied' })
             } else if (transactionDto.action === 'in') {
                 if (vehicle.status === 'available') {
                     throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: 1, status: 'available' })
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ ownedBy.id:", ownedBy.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ model.id:", model.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ vehicleType.id:", vehicleType.id)
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ vehicle.id:", vehicle.id)
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id), status: 'available' })
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
             if (employee.status === 'inactive') {
-                console.log("🚀 ~ TransactionService ~ updateTransactionRelation ~ employee.id:", employee.id)
                 throw new InternalServerErrorException(Messages.employee.inactive(employee.id)); // Handle error
             }
             const location = await this.locationService.findOne(transactionDto.location);

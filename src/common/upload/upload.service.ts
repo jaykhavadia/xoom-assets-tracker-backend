@@ -157,7 +157,6 @@ export class UploadService {
             // Format as HH:mm:ss
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         } catch (error) {
-            console.log("UploadService ~ excelTimeTo24HourFormat ~ error:", error)
             throw new Error("inCorrect Time Format");
         }
 
@@ -266,7 +265,6 @@ export class UploadService {
                                 transaction_vehicleId: result.transaction_vehicleId,
                                 transaction_locationId: result.transaction_locationId,
                             };
-                            console.log("🚀 ~ UploadService ~ returnawaitresults.map ~ result:", result)
                             return { tripDate, tripTime, Plate, amount, employeeDetails };  // Return employee details if conditions met
                         }
                     }
@@ -295,12 +293,12 @@ export class UploadService {
                 if (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM')) {
                     console.log("The string contains AM or PM");
                 } else {
-                    errorArray.push(`inCorrect Date Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM`);
+                    errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM`);
                     return;
                 }
 
-                transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
                 transaction.time = item['Cut Off Time']; // Format as HH:mm:ss
+                transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
     
                 // Find the associated vehicle
                 const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
@@ -363,7 +361,6 @@ export class UploadService {
                 // Save the transaction (you need to use a repository or save logic here)
                 return transaction;
             } catch (error) {
-                console.log("UploadService ~ transactionPromises ~ error:", error)
                 errorArray.push(error.message);
             }
         });
@@ -429,7 +426,6 @@ export class UploadService {
                 vehicle.isDeleted = item['isDeleted'] || false; // Default to false if not present
                 return vehicle;
             } catch (error) {
-                console.log("🚀 ~ UploadService ~ vehiclePromises ~ error:", error)
                 errorArray.push(error.message);
             }
         });
@@ -463,7 +459,6 @@ export class UploadService {
                     return;
                 }
             } catch (error) {
-                console.log("🚀 ~ UploadService ~ employees.push ~ error:", error)
                 errorArray.push(error.message);
             }
         }));
@@ -500,7 +495,6 @@ export class UploadService {
     
             return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
         } catch (error) {
-            console.log("UploadService ~ convertTo24HourFormat ~ error:", error)
             throw new Error('inCorrect Time format');
         }
     }
