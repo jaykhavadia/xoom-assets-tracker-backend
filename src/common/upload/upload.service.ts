@@ -71,7 +71,7 @@ export class UploadService {
                         throw new Error('INVALID_FILE')
                     }
 
-                    return await this.processTransaction(jsonData, vehicle, employee, location);
+                    return await this.processTransaction(jsonData, vehicle, employee, location, aggregator);
                 } else if (Object.keys(jsonData[0]).includes('Trip Date')) {
                     if (type !== 'fine') {
                         throw new Error('INVALID_FILE')
@@ -281,7 +281,7 @@ export class UploadService {
     };
 
 
-    processTransaction = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[]): Promise<{ transactions: CreateTransactionDto[]; errorArray: string[] }> => {
+    processTransaction = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[], aggregators: Aggregator[]): Promise<{ transactions: CreateTransactionDto[]; errorArray: string[] }> => {
         const errorArray = [];
         const transactionPromises = jsonData.map(async (item, index) => {
             try {
@@ -325,7 +325,16 @@ export class UploadService {
                     return;
                 }
     
-                // Find the associated employee
+                // Find the associated aggregator
+                const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item['Aggregator']);
+                if (aggregatorMatch) {
+                    transaction.aggregator = aggregatorMatch.id.toString();
+                } else {
+                    errorArray.push(`Aggregator ${item['Aggregator']} not found. at Data No. ${index + 1}`);
+                    return;
+                }
+
+                // Find the associated employees
                 const employeeMatch = employees.find((employee) => employee.code === item['XDS No.']);
                 if (employeeMatch) {
                     if (employeeMatch.status === 'inactive') {
