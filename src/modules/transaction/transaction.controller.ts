@@ -106,6 +106,22 @@ export class TransactionController {
     }
   }
 
+  @Get('past-transaction/:vehicleNo')
+  async findPastTransaction(@Param('vehicleNo') vehicleNo: string): Promise<response<Transaction>> {
+    const vehicleNumber = parseInt(vehicleNo, 10); // Parse the ID from the URL
+    try {
+      const transaction = await this.transactionService.findPastTransaction(vehicleNumber); // Fetch all transactions
+      return {
+        success: true,
+        message: Messages.transaction.findPastTransactionSuccess(vehicleNumber),
+        data: transaction, // Return all transactions
+      };
+    } catch (error) {
+      this.logger.error(`[TransactionController] [findPastTransaction] Error: ${error.message}`); // Log error
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Handle error
+    }
+  }
+
   /**
    * Deletes a transaction by its ID.
    * @param id - The ID of the transaction to delete.
@@ -191,7 +207,6 @@ export class TransactionController {
         // Save transaction to the database
         const filteredTransaction = fileResponse.transactions.filter((item) => item !== undefined); // Assuming you have a createBulk method
         filteredTransaction.map(async (transaction) => {
-          console.log("🚀 ~ TransactionController ~ filteredTransaction.map ~ transaction:", transaction)
           await this.transactionService.create(transaction);
         });
       } else {

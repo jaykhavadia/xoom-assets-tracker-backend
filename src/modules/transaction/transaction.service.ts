@@ -152,6 +152,23 @@ export class TransactionService {
         }
     }
 
+    async findPastTransaction(vehicleNo: number): Promise<Transaction> {
+        try {
+            const queryBuilder = this.transactionRepository
+                .createQueryBuilder('t')
+                .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                .where('t.action = :action', { action: 'out' })
+                .orderBy('t.date', 'DESC')
+                .take(1);
+
+                const result = await queryBuilder.getOne();
+                return result;
+        } catch (error) {
+            this.logger.error(`[TransactionService] [findPastTransaction] Error: ${error.message}`); // Log error
+            throw new InternalServerErrorException(error.message); // Handle error
+        }
+    }
+
     async getTransactionsByDateRange(
         from?: string,
         to?: string,
