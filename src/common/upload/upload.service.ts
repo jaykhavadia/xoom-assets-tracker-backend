@@ -295,7 +295,7 @@ export class UploadService {
                 if (item['Cut Off Date'].includes('AM') || item['Cut Off Date'].includes('PM')) {
                     console.log("The string contains AM or PM");
                 } else {
-                    errorArray.push(`inCorrect Date Format at Data No. ${index + 1}`);
+                    errorArray.push(`inCorrect Date Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM`);
                     return;
                 }
 
