@@ -239,7 +239,7 @@ export class TransactionService {
                 if (vehicle.status === 'available') {
                     throw new InternalServerErrorException(Messages.vehicle.available(vehicle.id)); // Handle error
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'available' })
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: 1, status: 'available' })
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
             if (employee.status === 'inactive') {
