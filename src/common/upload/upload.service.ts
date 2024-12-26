@@ -292,6 +292,13 @@ export class UploadService {
                 transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
     
                 // Parse the date and time
+                if (item['Cut Off Date'].includes('AM') || item['Cut Off Date'].includes('PM')) {
+                    console.log("The string contains AM or PM");
+                } else {
+                    errorArray.push(`inCorrect Date Format at Data No. ${index + 1}`);
+                    return;
+                }
+
                 transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
                 transaction.time = item['Cut Off Time']; // Format as HH:mm:ss
     
