@@ -328,7 +328,7 @@ export class UploadService {
                 // Find the associated aggregator
                 const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item['Aggregator']);
                 if (aggregatorMatch) {
-                    transaction.aggregator = aggregatorMatch.id.toString();
+                    transaction.aggregator = aggregatorMatch.name;
                 } else {
                     errorArray.push(`Aggregator ${item['Aggregator']} not found. at Data No. ${index + 1}`);
                     return;
