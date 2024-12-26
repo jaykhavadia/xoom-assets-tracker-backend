@@ -191,6 +191,7 @@ export class TransactionController {
         // Save transaction to the database
         const filteredTransaction = fileResponse.transactions.filter((item) => item !== undefined); // Assuming you have a createBulk method
         filteredTransaction.map(async (transaction) => {
+          console.log("🚀 ~ TransactionController ~ filteredTransaction.map ~ transaction:", transaction)
           await this.transactionService.create(transaction);
         });
       } else {
