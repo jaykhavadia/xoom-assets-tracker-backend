@@ -149,7 +149,7 @@ export class VehicleService {
         const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: vehicleTypeId } });
         const model = await this.modelRepository.findOne({ where: { id: modelId } });
         const ownedBy = await this.ownedByRepository.findOne({ where: { id: ownedById } });
-        const aggregator = await this.aggregatorRepository.findOne({ where: vehicleDto.status !== 'available' ? { id: aggregatorId } :{ name: 'idle' } });
+        const aggregator = await this.aggregatorRepository.findOne({ where: { id: aggregatorId } });
         const missingFields = [];
         
         if (!vehicleType) missingFields.push(`vehicleType (ID: ${vehicleTypeId})`);
