@@ -157,8 +157,9 @@ export class TransactionService {
             const queryBuilder = this.transactionRepository
                 .createQueryBuilder('t')
                 .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                .leftJoinAndSelect('t.employee', 'employee')
                 .where('t.action = :action', { action: 'out' })
-                .orderBy('t.date', 'DESC')
+                .orderBy('t.date', 'DESC')  
                 .take(1);
 
                 const result = await queryBuilder.getOne();
