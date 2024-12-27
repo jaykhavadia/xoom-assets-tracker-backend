@@ -98,10 +98,10 @@ export class UploadService {
             // Excel's date system starts from 1900-01-01, but it's incorrectly considering 1900 as a leap year
             const startDate = moment('1900-01-01'); // This is 1900-01-01 in UTC
             const correctedDate = startDate.add(serial - 2, 'days'); // Adjust by -2 for the Excel offset and leap year bug
-    
+
             // Adjust the date to UTC and then apply your desired time offset
             const adjustedDate = correctedDate.utcOffset(0, true); // Ensure we stay in UTC timezone
-    
+
             return adjustedDate.toDate(); // Return the JavaScript Date object
         } catch (error) {
             console.error("UploadService ~ excelDateToJSDate ~ error:", error)
@@ -111,32 +111,32 @@ export class UploadService {
 
     excelDateToJSDateTransaction = (serial: number | string): string => {
         try {
-            
+
             // Ensure `serial` is not null or undefined
             if (!serial) {
                 throw new Error("Invalid input: serial date is required");
             }
-    
+
             // Handle the case where `serial` is a string like '02-Oct-24'
             if (typeof serial === 'string' && isNaN(Number(serial))) {
                 const parts = serial.split('-');
                 if (parts.length !== 3) {
                     throw new Error("Invalid date string format");
                 }
-    
+
                 const [day, monthStr, year] = parts;
                 const month = new Date(`${monthStr} 1, 2000`).getMonth() + 1; // Convert month name to number
                 const formattedYear = year.length === 2 ? `20${year}` : year; // Handle two-digit year
                 return `${formattedYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
-    
+
             // Handle the case where `serial` is a number (Excel serial date)
             if (typeof serial === 'number' || !isNaN(Number(serial))) {
                 const excelStartDate = new Date(1900, 0, 1); // Excel starts from 1900-01-01
                 const jsDate = new Date(excelStartDate.getTime() + (Number(serial) - 2) * 24 * 60 * 60 * 1000); // Adjust for leap year bug in Excel
                 return jsDate.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
             }
-    
+
             // Throw an error for unexpected input types
             throw new Error("Invalid input: serial date must be a string or number");
         } catch (error) {
@@ -153,7 +153,7 @@ export class UploadService {
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
-    
+
             // Format as HH:mm:ss
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         } catch (error) {
@@ -181,96 +181,33 @@ export class UploadService {
             const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
 
             const targetDate = `${targetISODate} ${time}`;
-
             const query = `
-          SELECT 
-              t1.id AS transaction_id,
-              t1.date AS transaction_date,
-              t1.time AS transaction_time,
-              t1.action AS transaction_action,
-              t1.pictures AS transaction_pictures,
-              t1.comments AS transaction_comments,
-              t1.vehicleId AS transaction_vehicleId,
-              t1.employeeId AS transaction_employeeId,
-              t1.locationId AS transaction_locationId,
-              vehicle.id AS vehicle_id,
-              vehicle.vehicleNo AS vehicle_vehicleNo,
-              employee.id AS employee_id,
-              employee.name AS employee_name,
-              employee.code AS employee_code
-          FROM 
-              local.transaction t1
-          LEFT JOIN 
-              local.vehicle ON vehicle.id = t1.vehicleId
-          LEFT JOIN 
-              local.employee ON employee.id = t1.employeeId
-          WHERE 
-              vehicle.vehicleNo = ${vehicleNo}
-              AND (
-                  -- Case 1: 'out' transactions before or on the target date
-                  (t1.action = 'out' AND CONCAT(t1.date, ' ', t1.time) <= '${targetDate}'
-                   AND EXISTS (
-                       -- Make sure there is a corresponding 'in' transaction after the target date
-                       SELECT 1
-                       FROM local.transaction t2
-                       WHERE t2.action = 'in'
-                         AND CONCAT(t2.date, ' ', t2.time) >= '${targetDate}'
-                         AND t2.vehicleId = t1.vehicleId
-                         AND t2.employeeId = t1.employeeId
-                   )
-                  )
-                  OR
-                  -- Case 2: 'in' transactions after the target date
-                  (t1.action = 'in' AND CONCAT(t1.date, ' ', t1.time) >= '${targetDate}'
-                   AND EXISTS (
-                       -- Make sure there is a corresponding 'out' transaction before or on the target date
-                       SELECT 1
-                       FROM local.transaction t3
-                       WHERE t3.action = 'out'
-                         AND CONCAT(t3.date, ' ', t3.time) <= '${targetDate}'
-                         AND t3.vehicleId = t1.vehicleId
-                         AND t3.employeeId = t1.employeeId
-                   )
-                  )
-              )
-          ORDER BY 
-              t1.date, t1.time ASC;
-        `;
-
-            const results = await this.transactionRepository.query(query);
-
-            return await results.map((result: any, index: number) => {
-                // Make sure there's a next transaction to compare
-                if (index < results.length - 1) {
-                    // Convert the current transaction date to "YYYY-MM-DD" format
-                    const currentTransactionDateFormatted = new Date(result.transaction_date).toISOString().split('T')[0];
-
-
-                    // Check if the current transaction action is "out" and the date is before or on targetISODate
-                    if (result.transaction_action === 'out' && currentTransactionDateFormatted <= targetISODate) {
-                        console.log('Current transaction is "out" and before or on targetISODate');
-
-                        // Convert the next transaction date to "YYYY-MM-DD" format
-                        const nextTransactionDateFormatted = new Date(results[index + 1].transaction_date).toISOString().split('T')[0];
-
-                        // Check if the next transaction action is "in" and it's after the current transaction date
-                        if (results[index + 1].transaction_action === 'in' && nextTransactionDateFormatted > currentTransactionDateFormatted) {
-                            console.log('Next transaction is "in" and after the current transaction');
-
-                            // Return employee details when conditions are met
-                            const employeeDetails = {
-                                employee_id: result.employee_id,
-                                employee_name: result.employee_name,
-                                employee_code: result.employee_code,
-                                transaction_vehicleId: result.transaction_vehicleId,
-                                transaction_locationId: result.transaction_locationId,
-                            };
-                            return { tripDate, tripTime, Plate, amount, employeeDetails };  // Return employee details if conditions met
-                        }
-                    }
-                }
-                return null; // Return null if no conditions met
-            });
+                    SELECT t.*, v.*, employee.*, location.name as locationName
+            FROM local.transaction t
+            INNER JOIN local.vehicle v ON v.vehicleNo = '${vehicleNo}'
+            LEFT JOIN local.employee ON t.employeeId = employee.id
+            LEFT JOIN local.location ON t.locationId = location.id
+            WHERE (t.date < '${targetISODate}' OR (t.date = '${targetISODate}' AND t.time <= '${time}'))
+            ORDER BY t.date DESC
+            LIMIT 1
+                    `;
+            const [result] = await this.transactionRepository.query(query);
+            let details;
+            if (result.action === 'out') {
+                details = {
+                    employee_id: result.employeeId,
+                    employee_name: result.name,
+                    employee_code: result.code,
+                    transaction_vehicleId: result.vehicleId,
+                    transaction_locationId: result.transaction_locationId,
+                };
+            }else {
+                details = {
+                    emirates: result.emirates,
+                    locationName: result.locationName
+                };
+            }
+            return { tripDate, tripTime, Plate, amount, details }; 
         });
 
         const results = await Promise.all(fineResponse);
@@ -285,10 +222,10 @@ export class UploadService {
             try {
                 // Initialize a new transaction entity
                 const transaction = new CreateTransactionDto();
-    
+
                 // Set the action as "Check Out" or other enums as necessary
                 transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
-    
+
                 // Parse the date and time
                 if (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM')) {
                     console.log("The string contains AM or PM");
@@ -299,7 +236,7 @@ export class UploadService {
 
                 transaction.time = item['Cut Off Time']; // Format as HH:mm:ss
                 transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
-    
+
                 // Find the associated vehicle
                 const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
                 if (vehicleMatch) {
@@ -308,21 +245,21 @@ export class UploadService {
                             errorArray.push(`${Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`); // Handle error
                             return
                         }
-    
+
                         transaction.vehicle = vehicleMatch.id;
                     } else if (transaction.action === 'in') {
                         if (vehicleMatch.status === 'available') {
                             errorArray.push(`${Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`); // Handle error
                             return;
                         }
-    
+
                         transaction.vehicle = vehicleMatch.id;
                     }
                 } else {
                     errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index + 1}`);
                     return;
                 }
-    
+
                 // Find the associated aggregator
                 const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item['Aggregator']);
                 if (aggregatorMatch) {
@@ -344,7 +281,7 @@ export class UploadService {
                     errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index + 1}`);
                     return;
                 }
-    
+
                 // Find the associated location
                 const locationMatch = locations.find((location) => location.name === item['Location']);
                 if (locationMatch) {
@@ -353,11 +290,11 @@ export class UploadService {
                     errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index + 1}`);
                     return;
                 }
-    
+
                 // Set additional fields if necessary
                 // transaction.pictures = []; // Default empty pictures, add logic if needed
                 transaction.comments = ''; // Default empty comments, update if needed
-    
+
                 // Save the transaction (you need to use a repository or save logic here)
                 return transaction;
             } catch (error) {
@@ -377,7 +314,7 @@ export class UploadService {
                 const vehicle = new Vehicle(); // Create an instance of the Vehicle class
                 vehicle.code = item['Code'];
                 vehicle.vehicleNo = item['Vehicle No.'];
-    
+
                 const modelsMatch = models.find((model) => model.brand === item['Model']);
                 if (modelsMatch) {
                     vehicle.model = modelsMatch;
@@ -388,7 +325,7 @@ export class UploadService {
                     errorArray.push(`Model with brand ${item['Model']} not found.`);
                     return;
                 }
-    
+
                 const vehicleTypeMatch = vehicleTypes.find(
                     (vehicleType) => {
                         return vehicleType.name === item['Category'] && vehicleType.fuel === item['Fuel'];
@@ -406,7 +343,7 @@ export class UploadService {
                     errorArray.push(`vehicleType with Category ${item['Category']} & Fuel ${item['Fuel']} not found.`);
                     return;
                 }
-    
+
                 const ownedByMatch = ownedBy.find((owner) => owner.name === item['From']);
                 if (ownedByMatch) {
                     vehicle.ownedBy = ownedByMatch;
@@ -417,7 +354,7 @@ export class UploadService {
                     errorArray.push(`From(ownedBy) with name ${item['From']} not found.`);
                     return;
                 }
-    
+
                 vehicle.chasisNumber = item['Chasis No.'];
                 vehicle.aggregator = aggregator.find((item) => item.name === 'idel');
                 vehicle.registrationExpiry = this.excelDateToJSDate(item['Expiry Date']);
@@ -469,7 +406,7 @@ export class UploadService {
         try {
             // Check if the time format is hh:mm:ss AM/PM or hh:mm AM/PM
             const timeArray = time.split(/[:\s]/);
-    
+
             // Parse hour and minute
             let hours: number = parseInt(timeArray[0], 10);
             let minutes: string = timeArray[1], seconds: string, period: string;
@@ -480,19 +417,19 @@ export class UploadService {
                 seconds = timeArray[2];
                 period = timeArray[3];
             }
-    
+
             // Adjust hours based on AM/PM
             if (period.toLowerCase() === 'am' && hours === 12) {
                 hours = 0; // Midnight case: 12 AM is 00:00
             } else if (period.toLowerCase() === 'pm' && hours !== 12) {
                 hours += 12; // PM case: Add 12 for afternoon/evening
             }
-    
+
             // Format hours, minutes, and seconds with leading zeros if necessary
             const formattedHour = hours.toString().padStart(2, '0');
             const formattedMinute = minutes.padStart(2, '0');
             const formattedSeconds = seconds.padStart(2, '0');
-    
+
             return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
         } catch (error) {
             throw new Error('inCorrect Time format');

@@ -159,11 +159,11 @@ export class TransactionService {
                 .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
                 .leftJoinAndSelect('t.employee', 'employee')
                 .where('t.action = :action', { action: 'out' })
-                .orderBy('t.date', 'DESC')  
+                .orderBy('t.date', 'DESC')
                 .take(1);
 
-                const result = await queryBuilder.getOne();
-                return result;
+            const result = await queryBuilder.getOne();
+            return result;
         } catch (error) {
             this.logger.error(`[TransactionService] [findPastTransaction] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(error.message); // Handle error
