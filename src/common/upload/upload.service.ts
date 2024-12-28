@@ -182,13 +182,13 @@ export class UploadService {
 
             // Validate that the date is valid and greater than the year 2020
             if (isNaN(inputDate.getTime()) || inputDate.getFullYear() <= 2020) {
-                errorArray.push(`Invalid date format provided. at ${index + 1}`);
+                errorArray.push(`Invalid date ${inputDate} format provided. at ${index + 1}`);
                 return;
             }
 
-            errorArray.push(`The date must be greater than the year 2020. at ${index + 1}`);
             const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
             const targetDate = `${targetISODate} ${time}`;
+            console.log("targetDate:", targetDate)
             const query = `
                     SELECT t.*, v.*, employee.*, location.name as locationName
             FROM local.transaction t
