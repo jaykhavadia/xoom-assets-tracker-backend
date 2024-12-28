@@ -191,9 +191,12 @@ export class UploadService {
             ORDER BY t.date DESC
             LIMIT 1
                     `;
+            console.log("🚀 ~ file: upload.service.ts:194 ~ UploadService ~ fineResponse ~ targetDate:", targetDate)
             const [result] = await this.transactionRepository.query(query);
+            console.log("🚀 ~ file: upload.service.ts:195 ~ UploadService ~ fineResponse ~ result:", result)
             let details;
-            if (result.action === 'out') {
+            if (!result) { errorArray.push('Kuch tho gadbad hai Dyaa'); return; }
+            if (result?.action === 'out') {
                 details = {
                     employee_id: result.employeeId,
                     employee_name: result.name,
@@ -201,13 +204,13 @@ export class UploadService {
                     transaction_vehicleId: result.vehicleId,
                     transaction_locationId: result.transaction_locationId,
                 };
-            }else {
+            } else {
                 details = {
                     emirates: result.emirates,
                     locationName: result.locationName
                 };
             }
-            return { tripDate, tripTime, Plate, amount, details }; 
+            return { tripDate, tripTime, Plate, amount, details };
         });
 
         const results = await Promise.all(fineResponse);
