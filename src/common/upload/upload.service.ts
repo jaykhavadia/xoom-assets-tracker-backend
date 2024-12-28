@@ -195,7 +195,7 @@ export class UploadService {
             const [result] = await this.transactionRepository.query(query);
             console.log("🚀 ~ file: upload.service.ts:195 ~ UploadService ~ fineResponse ~ result:", result)
             let details;
-            if (!result) { errorArray.push('Kuch tho gadbad hai Dyaa'); return; }
+            if (!result) { errorArray.push('Kuch tho gadbad hai Dyaa'); errorArray.push('Gaand Faat Gaee hai'); return; }
             if (result?.action === 'out') {
                 details = {
                     employee_id: result.employeeId,
