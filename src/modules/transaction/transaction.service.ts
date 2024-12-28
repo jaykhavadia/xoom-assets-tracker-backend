@@ -12,6 +12,7 @@ import { AggregatorService } from '../aggregator/aggregator.service';
 import { Employee } from '../employee/entities/employee.entity';
 import { Location } from '../location/entities/location.entity';
 import { Vehicle } from '../vehicle/entities/vehical.entity';
+import * as moment from 'moment';
 
 @Injectable()
 export class TransactionService {
@@ -154,20 +155,42 @@ export class TransactionService {
 
     async findPastTransaction(vehicleNo: number): Promise<Transaction> {
         try {
-            const queryBuilder = this.transactionRepository
-                .createQueryBuilder('t')
-                .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
-                .leftJoinAndSelect('t.employee', 'employee')
-                .where('t.action = :action', { action: 'out' })
-                .orderBy('t.date', 'DESC')
-                .take(1);
+            const { time, date } = this.getCurrentDateTime();
+            const queryBuilder = this.transactionRepository.createQueryBuilder('t')
+            .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+            .leftJoinAndSelect('t.employee', 'employee')
+            .leftJoinAndSelect('t.location', 'location')
+            .addSelect('location.name', 'locationName')
+            .where(
+              '(t.date < :date OR (t.date = :date AND t.time <= :time))',
+              { date, time }
+            )
+            .orderBy('t.date', 'DESC')
+            .addOrderBy('t.time', 'DESC') // Ensure secondary ordering by time
+            .limit(1);
 
-            const result = await queryBuilder.getOne();
+            let result = await queryBuilder.getOne();
+            if(result?.action === 'in'){
+                throw new Error('Vehicle already Checked IN');
+            }
+
             return result;
         } catch (error) {
             this.logger.error(`[TransactionService] [findPastTransaction] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(error.message); // Handle error
         }
+    }
+
+    getCurrentDateTime = () => {
+        const now = moment();
+
+        // Format date as dd-mm-yyyy
+        const date = now.format('YYYY-MM-DD');
+
+        // Format time as HH:mm:ss (24-hour format)
+        const time = now.format('HH:mm:ss');
+
+        return { date, time };
     }
 
     async getTransactionsByDateRange(

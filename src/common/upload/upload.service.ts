@@ -216,7 +216,7 @@ export class UploadService {
                     locationName: result.locationName
                 };
             }
-            return { tripDate, tripTime, Plate, amount, details };
+            return { tripDate: targetISODate, tripTime, Plate, amount, details };
         });
 
         const results = await Promise.all(fineResponse);
