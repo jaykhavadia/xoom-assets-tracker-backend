@@ -165,7 +165,7 @@ export class UploadService {
     processFine = async (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]): Promise<{ fine: any[]; errorArray: string[] }> => {
         const errorArray = [];
 
-        const fineResponse = await jsonData.map(async (item) => {
+        const fineResponse = await jsonData.map(async (item, index) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
             const date = new Date(this.excelDateToJSDate(tripDate));
             const time = this.convertTo24HourFormat(tripTime);
@@ -178,8 +178,16 @@ export class UploadService {
             }
 
             const vehicleNo = vehicleMatch.vehicleNo;
-            const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
+            const inputDate = new Date(date);
 
+            // Validate that the date is valid and greater than the year 2020
+            if (isNaN(inputDate.getTime()) || inputDate.getFullYear() <= 2020) {
+                errorArray.push(`Invalid date format provided. at ${index + 1}`);
+                return;
+            }
+
+            errorArray.push(`The date must be greater than the year 2020. at ${index + 1}`);
+            const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
             const targetDate = `${targetISODate} ${time}`;
             const query = `
                     SELECT t.*, v.*, employee.*, location.name as locationName
@@ -191,11 +199,9 @@ export class UploadService {
             ORDER BY t.date DESC
             LIMIT 1
                     `;
-            console.log("🚀 ~ file: upload.service.ts:194 ~ UploadService ~ fineResponse ~ targetDate:", targetDate)
             const [result] = await this.transactionRepository.query(query);
-            console.log("🚀 ~ file: upload.service.ts:195 ~ UploadService ~ fineResponse ~ result:", result)
             let details;
-            if (!result) { errorArray.push('Kuch tho gadbad hai Dyaa'); errorArray.push('Gaand Faat Gaee hai'); return; }
+            if (!result) { errorArray.push(`Some thing is wrong No data found At ${index + 1} `); return; }
             if (result?.action === 'out') {
                 details = {
                     employee_id: result.employeeId,
