@@ -11,7 +11,7 @@ import { CreateTransactionDto } from 'src/modules/transaction/dto/CreateTransact
 import { Action, Transaction } from 'src/modules/transaction/entities/transaction.entity';
 import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
 
 @Injectable()
@@ -207,31 +207,43 @@ export class UploadService {
             const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
             const targetDate = `${targetISODate} ${time}`;
             console.log("targetDate:", targetDate)
-            const query = `
-                    SELECT t.*, v.*, employee.*, location.name as locationName
-            FROM local.transaction t
-            INNER JOIN local.vehicle v ON v.vehicleNo = '${vehicleNo}'
-            LEFT JOIN local.employee ON t.employeeId = employee.id
-            LEFT JOIN local.location ON t.locationId = location.id
-            WHERE (t.date < '${targetISODate}' OR (t.date = '${targetISODate}' AND t.time <= '${time}'))
-            ORDER BY t.date DESC
-            LIMIT 1
-                    `;
-            const [result] = await this.transactionRepository.query(query);
+
+            const result = await this.transactionRepository
+                    .createQueryBuilder('t')
+                    .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                    .leftJoinAndSelect('t.employee', 'employee')
+                    .leftJoinAndSelect('t.location', 'location')
+                    .addSelect('location.name', 'locationName')
+                    .where(
+                        new Brackets((qb) => {
+                        qb.where('t.date < :endDate', { endDate: targetISODate })
+                            .orWhere(
+                            new Brackets((subQb) => {
+                                subQb.where('t.date = :endDate', { endDate: targetISODate })
+                                .andWhere('t.time <= :endTime', { endTime: time });
+                            })
+                            );
+                        })
+                    )
+                    .orderBy('t.date', 'DESC')
+                    .limit(1)
+                      .getOne();
+
             let details;
+            // console.log(result);
             if (!result) { errorArray.push(`Some thing is wrong No data found At ${index + 1} `); return; }
             if (result?.action === 'out') {
                 details = {
-                    employee_id: result.employeeId,
-                    employee_name: result.name,
-                    employee_code: result.code,
-                    transaction_vehicleId: result.vehicleId,
-                    transaction_locationId: result.transaction_locationId,
+                    employee_id: result.employee.id,
+                    employee_name: result.employee.name,
+                    employee_code: result.employee.code,
+                    transaction_vehicleId: result.vehicle.id,
+                    transaction_locationId: result.location.id,
                 };
             } else {
                 details = {
-                    emirates: result.emirates,
-                    locationName: result.locationName
+                    emirates: result.vehicle.emirates,
+                    locationName: result.location.name
                 };
             }
             return { tripDate: targetISODate, tripTime, Plate, amount, details };
