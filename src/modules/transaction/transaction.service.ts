@@ -1,3 +1,4 @@
+import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Transaction } from './entities/transaction.entity';
 import { Repository } from 'typeorm';
@@ -33,7 +34,7 @@ export class TransactionService {
      */
     async create(transactionDto: CreateTransactionDto): Promise<Transaction> {
         try {
-            const { employee, location, vehicle } = await this.updateTransactionRelation(transactionDto);
+            const { employee, location, vehicle, aggregator } = await this.updateTransactionRelation(transactionDto);
 
             // Create a new Transaction instance with the relevant properties
             let transaction = this.transactionRepository.create({
@@ -44,6 +45,7 @@ export class TransactionService {
                 vehicle,
                 employee,
                 location,
+                aggregator,
                 pictures: [],
             });
             transaction = await this.transactionRepository.save(transaction); // Save the transaction
@@ -261,7 +263,7 @@ export class TransactionService {
         }
     }
 
-    async updateTransactionRelation(transactionDto: CreateTransactionDto): Promise<{ employee: Employee, location: Location, vehicle: Vehicle }> {
+    async updateTransactionRelation(transactionDto: CreateTransactionDto): Promise<{ employee: Employee, location: Location, vehicle: Vehicle, aggregator: Aggregator }> {
         try {
             this.logger.log('Starting updateTransactions function.');
             // Find the related entities using their IDs
@@ -269,7 +271,7 @@ export class TransactionService {
             if (!vehicle) {
                 throw new InternalServerErrorException('Vehicle Not Found'); // Handle error
             }
-            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === 'out' ? transactionDto?.aggregator : 'idle');
+            const aggregatorData: Aggregator = await this.aggregatorService.findOneByName(transactionDto.action === 'out' ? transactionDto?.aggregator : 'idle');
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
             if (transactionDto.action === 'out') {
                 if (vehicle.status === 'occupied') {
@@ -289,7 +291,7 @@ export class TransactionService {
             const location = await this.locationService.findOne(transactionDto.location);
 
             this.logger.log('Successfully updated transaction.');
-            return { employee, location, vehicle };
+            return { employee, location, vehicle, aggregator: aggregatorData };
         } catch (error) {
             this.logger.error(`[TransactionService] [updateTransactionRelation] Error: ${error.message}`);
             throw new InternalServerErrorException(error.message);
