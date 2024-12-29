@@ -51,7 +51,7 @@ export class TransactionService {
             transaction = await this.transactionRepository.save(transaction); // Save the transaction
             return this.transactionRepository.findOne({
                 where: { id: transaction.id },
-                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+                relations: ['vehicle', 'employee', 'location', 'aggregator'], // Explicitly load relations
             });
         } catch (error) {
             this.logger.error(`[TransactionService] [create] Error: ${error.message}`); // Log error
@@ -91,7 +91,7 @@ export class TransactionService {
             ); // Update the transaction
             return this.transactionRepository.findOne({
                 where: { id },
-                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+                relations: ['vehicle', 'employee', 'location', 'aggregator'], // Explicitly load relations
             }); // Fetch the updated transaction
         } catch (error) {
             this.logger.error(`[TransactionService] [update] Error: ${error.message}`); // Log error
@@ -104,7 +104,7 @@ export class TransactionService {
             await this.transactionRepository.update({ id }, updateDto); // Update the transaction
             return this.transactionRepository.findOne({
                 where: { id },
-                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+                relations: ['vehicle', 'employee', 'location','aggregator'], // Explicitly load relations
             }); // Fetch the updated transaction
         } catch (error) {
             this.logger.error(`[TransactionService] [update] Error: ${error.message}`); // Log error
@@ -121,7 +121,7 @@ export class TransactionService {
         try {
             return this.transactionRepository.findOne({
                 where: { id },
-                relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
+                relations: ['vehicle', 'employee', 'location','aggregator'], // Explicitly load relations
             });
         } catch (error) {
             this.logger.error(`[TransactionService] [findOne] Error: ${error.message}`); // Log error
@@ -135,7 +135,7 @@ export class TransactionService {
      */
     async findAll(): Promise<Transaction[]> {
         try {
-            return await this.transactionRepository.find({ relations: ['vehicle', 'employee', 'location'] }); // Fetch all transactions
+            return await this.transactionRepository.find({ relations: ['vehicle', 'employee', 'location','aggregator'] }); // Fetch all transactions
         } catch (error) {
             this.logger.error(`[TransactionService] [findAll] Error: ${error.message}`); // Log error
             throw new InternalServerErrorException(Messages.transaction.findAllFailure); // Handle error
