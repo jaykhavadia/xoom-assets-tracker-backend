@@ -35,6 +35,15 @@ export class UploadService {
         @InjectRepository(Transaction)
         private readonly transactionRepository: Repository<Transaction>,
     ) { }
+    timeRegex = /^(0[1-9]|1[0-2]):[0-5][0-9]:[0-5][0-9] (AM|PM)$/;
+
+     validateTime = (input: string): boolean => {
+      if (this.timeRegex.test(input)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
 
     async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: CreateTransactionDto[]; errorArray: string[] } | { fine: any[]; errorArray: string[] }> {
         try {
@@ -167,7 +176,16 @@ export class UploadService {
 
         const fineResponse = await jsonData.map(async (item, index) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
+
+            // Parse the date and time
+            if (this.validateTime(tripTime)) {
+                console.log("The string contains AM or PM");
+            } else {
+                errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`);
+                return;
+            }
             const date = new Date(this.excelDateToJSDate(tripDate));
+            
             const time = this.convertTo24HourFormat(tripTime);
 
             // Find the associated vehicle
@@ -236,10 +254,10 @@ export class UploadService {
                 transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
 
                 // Parse the date and time
-                if (!item['Cut Off Time'].includes('\'') && (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))) {
+                if (this.validateTime(item['Cut Off Time']) && !item['Cut Off Time'].includes('\'') && (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))) {
                     console.log("The string contains AM or PM");
                 } else {
-                    errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM`);
+                    errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item['Cut Off Time']}`);
                     return;
                 }
 
