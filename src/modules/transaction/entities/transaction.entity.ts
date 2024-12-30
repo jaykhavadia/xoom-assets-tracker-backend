@@ -47,8 +47,8 @@ export class Transaction {
   @ManyToOne(() => Location, (location) => location.transactions, { cascade: true })
   location: Location;
 
-  @ManyToOne(() => Aggregator, (aggregator) => aggregator, { eager: true, cascade: true })
-  aggregator: Aggregator;
+  @Column({type: 'text', nullable: true})
+  aggregator: string;
 
   @CreateDateColumn({ type: 'timestamp' })
     createdAt: Date;

@@ -75,13 +75,7 @@ export class UploadService {
                     }
 
                     return await this.processEmployee(jsonData, employee);
-                } else if (Object.keys(jsonData[0]).includes('Vehicle No.')) {
-                    if (type !== 'transaction') {
-                        throw new Error('INVALID_FILE')
-                    }
-
-                    return await this.processTransaction(jsonData, vehicle, employee, location, aggregator);
-                } else if (Object.keys(jsonData[0]).includes('Trip Date')) {
+                } if (Object.keys(jsonData[0]).includes('Trip Date')) {
                     if (type !== 'fine') {
                         throw new Error('INVALID_FILE')
                     }
@@ -335,7 +329,7 @@ export class UploadService {
                 transaction.comments = ''; // Default empty comments, update if needed
 
                 // Save the transaction (you need to use a repository or save logic here)
-                return transaction;
+                // return await this.transactionService.create(transaction);
             } catch (error) {
                 errorArray.push(error.message);
             }

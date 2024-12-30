@@ -78,6 +78,15 @@ export class VehicleService {
         }
     }
 
+    async findByVehicleNo(vehicleNo: string): Promise<Vehicle> {
+        try {
+            return await this.vehicleRepository.findOneBy({ vehicleNo });
+        } catch (error) {
+            this.logger.error(`[VehicleService] [findOne] Error: ${error.message}`);
+            throw new InternalServerErrorException(`Failed to find vehicle with id: ${vehicleNo}`);
+        }
+    }
+
     /**
      * Updates an existing vehicle in the database
      * @param id - the ID of the vehicle to update
