@@ -7,6 +7,7 @@ export declare class EmployeeService {
     create(employee: Employee): Promise<Employee>;
     findAll(): Promise<Employee[]>;
     findOne(id: number): Promise<Employee>;
+    findByCode(code: string): Promise<Employee>;
     update(id: number, employee: Employee): Promise<Employee>;
     remove(id: number): Promise<void>;
     updateEmployees(employees: Employee[]): Promise<void>;

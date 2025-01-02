@@ -51,6 +51,18 @@ let LocationService = class LocationService {
             throw new common_1.InternalServerErrorException(`[LocationService] [findOne] Error: ${error.message}`);
         }
     }
+    async findByName(name) {
+        try {
+            const location = await this.locationRepository.findOne({ where: { name } });
+            if (!location) {
+                throw new common_1.NotFoundException(`Location with name ${name} not found`);
+            }
+            return location;
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException(`[LocationService] [findOne] Error: ${error.message}`);
+        }
+    }
     async update(id, location) {
         try {
             const existingLocation = await this.findOne(id);

@@ -65,6 +65,7 @@ export declare const Messages: {
         findAllSuccess: string;
         findAllFailure: string;
         findOneSuccess: (id: number) => string;
+        findPastTransactionSuccess: (id: number) => string;
         findOneFailure: (id: number) => string;
         updateSuccess: (id: number) => string;
         updateFailure: (id: number) => string;

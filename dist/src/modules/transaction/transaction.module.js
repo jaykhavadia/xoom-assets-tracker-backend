@@ -32,6 +32,7 @@ exports.TransactionModule = TransactionModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([vehical_entity_1.Vehicle, transaction_entity_1.Transaction, employee_entity_1.Employee, location_entity_1.Location, user_entity_1.User, aggregator_entity_1.Aggregator]), common_module_1.CommonModule, vehicle_module_1.VehicleModule, employee_module_1.EmployeeModule, location_module_1.LocationModule, jwt_auth_module_1.JwtAuthModule, aggregator_module_1.AggregatorModule, sheet_module_1.SheetModule],
         controllers: [transaction_controller_1.TransactionController],
         providers: [transaction_service_1.TransactionService],
+        exports: [transaction_service_1.TransactionService]
     })
 ], TransactionModule);
 //# sourceMappingURL=transaction.module.js.map

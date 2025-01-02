@@ -6,6 +6,7 @@ export declare class LocationService {
     create(location: Location): Promise<Location>;
     findAll(): Promise<Location[]>;
     findOne(id: number): Promise<Location>;
+    findByName(name: string): Promise<Location>;
     update(id: number, location: Location): Promise<Location>;
     remove(id: number): Promise<void>;
 }

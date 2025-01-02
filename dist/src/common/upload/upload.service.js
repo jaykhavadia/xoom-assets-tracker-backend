@@ -38,158 +38,250 @@ let UploadService = class UploadService {
         this.employeeRepository = employeeRepository;
         this.locationRepository = locationRepository;
         this.transactionRepository = transactionRepository;
+        this.timeRegex = /^(0[1-9]|1[0-2]):[0-5][0-9]:[0-5][0-9] (AM|PM)$/;
+        this.validateTime = (input) => {
+            if (this.timeRegex.test(input)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        };
         this.excelDateToJSDate = (serial) => {
-            const startDate = moment('1900-01-01');
-            const date = startDate.add(serial - 2, 'days');
-            return date.toDate();
+            try {
+                const startDate = moment('1900-01-01');
+                const correctedDate = startDate.add(serial - 2, 'days');
+                const adjustedDate = correctedDate.utcOffset(0, true);
+                return adjustedDate.toDate();
+            }
+            catch (error) {
+                console.error("UploadService ~ excelDateToJSDate ~ error:", error);
+                throw new Error("inCorrect Date Format");
+            }
         };
         this.excelDateToJSDateTransaction = (serial) => {
-            if (!serial) {
-                throw new Error("Invalid input: serial date is required");
-            }
-            if (typeof serial === 'string' && isNaN(Number(serial))) {
-                const parts = serial.split('-');
-                if (parts.length !== 3) {
-                    throw new Error("Invalid date string format");
+            try {
+                if (!serial) {
+                    throw new Error("Invalid input: serial date is required");
                 }
-                const [day, monthStr, year] = parts;
-                const month = new Date(`${monthStr} 1, 2000`).getMonth() + 1;
-                const formattedYear = year.length === 2 ? `20${year}` : year;
-                return `${formattedYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (typeof serial === 'string' && isNaN(Number(serial))) {
+                    const parts = serial.split('-');
+                    if (parts.length !== 3) {
+                        throw new Error("Invalid date string format");
+                    }
+                    const [day, monthStr, year] = parts;
+                    const month = new Date(`${monthStr} 1, 2000`).getMonth() + 1;
+                    const formattedYear = year.length === 2 ? `20${year}` : year;
+                    return `${formattedYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                }
+                if (typeof serial === 'number' || !isNaN(Number(serial))) {
+                    const excelStartDate = new Date(1900, 0, 1);
+                    const jsDate = new Date(excelStartDate.getTime() + (Number(serial) - 2) * 24 * 60 * 60 * 1000);
+                    return jsDate.toISOString().split('T')[0];
+                }
+                throw new Error("Invalid input: serial date must be a string or number");
             }
-            if (typeof serial === 'number' || !isNaN(Number(serial))) {
-                const excelStartDate = new Date(1900, 0, 1);
-                const jsDate = new Date(excelStartDate.getTime() + (Number(serial) - 2) * 24 * 60 * 60 * 1000);
-                return jsDate.toISOString().split('T')[0];
+            catch (error) {
+                console.error("UploadService ~ excelDateToJSDateTransaction ~ error:", error);
+                throw new Error("inCorrect Date Format");
             }
-            throw new Error("Invalid input: serial date must be a string or number");
         };
         this.excelTimeTo24HourFormat = (excelTime) => {
-            const totalSeconds = Math.round(excelTime * 24 * 60 * 60);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            try {
+                const totalSeconds = Math.round(excelTime * 24 * 60 * 60);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+            catch (error) {
+                throw new Error("inCorrect Time Format");
+            }
         };
         this.processFine = async (jsonData, vehicles, employees, transaction) => {
             const errorArray = [];
-            const finesByEmployee = {};
-            const fineResponse = await jsonData.map(async (item) => {
+            const fineResponse = await jsonData.map(async (item, index) => {
                 const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
+                if (this.validateTime(tripTime)) {
+                    console.log("The string contains AM or PM");
+                }
+                else {
+                    errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`);
+                    return;
+                }
                 const date = new Date(this.excelDateToJSDate(tripDate));
-                const time = this.excelTimeTo24HourFormat(tripTime);
+                const time = this.convertTo24HourFormat(tripTime);
                 const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
                 if (!vehicleMatch) {
                     errorArray.push(`Vehicle with number ${Plate} not found.`);
+                    return null;
+                }
+                const vehicleNo = vehicleMatch.vehicleNo;
+                const inputDate = new Date(date);
+                if (isNaN(inputDate.getTime()) || inputDate.getFullYear() <= 2020) {
+                    errorArray.push(`Invalid date ${inputDate} format provided. at ${index + 1}`);
                     return;
                 }
-                const transaction = await this.transactionRepository.findOne({
-                    where: {
-                        date,
-                        time,
-                        vehicle: vehicleMatch,
-                    },
-                    relations: ['employee'],
-                });
-                if (transaction && transaction.employee) {
-                    const employeeId = transaction.employee.id;
-                    finesByEmployee[employeeId] = (finesByEmployee[employeeId] || 0) + amount;
+                const targetISODate = new Date(date).toISOString().split('T')[0];
+                const targetDate = `${targetISODate} ${time}`;
+                console.log("targetDate:", targetDate);
+                const result = await this.transactionRepository
+                    .createQueryBuilder('t')
+                    .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                    .leftJoinAndSelect('t.employee', 'employee')
+                    .leftJoinAndSelect('t.location', 'location')
+                    .addSelect('location.name', 'locationName')
+                    .where(new typeorm_2.Brackets((qb) => {
+                    qb.where('t.date < :endDate', { endDate: targetISODate })
+                        .orWhere(new typeorm_2.Brackets((subQb) => {
+                        subQb.where('t.date = :endDate', { endDate: targetISODate })
+                            .andWhere('t.time <= :endTime', { endTime: time });
+                    }));
+                }))
+                    .orderBy('t.date', 'DESC')
+                    .limit(1)
+                    .getOne();
+                let details;
+                if (!result) {
+                    errorArray.push(`Some thing is wrong No data found At ${index + 1} `);
+                    return;
                 }
-                console.log(finesByEmployee);
+                if (result?.action === 'out') {
+                    details = {
+                        employee_id: result.employee.id,
+                        employee_name: result.employee.name,
+                        employee_code: result.employee.code,
+                        transaction_vehicleId: result.vehicle.id,
+                        transaction_locationId: result.location.id,
+                    };
+                }
+                else {
+                    details = {
+                        emirates: result.vehicle.emirates,
+                        locationName: result.location.name
+                    };
+                }
+                return { tripDate: targetISODate, tripTime, Plate, amount, details };
             });
+            const results = await Promise.all(fineResponse);
+            return { fine: results.flat().filter(item => item !== null && item !== undefined), errorArray };
         };
-        this.processTransaction = async (jsonData, vehicles, employees, locations) => {
+        this.processTransaction = async (jsonData, vehicles, employees, locations, aggregators) => {
             const errorArray = [];
             const transactionPromises = jsonData.map(async (item, index) => {
-                const transaction = new CreateTransaction_dto_1.CreateTransactionDto();
-                transaction.action = item['Status'] === 'Check Out' ? transaction_entity_1.Action.OUT : transaction_entity_1.Action.IN;
-                transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
-                transaction.time = item['Cut Off Time'];
-                const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
-                if (vehicleMatch) {
-                    if (transaction.action === 'out') {
-                        if (vehicleMatch.status === 'occupied') {
-                            errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`);
-                            return;
-                        }
-                        transaction.vehicle = vehicleMatch.id;
+                try {
+                    const transaction = new CreateTransaction_dto_1.CreateTransactionDto();
+                    transaction.action = item['Status'] === 'Check Out' ? transaction_entity_1.Action.OUT : transaction_entity_1.Action.IN;
+                    if (this.validateTime(item['Cut Off Time']) && !item['Cut Off Time'].includes('\'') && (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))) {
+                        console.log("The string contains AM or PM");
                     }
-                    else if (transaction.action === 'in') {
-                        if (vehicleMatch.status === 'available') {
-                            errorArray.push(`${messages_constants_1.Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`);
-                            return;
-                        }
-                        transaction.vehicle = vehicleMatch.id;
-                    }
-                }
-                else {
-                    errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index + 1}`);
-                    return;
-                }
-                const employeeMatch = employees.find((employee) => employee.code === item['XDS No.']);
-                if (employeeMatch) {
-                    if (employeeMatch.status === 'inactive') {
-                        errorArray.push(`${messages_constants_1.Messages.employee.inactive(item['XDS No.'])} at Data No. ${index + 1}`);
+                    else {
+                        errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item['Cut Off Time']}`);
                         return;
                     }
-                    transaction.employee = employeeMatch.id;
+                    transaction.time = item['Cut Off Time'];
+                    transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
+                    if (vehicleMatch) {
+                        if (transaction.action === 'out') {
+                            if (vehicleMatch.status === 'occupied') {
+                                errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                                return;
+                            }
+                            transaction.vehicle = vehicleMatch.id;
+                        }
+                        else if (transaction.action === 'in') {
+                            if (vehicleMatch.status === 'available') {
+                                errorArray.push(`${messages_constants_1.Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                                return;
+                            }
+                            transaction.vehicle = vehicleMatch.id;
+                        }
+                    }
+                    else {
+                        errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index + 1}`);
+                        return;
+                    }
+                    const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item['Aggregator']);
+                    if (aggregatorMatch) {
+                        transaction.aggregator = aggregatorMatch.name;
+                    }
+                    else {
+                        errorArray.push(`Aggregator ${item['Aggregator']} not found. at Data No. ${index + 1}`);
+                        return;
+                    }
+                    const employeeMatch = employees.find((employee) => employee.code === item['XDS No.']);
+                    if (employeeMatch) {
+                        if (employeeMatch.status === 'inactive') {
+                            errorArray.push(`${messages_constants_1.Messages.employee.inactive(item['XDS No.'])} at Data No. ${index + 1}`);
+                            return;
+                        }
+                        transaction.employee = employeeMatch.id;
+                    }
+                    else {
+                        errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index + 1}`);
+                        return;
+                    }
+                    const locationMatch = locations.find((location) => location.name === item['Location']);
+                    if (locationMatch) {
+                        transaction.location = locationMatch.id;
+                    }
+                    else {
+                        errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index + 1}`);
+                        return;
+                    }
+                    transaction.comments = '';
                 }
-                else {
-                    errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index + 1}`);
-                    return;
+                catch (error) {
+                    errorArray.push(error.message);
                 }
-                const locationMatch = locations.find((location) => location.name === item['Location']);
-                if (locationMatch) {
-                    transaction.location = locationMatch.id;
-                }
-                else {
-                    errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index + 1}`);
-                    return;
-                }
-                transaction.comments = '';
-                return transaction;
             });
             return { transactions: await Promise.all(transactionPromises), errorArray };
         };
         this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregator) => {
             const errorArray = [];
             const vehiclePromises = jsonData.map(async (item) => {
-                const vehicle = new vehical_entity_1.Vehicle();
-                vehicle.code = item['Code'];
-                vehicle.vehicleNo = item['Vehicle No.'];
-                const modelsMatch = models.find((model) => model.brand === item['Model']);
-                if (modelsMatch) {
-                    vehicle.model = modelsMatch;
+                try {
+                    const vehicle = new vehical_entity_1.Vehicle();
+                    vehicle.code = item['Code'];
+                    vehicle.vehicleNo = item['Vehicle No.'];
+                    const modelsMatch = models.find((model) => model.brand === item['Model']);
+                    if (modelsMatch) {
+                        vehicle.model = modelsMatch;
+                    }
+                    else {
+                        errorArray.push(`Model with brand ${item['Model']} not found.`);
+                        return;
+                    }
+                    const vehicleTypeMatch = vehicleTypes.find((vehicleType) => {
+                        return vehicleType.name === item['Category'] && vehicleType.fuel === item['Fuel'];
+                    });
+                    if (vehicleTypeMatch) {
+                        vehicle.vehicleType = vehicleTypeMatch;
+                    }
+                    else {
+                        errorArray.push(`vehicleType with Category ${item['Category']} & Fuel ${item['Fuel']} not found.`);
+                        return;
+                    }
+                    const ownedByMatch = ownedBy.find((owner) => owner.name === item['From']);
+                    if (ownedByMatch) {
+                        vehicle.ownedBy = ownedByMatch;
+                    }
+                    else {
+                        errorArray.push(`From(ownedBy) with name ${item['From']} not found.`);
+                        return;
+                    }
+                    vehicle.chasisNumber = item['Chasis No.'];
+                    vehicle.aggregator = aggregator.find((item) => item.name === 'idel');
+                    vehicle.registrationExpiry = this.excelDateToJSDate(item['Expiry Date']);
+                    vehicle.emirates = item['Emirates'];
+                    vehicle.status = item['Status'] || 'available';
+                    vehicle.isDeleted = item['isDeleted'] || false;
+                    return vehicle;
                 }
-                else {
-                    errorArray.push(`Model with brand ${item['Model']} not found.`);
-                    return;
+                catch (error) {
+                    errorArray.push(error.message);
                 }
-                const vehicleTypeMatch = vehicleTypes.find((vehicleType) => {
-                    return vehicleType.name === item['Category'] && vehicleType.fuel === item['Fuel'];
-                });
-                if (vehicleTypeMatch) {
-                    vehicle.vehicleType = vehicleTypeMatch;
-                }
-                else {
-                    errorArray.push(`vehicleType with Category ${item['Category']} & Fuel ${item['Fuel']} not found.`);
-                    return;
-                }
-                const ownedByMatch = ownedBy.find((owner) => owner.name === item['From']);
-                if (ownedByMatch) {
-                    vehicle.ownedBy = ownedByMatch;
-                }
-                else {
-                    errorArray.push(`From(ownedBy) with name ${item['From']} not found.`);
-                    return;
-                }
-                vehicle.chasisNumber = item['Chasis No.'];
-                vehicle.aggregator = aggregator.find((item) => item.name === 'idel');
-                vehicle.registrationExpiry = this.excelDateToJSDate(item['Expiry Date']);
-                vehicle.emirates = item['Emirates'];
-                vehicle.status = item['Status'] || 'available';
-                vehicle.isDeleted = item['isDeleted'] || false;
-                return vehicle;
             });
             const resolvedVehicles = await Promise.all(vehiclePromises);
             return { vehicles: resolvedVehicles, errorArray };
@@ -198,25 +290,58 @@ let UploadService = class UploadService {
             const errorArray = [];
             const employees = [];
             employees.push(...jsonData.map((item) => {
-                const employeeMatch = employeeList.find((employee) => employee.code === item['E code']);
-                if (employeeMatch) {
-                    errorArray.push(`Employee with E code ${item['E code']} Already exist.`);
-                    return;
-                }
                 try {
-                    const employee = new employee_entity_1.Employee();
-                    employee.name = item['Name'];
-                    employee.code = item['E code'];
-                    employee.status = item['Status'] || 'Active';
-                    return employee;
+                    const employeeMatch = employeeList.find((employee) => employee.code === item['E code']);
+                    if (employeeMatch) {
+                        errorArray.push(`Employee with E code ${item['E code']} Already exist.`);
+                        return;
+                    }
+                    try {
+                        const employee = new employee_entity_1.Employee();
+                        employee.name = item['Name'];
+                        employee.code = item['E code'];
+                        employee.status = item['Status'] || 'Active';
+                        return employee;
+                    }
+                    catch (error) {
+                        console.log("[UploadService] [employees.push] error:", error);
+                        errorArray.push(`Employee with E Code ${item['E code']} Failed to Add.`);
+                        return;
+                    }
                 }
                 catch (error) {
-                    console.log("[UploadService] [employees.push] error:", error);
-                    errorArray.push(`Employee with E Code ${item['E code']} Failed to Add.`);
-                    return;
+                    errorArray.push(error.message);
                 }
             }));
             return { employees, errorArray };
+        };
+        this.convertTo24HourFormat = (time) => {
+            try {
+                const timeArray = time.split(/[:\s]/);
+                let hours = parseInt(timeArray[0], 10);
+                let minutes = timeArray[1], seconds, period;
+                if (timeArray.length === 3) {
+                    seconds = "00";
+                    period = timeArray[2];
+                }
+                else {
+                    seconds = timeArray[2];
+                    period = timeArray[3];
+                }
+                if (period.toLowerCase() === 'am' && hours === 12) {
+                    hours = 0;
+                }
+                else if (period.toLowerCase() === 'pm' && hours !== 12) {
+                    hours += 12;
+                }
+                const formattedHour = hours.toString().padStart(2, '0');
+                const formattedMinute = minutes.padStart(2, '0');
+                const formattedSeconds = seconds.padStart(2, '0');
+                return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
+            }
+            catch (error) {
+                throw new Error('inCorrect Time format');
+            }
         };
     }
     async readExcel(file, type) {
@@ -246,24 +371,20 @@ let UploadService = class UploadService {
                     }
                     return await this.processEmployee(jsonData, employee);
                 }
-                else if (Object.keys(jsonData[0]).includes('Vehicle No.')) {
-                    if (type !== 'transaction') {
-                        throw new Error('INVALID_FILE');
-                    }
-                    return await this.processTransaction(jsonData, vehicle, employee, location);
-                }
-                else if (Object.keys(jsonData[0]).includes('Trip Date')) {
+                if (Object.keys(jsonData[0]).includes('Trip Date')) {
                     if (type !== 'fine') {
                         throw new Error('INVALID_FILE');
                     }
-                    await this.processFine(jsonData, vehicle, employee, transaction);
+                    return await this.processFine(jsonData, vehicle, employee, transaction);
                 }
                 else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
+                    throw new Error('Unrecognized sheet format');
                 }
             }
             else {
                 console.warn('No data found in the uploaded Excel sheet.');
+                throw new Error('No data found');
             }
         }
         catch (error) {

@@ -67,6 +67,15 @@ let VehicleService = VehicleService_1 = class VehicleService {
             throw new common_1.InternalServerErrorException(`Failed to find vehicle with id: ${id}`);
         }
     }
+    async findByVehicleNo(vehicleNo) {
+        try {
+            return await this.vehicleRepository.findOneBy({ vehicleNo });
+        }
+        catch (error) {
+            this.logger.error(`[VehicleService] [findOne] Error: ${error.message}`);
+            throw new common_1.InternalServerErrorException(`Failed to find vehicle with id: ${vehicleNo}`);
+        }
+    }
     async update(id, updateVehicleDto) {
         try {
             const updatedVehicle = await this.checkRelation(updateVehicleDto);
@@ -94,9 +103,6 @@ let VehicleService = VehicleService_1 = class VehicleService {
     async updateVehicles(vehicles) {
         try {
             this.logger.log('Starting updateVehicles function.');
-            await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 0');
-            await this.vehicleRepository.clear();
-            await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 1');
             await this.vehicleRepository.save(vehicles);
             this.logger.log('Successfully updated vehicles.');
         }
@@ -106,24 +112,21 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
     }
     async checkRelation(checkRelationDto) {
-        const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: checkRelationDto.vehicleTypeId } });
-        const model = await this.modelRepository.findOne({ where: { id: checkRelationDto.modelId } });
-        const ownedBy = await this.ownedByRepository.findOne({ where: { id: checkRelationDto.ownedById } });
-        let aggregator = await this.aggregatorRepository.findOne({ where: { id: checkRelationDto.aggregatorId } });
+        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
+        const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: vehicleTypeId } });
+        const model = await this.modelRepository.findOne({ where: { id: modelId } });
+        const ownedBy = await this.ownedByRepository.findOne({ where: { id: ownedById } });
+        const aggregator = await this.aggregatorRepository.findOne({ where: { id: aggregatorId } });
         const missingFields = [];
         if (!vehicleType)
-            missingFields.push(`vehicleType (ID: ${checkRelationDto.vehicleTypeId})`);
+            missingFields.push(`vehicleType (ID: ${vehicleTypeId})`);
         if (!model)
-            missingFields.push(`model (ID: ${checkRelationDto.modelId})`);
+            missingFields.push(`model (ID: ${modelId})`);
         if (!ownedBy)
-            missingFields.push(`ownedBy (ID: ${checkRelationDto.ownedById})`);
-        if (!aggregator) {
-            aggregator = await this.aggregatorRepository.findOne({ where: { id: 1 } });
-        }
+            missingFields.push(`ownedBy (ID: ${ownedById})`);
         if (missingFields.length > 0) {
             throw new common_1.BadRequestException(`Invalid or missing fields: ${missingFields.join(', ')}`);
         }
-        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
         return {
             vehicleType,
             model,

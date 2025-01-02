@@ -22,16 +22,27 @@ const messages_constants_1 = require("../../constants/messages.constants");
 const vehicle_service_1 = require("../vehicle/vehicle.service");
 const employee_service_1 = require("../employee/employee.service");
 const location_service_1 = require("../location/location.service");
+const CreateTransaction_dto_1 = require("./dto/CreateTransaction.dto");
 const date_fns_1 = require("date-fns");
 const aggregator_service_1 = require("../aggregator/aggregator.service");
+const moment = require("moment");
+const XLSX = require("xlsx");
+const upload_service_1 = require("../../common/upload/upload.service");
 let TransactionService = TransactionService_1 = class TransactionService {
-    constructor(transactionRepository, vehicleService, employeeService, locationService, aggregatorService) {
+    constructor(transactionRepository, vehicleService, employeeService, locationService, aggregatorService, uploadService) {
         this.transactionRepository = transactionRepository;
         this.vehicleService = vehicleService;
         this.employeeService = employeeService;
         this.locationService = locationService;
         this.aggregatorService = aggregatorService;
+        this.uploadService = uploadService;
         this.logger = new common_1.Logger(TransactionService_1.name);
+        this.getCurrentDateTime = () => {
+            const now = moment();
+            const date = now.format('YYYY-MM-DD');
+            const time = now.format('HH:mm:ss');
+            return { date, time };
+        };
         this.convertTo24HourFormat = (time) => {
             const timeArray = time.split(/[:\s]/);
             let hours = parseInt(timeArray[0], 10);
@@ -58,7 +69,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
     }
     async create(transactionDto) {
         try {
-            const { employee, location, vehicle } = await this.updateTransactionRelation(transactionDto);
+            const { employee, location, vehicle, aggregator } = await this.updateTransactionRelation(transactionDto);
             let transaction = this.transactionRepository.create({
                 date: transactionDto.date,
                 time: this.convertTo24HourFormat(transactionDto.time),
@@ -67,10 +78,11 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 vehicle,
                 employee,
                 location,
+                aggregator: aggregator.name,
                 pictures: [],
             });
             transaction = await this.transactionRepository.save(transaction);
-            return this.transactionRepository.findOne({
+            return await this.transactionRepository.findOne({
                 where: { id: transaction.id },
                 relations: ['vehicle', 'employee', 'location'],
             });
@@ -150,6 +162,29 @@ let TransactionService = TransactionService_1 = class TransactionService {
             throw new common_1.InternalServerErrorException(messages_constants_1.Messages.transaction.removeFailure(id));
         }
     }
+    async findPastTransaction(vehicleNo) {
+        try {
+            const { time, date } = this.getCurrentDateTime();
+            const queryBuilder = this.transactionRepository.createQueryBuilder('t')
+                .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                .leftJoinAndSelect('t.employee', 'employee')
+                .leftJoinAndSelect('t.location', 'location')
+                .addSelect('location.name', 'locationName')
+                .where('(t.date < :date OR (t.date = :date AND t.time <= :time))', { date, time })
+                .orderBy('t.date', 'DESC')
+                .addOrderBy('t.time', 'DESC')
+                .limit(1);
+            let result = await queryBuilder.getOne();
+            if (result?.action === 'in') {
+                throw new Error('Vehicle already Checked IN');
+            }
+            return result;
+        }
+        catch (error) {
+            this.logger.error(`[TransactionService] [findPastTransaction] Error: ${error.message}`);
+            throw new common_1.InternalServerErrorException(error.message);
+        }
+    }
     async getTransactionsByDateRange(from, to, months, date) {
         const queryBuilder = this.transactionRepository
             .createQueryBuilder('transaction')
@@ -195,24 +230,23 @@ let TransactionService = TransactionService_1 = class TransactionService {
     }
     async updateTransactionRelation(transactionDto) {
         try {
-            this.logger.log('Starting updateTransactions function.');
             let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
             if (!vehicle) {
                 throw new common_1.InternalServerErrorException('Vehicle Not Found');
             }
-            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto?.aggregator || 'idle');
+            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === 'out' ? transactionDto?.aggregator : 'idle');
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
             if (transactionDto.action === 'out') {
                 if (vehicle.status === 'occupied') {
                     throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.occupied(vehicle.id));
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'occupied' });
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id), status: 'occupied' });
             }
             else if (transactionDto.action === 'in') {
                 if (vehicle.status === 'available') {
                     throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.available(vehicle.id));
                 }
-                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicle, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id || 1), status: 'available' });
+                vehicle = await this.vehicleService.update(vehicle.id, { ...vehicleData, vehicleTypeId: Number(vehicleType.id), modelId: Number(model.id), ownedById: Number(ownedBy.id), aggregatorId: Number(aggregatorData.id), status: 'available' });
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
             if (employee.status === 'inactive') {
@@ -220,12 +254,102 @@ let TransactionService = TransactionService_1 = class TransactionService {
             }
             const location = await this.locationService.findOne(transactionDto.location);
             this.logger.log('Successfully updated transaction.');
-            return { employee, location, vehicle };
+            return { employee, location, vehicle, aggregator: aggregatorData };
         }
         catch (error) {
             this.logger.error(`[TransactionService] [updateTransactionRelation] Error: ${error.message}`);
             throw new common_1.InternalServerErrorException(error.message);
         }
+    }
+    async processTransaction(file, type) {
+        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        if (Object.keys(jsonData[0]).includes('Vehicle No.') && (type !== 'transaction')) {
+            throw new Error('INVALID_FILE');
+        }
+        const errorArray = [];
+        const transactions = [];
+        for (const [index, item] of jsonData.entries()) {
+            try {
+                const transaction = new CreateTransaction_dto_1.CreateTransactionDto();
+                if (item['Status'] === 'Check Out' || item['Status'] === 'Check In') {
+                    transaction.action = item['Status'] === 'Check Out' ? transaction_entity_1.Action.OUT : transaction_entity_1.Action.IN;
+                }
+                else {
+                    errorArray.push(`Incorrect Status Format at ${index + 1}. Expected Check Out OR Check In`);
+                    continue;
+                }
+                if (this.uploadService.validateTime(item['Cut Off Time']) &&
+                    !item['Cut Off Time'].includes("'") &&
+                    (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))) {
+                    console.log("The string contains AM or PM", index);
+                }
+                else {
+                    errorArray.push(`Incorrect Time Format at Data No. ${index + 1}. Expected HH:MM:SS AM/PM, got ${item['Cut Off Time']}`);
+                    continue;
+                }
+                transaction.time = item['Cut Off Time'];
+                transaction.date = this.uploadService.excelDateToJSDate(item['Cut Off Date']);
+                const vehicleMatch = await this.vehicleService.findByVehicleNo(item['Vehicle No.'].toString());
+                if (vehicleMatch) {
+                    if (transaction.action === transaction_entity_1.Action.OUT) {
+                        if (vehicleMatch.status === 'occupied') {
+                            errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                            continue;
+                        }
+                        transaction.vehicle = vehicleMatch.id;
+                    }
+                    else if (transaction.action === transaction_entity_1.Action.IN) {
+                        if (vehicleMatch.status === 'available') {
+                            errorArray.push(`${messages_constants_1.Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                            continue;
+                        }
+                        transaction.vehicle = vehicleMatch.id;
+                    }
+                }
+                else {
+                    errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found at Data No. ${index + 1}`);
+                    continue;
+                }
+                const aggregatorMatch = await this.aggregatorService.findOneByName(item['Aggregator']);
+                if (aggregatorMatch) {
+                    transaction.aggregator = aggregatorMatch.name;
+                }
+                else {
+                    errorArray.push(`Aggregator ${item['Aggregator']} not found at Data No. ${index + 1}`);
+                    continue;
+                }
+                const employeeMatch = await this.employeeService.findByCode(item['XDS No.']);
+                if (employeeMatch) {
+                    if (employeeMatch.status === 'inactive') {
+                        errorArray.push(`${messages_constants_1.Messages.employee.inactive(item['XDS No.'])} at Data No. ${index + 1}`);
+                        continue;
+                    }
+                    transaction.employee = employeeMatch.id;
+                }
+                else {
+                    errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found at Data No. ${index + 1}`);
+                    continue;
+                }
+                const locationMatch = await this.locationService.findByName(item['Location']);
+                if (locationMatch) {
+                    transaction.location = locationMatch.id;
+                }
+                else {
+                    errorArray.push(`Location with name ${item['Location']} not found at Data No. ${index + 1}`);
+                    continue;
+                }
+                transaction.comments = '';
+                const savedTransaction = await this.create(transaction);
+                transactions.push(savedTransaction);
+            }
+            catch (error) {
+                errorArray.push(`Error processing item at Data No. ${index + 1}: ${error.message}`);
+            }
+        }
+        return errorArray;
     }
 };
 exports.TransactionService = TransactionService;
@@ -236,6 +360,7 @@ exports.TransactionService = TransactionService = TransactionService_1 = __decor
         vehicle_service_1.VehicleService,
         employee_service_1.EmployeeService,
         location_service_1.LocationService,
-        aggregator_service_1.AggregatorService])
+        aggregator_service_1.AggregatorService,
+        upload_service_1.UploadService])
 ], TransactionService);
 //# sourceMappingURL=transaction.service.js.map

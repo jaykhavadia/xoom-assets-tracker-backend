@@ -50,6 +50,15 @@ let EmployeeService = EmployeeService_1 = class EmployeeService {
             throw new common_1.InternalServerErrorException(`Failed to find employee with id: ${id}`);
         }
     }
+    async findByCode(code) {
+        try {
+            return await this.employeeRepository.findOneBy({ code });
+        }
+        catch (error) {
+            this.logger.error(`[EmployeeService] [findOne] Error: ${error.message}`);
+            throw new common_1.InternalServerErrorException(`Failed to find employee with code: ${code}`);
+        }
+    }
     async update(id, employee) {
         try {
             await this.employeeRepository.update(id, employee);

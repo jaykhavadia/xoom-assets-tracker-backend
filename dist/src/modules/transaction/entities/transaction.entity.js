@@ -65,6 +65,18 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => location_entity_1.Location, (location) => location.transactions, { cascade: true }),
     __metadata("design:type", location_entity_1.Location)
 ], Transaction.prototype, "location", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Transaction.prototype, "aggregator", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ type: 'timestamp' }),
+    __metadata("design:type", Date)
+], Transaction.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ type: 'timestamp' }),
+    __metadata("design:type", Date)
+], Transaction.prototype, "updatedAt", void 0);
 exports.Transaction = Transaction = __decorate([
     (0, typeorm_1.Entity)()
 ], Transaction);

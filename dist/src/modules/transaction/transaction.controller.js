@@ -35,7 +35,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
     async create(body, files) {
         try {
             let transaction = await this.transactionService.create(body);
-            if (files) {
+            if (files && Object.keys(files).length > 0) {
                 const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
                 transaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: savedFiles });
             }
@@ -78,6 +78,21 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         catch (error) {
             this.logger.error(`[TransactionController] [findAll] Error: ${error.message}`);
             throw new common_1.HttpException(messages_constants_1.Messages.transaction.findAllFailure, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+    async findPastTransaction(vehicleNo) {
+        const vehicleNumber = parseInt(vehicleNo, 10);
+        try {
+            const transaction = await this.transactionService.findPastTransaction(vehicleNumber);
+            return {
+                success: true,
+                message: messages_constants_1.Messages.transaction.findPastTransactionSuccess(vehicleNumber),
+                data: transaction,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[TransactionController] [findPastTransaction] Error: ${error.message}`);
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
         }
     }
     async remove(id) {
@@ -127,16 +142,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
     }
     async uploadExcel(file) {
         try {
-            const fileResponse = await this.uploadService.readExcel(file, 'transaction');
-            if ('transactions' in fileResponse) {
-                const filteredTransaction = fileResponse.transactions.filter((item) => item !== undefined);
-                filteredTransaction.map(async (transaction) => {
-                    await this.transactionService.create(transaction);
-                });
-            }
-            else {
-                throw new Error('Unexpected file response type for transaction.');
-            }
+            const errorArray = await this.transactionService.processTransaction(file, 'transaction');
             const sheetData = {
                 uploadedAt: new Date(),
                 uploadedAtTime: (0, date_fns_1.format)(new Date(), 'hh:mm a'),
@@ -147,7 +153,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
             return {
                 success: true,
                 message: messages_constants_1.Messages.employee.updateBulkSuccess,
-                errorArray: fileResponse.errorArray
+                errorArray
             };
         }
         catch (error) {
@@ -158,9 +164,16 @@ let TransactionController = TransactionController_1 = class TransactionControlle
     async uploadFineExcel(file) {
         try {
             const fileResponse = await this.uploadService.readExcel(file, 'fine');
+            if ('fine' in fileResponse) {
+                const filteredTransaction = fileResponse.fine.filter((item) => item !== undefined);
+            }
+            else {
+                throw new Error('Unexpected file response type for transaction.');
+            }
             return {
                 success: true,
-                message: messages_constants_1.Messages.employee.updateBulkSuccess,
+                message: 'Fine Allocated',
+                data: fileResponse.fine,
                 errorArray: fileResponse.errorArray
             };
         }
@@ -199,6 +212,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('past-transaction/:vehicleNo'),
+    __param(0, (0, common_1.Param)('vehicleNo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TransactionController.prototype, "findPastTransaction", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),

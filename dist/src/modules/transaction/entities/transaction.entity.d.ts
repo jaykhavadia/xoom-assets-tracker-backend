@@ -24,4 +24,7 @@ export declare class Transaction {
     vehicle: Vehicle;
     employee: Employee;
     location: Location;
+    aggregator: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
