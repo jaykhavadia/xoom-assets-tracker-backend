@@ -49,7 +49,7 @@ import { JwtAuthModule } from './auth/jwt-auth.module';
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
         entities: [Vehicle, Location, Employee, Transaction, Sheet, AuthToken, User, VehicleType, Model, OwnedBy, Aggregator],
-        synchronize: true, // Set to false in production
+        // synchronize: true, // Set to false in production
       }),
       async dataSourceFactory(options) {
         const dataSource = await new DataSource(options).initialize();
