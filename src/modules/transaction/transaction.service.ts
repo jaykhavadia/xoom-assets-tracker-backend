@@ -348,8 +348,15 @@ export class TransactionService {
                 // Initialize a new transaction entity
                 const transaction = new CreateTransactionDto();
 
-                // Set the action as "Check Out" or other enums as necessary
-                transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
+                if (item['Status'] === 'Check Out' || item['Status'] === 'Check In') {
+                    // Set the action as "Check Out" or other enums as necessary
+                    transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
+                } else {
+                    errorArray.push(
+                        `Incorrect Status Format at ${index + 1}. Expected Check Out OR Check In`
+                    );
+                    continue; // Skip to the next iteration
+                }
 
                 // Parse the date and time
                 if (
