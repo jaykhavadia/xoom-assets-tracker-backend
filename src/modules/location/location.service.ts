@@ -64,6 +64,21 @@ export class LocationService {
     }
   }
 
+  async findByName(name: string): Promise<Location> {
+    try {
+      const location = await this.locationRepository.findOne({ where: { name } }); // Find a location by ID
+      if (!location) {
+        throw new NotFoundException(`Location with name ${name} not found`); // Throw if location doesn't exist
+      }
+      return location;
+    } catch (error) {
+      // Log and throw a more specific error message
+      throw new InternalServerErrorException(
+        `[LocationService] [findOne] Error: ${error.message}`,
+      );
+    }
+  }
+
   /**
    * Updates a location by its ID.
    * @param id - The ID of the location to update.

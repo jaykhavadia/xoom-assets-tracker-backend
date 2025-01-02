@@ -72,6 +72,7 @@ export const Messages = {
         findAllSuccess: 'Transactions retrieved successfully',
         findAllFailure: 'Failed to retrieve transactions',
         findOneSuccess: (id: number) => `Transaction with ID ${id} retrieved successfully`,
+        findPastTransactionSuccess: (id: number) => `Past Transaction with Vehicle No ${id} retrieved successfully`,
         findOneFailure: (id: number) => `Failed to retrieve transaction with ID ${id}`,
         updateSuccess: (id: number) => `Transaction with ID ${id} updated successfully`,
         updateFailure: (id: number) => `Failed to update transaction with ID ${id}`,
