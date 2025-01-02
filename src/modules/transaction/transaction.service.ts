@@ -1,5 +1,6 @@
+import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { Transaction } from './entities/transaction.entity';
+import { Action, Transaction } from './entities/transaction.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Messages } from 'src/constants/messages.constants';
@@ -13,6 +14,8 @@ import { Employee } from '../employee/entities/employee.entity';
 import { Location } from '../location/entities/location.entity';
 import { Vehicle } from '../vehicle/entities/vehical.entity';
 import * as moment from 'moment';
+import * as XLSX from 'xlsx';
+import { UploadService } from '../../common/upload/upload.service';
 
 @Injectable()
 export class TransactionService {
@@ -24,6 +27,7 @@ export class TransactionService {
         private readonly employeeService: EmployeeService,
         private readonly locationService: LocationService,
         private readonly aggregatorService: AggregatorService,
+        private readonly uploadService: UploadService,
     ) { }
 
     /**
@@ -33,7 +37,7 @@ export class TransactionService {
      */
     async create(transactionDto: CreateTransactionDto): Promise<Transaction> {
         try {
-            const { employee, location, vehicle } = await this.updateTransactionRelation(transactionDto);
+            const { employee, location, vehicle, aggregator } = await this.updateTransactionRelation(transactionDto);
 
             // Create a new Transaction instance with the relevant properties
             let transaction = this.transactionRepository.create({
@@ -44,10 +48,11 @@ export class TransactionService {
                 vehicle,
                 employee,
                 location,
+                aggregator: aggregator.name,
                 pictures: [],
             });
             transaction = await this.transactionRepository.save(transaction); // Save the transaction
-            return this.transactionRepository.findOne({
+            return await this.transactionRepository.findOne({
                 where: { id: transaction.id },
                 relations: ['vehicle', 'employee', 'location'], // Explicitly load relations
             });
@@ -157,20 +162,20 @@ export class TransactionService {
         try {
             const { time, date } = this.getCurrentDateTime();
             const queryBuilder = this.transactionRepository.createQueryBuilder('t')
-            .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
-            .leftJoinAndSelect('t.employee', 'employee')
-            .leftJoinAndSelect('t.location', 'location')
-            .addSelect('location.name', 'locationName')
-            .where(
-              '(t.date < :date OR (t.date = :date AND t.time <= :time))',
-              { date, time }
-            )
-            .orderBy('t.date', 'DESC')
-            .addOrderBy('t.time', 'DESC') // Ensure secondary ordering by time
-            .limit(1);
+                .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                .leftJoinAndSelect('t.employee', 'employee')
+                .leftJoinAndSelect('t.location', 'location')
+                .addSelect('location.name', 'locationName')
+                .where(
+                    '(t.date < :date OR (t.date = :date AND t.time <= :time))',
+                    { date, time }
+                )
+                .orderBy('t.date', 'DESC')
+                .addOrderBy('t.time', 'DESC') // Ensure secondary ordering by time
+                .limit(1);
 
             let result = await queryBuilder.getOne();
-            if(result?.action === 'in'){
+            if (result?.action === 'in') {
                 throw new Error('Vehicle already Checked IN');
             }
 
@@ -261,15 +266,14 @@ export class TransactionService {
         }
     }
 
-    async updateTransactionRelation(transactionDto: CreateTransactionDto): Promise<{ employee: Employee, location: Location, vehicle: Vehicle }> {
+    async updateTransactionRelation(transactionDto: CreateTransactionDto): Promise<{ employee: Employee, location: Location, vehicle: Vehicle, aggregator: Aggregator }> {
         try {
-            this.logger.log('Starting updateTransactions function.');
             // Find the related entities using their IDs
             let vehicle = await this.vehicleService.findOne(transactionDto.vehicle);
             if (!vehicle) {
                 throw new InternalServerErrorException('Vehicle Not Found'); // Handle error
             }
-            const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === 'out' ? transactionDto?.aggregator : 'idle');
+            const aggregatorData: Aggregator = await this.aggregatorService.findOneByName(transactionDto.action === 'out' ? transactionDto?.aggregator : 'idle');
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
             if (transactionDto.action === 'out') {
                 if (vehicle.status === 'occupied') {
@@ -289,7 +293,7 @@ export class TransactionService {
             const location = await this.locationService.findOne(transactionDto.location);
 
             this.logger.log('Successfully updated transaction.');
-            return { employee, location, vehicle };
+            return { employee, location, vehicle, aggregator: aggregatorData };
         } catch (error) {
             this.logger.error(`[TransactionService] [updateTransactionRelation] Error: ${error.message}`);
             throw new InternalServerErrorException(error.message);
@@ -324,6 +328,118 @@ export class TransactionService {
         const formattedSeconds = seconds.padStart(2, '0');
 
         return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
+    }
+
+    async processTransaction(file: Express.Multer.File, type: string): Promise<any> {
+        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0]; // Get the first sheet name
+        const worksheet = workbook.Sheets[sheetName]; // Get the worksheet
+        const jsonData = XLSX.utils.sheet_to_json(worksheet); // Convert sheet to JSON
+
+        if (Object.keys(jsonData[0]).includes('Vehicle No.') && (type !== 'transaction')) {
+            throw new Error('INVALID_FILE')
+        }
+        const errorArray = [];
+
+        const transactions = [];
+
+        for (const [index, item] of jsonData.entries()) {
+            try {
+                // Initialize a new transaction entity
+                const transaction = new CreateTransactionDto();
+
+                if (item['Status'] === 'Check Out' || item['Status'] === 'Check In') {
+                    // Set the action as "Check Out" or other enums as necessary
+                    transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
+                } else {
+                    errorArray.push(
+                        `Incorrect Status Format at ${index + 1}. Expected Check Out OR Check In`
+                    );
+                    continue; // Skip to the next iteration
+                }
+
+                // Parse the date and time
+                if (
+                    this.uploadService.validateTime(item['Cut Off Time']) &&
+                    !item['Cut Off Time'].includes("'") &&
+                    (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))
+                ) {
+                    console.log("The string contains AM or PM", index);
+                } else {
+                    errorArray.push(
+                        `Incorrect Time Format at Data No. ${index + 1}. Expected HH:MM:SS AM/PM, got ${item['Cut Off Time']}`
+                    );
+                    continue; // Skip to the next iteration
+                }
+
+                transaction.time = item['Cut Off Time']; // Format as HH:mm:ss
+                transaction.date = this.uploadService.excelDateToJSDate(item['Cut Off Date']);
+
+                // Find the associated vehicle
+                const vehicleMatch = await this.vehicleService.findByVehicleNo(item['Vehicle No.'].toString());
+                if (vehicleMatch) {
+                    if (transaction.action === Action.OUT) {
+                        if (vehicleMatch.status === 'occupied') {
+                            errorArray.push(`${Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                            continue; // Skip to the next iteration
+                        }
+                        transaction.vehicle = vehicleMatch.id;
+                    } else if (transaction.action === Action.IN) {
+                        if (vehicleMatch.status === 'available') {
+                            errorArray.push(`${Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                            continue; // Skip to the next iteration
+                        }
+                        transaction.vehicle = vehicleMatch.id;
+                    }
+                } else {
+                    errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found at Data No. ${index + 1}`);
+                    continue; // Skip to the next iteration
+                }
+
+                // Find the associated aggregator
+                const aggregatorMatch = await this.aggregatorService.findOneByName(item['Aggregator']);
+                if (aggregatorMatch) {
+                    transaction.aggregator = aggregatorMatch.name;
+                } else {
+                    errorArray.push(`Aggregator ${item['Aggregator']} not found at Data No. ${index + 1}`);
+                    continue; // Skip to the next iteration
+                }
+
+                // Find the associated employees
+                const employeeMatch = await this.employeeService.findByCode(item['XDS No.']);
+                if (employeeMatch) {
+                    if (employeeMatch.status === 'inactive') {
+                        errorArray.push(`${Messages.employee.inactive(item['XDS No.'])} at Data No. ${index + 1}`);
+                        continue; // Skip to the next iteration
+                    }
+                    transaction.employee = employeeMatch.id;
+                } else {
+                    errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found at Data No. ${index + 1}`);
+                    continue; // Skip to the next iteration
+                }
+
+                // Find the associated location
+                const locationMatch = await this.locationService.findByName(item['Location']);
+                if (locationMatch) {
+                    transaction.location = locationMatch.id;
+                } else {
+                    errorArray.push(`Location with name ${item['Location']} not found at Data No. ${index + 1}`);
+                    continue; // Skip to the next iteration
+                }
+
+                // Set additional fields if necessary
+                transaction.comments = ''; // Default empty comments, update if needed
+
+                // Save the transaction and add to the result list
+                const savedTransaction = await this.create(transaction);
+                transactions.push(savedTransaction);
+            } catch (error) {
+                errorArray.push(`Error processing item at Data No. ${index + 1}: ${error.message}`);
+            }
+        }
+
+        return errorArray;
+
     }
 
 }

@@ -199,19 +199,10 @@ export class TransactionController {
      */
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
+  async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<any>> {
     try {
-      const fileResponse = await this.uploadService.readExcel(file, 'transaction');
-      // Save transaction to the database
-      if ('transactions' in fileResponse) {
-        // Save transaction to the database
-        const filteredTransaction = fileResponse.transactions.filter((item) => item !== undefined); // Assuming you have a createBulk method
-        filteredTransaction.map(async (transaction) => {
-          await this.transactionService.create(transaction);
-        });
-      } else {
-        throw new Error('Unexpected file response type for transaction.');
-      }
+       const errorArray = await this.transactionService.processTransaction(file, 'transaction');
+     
 
       // Prepare data for the Sheet entity
       const sheetData: Partial<Sheet> = {
@@ -250,7 +241,7 @@ export class TransactionController {
       return {
         success: true,
         message: Messages.employee.updateBulkSuccess,
-        errorArray: fileResponse.errorArray
+        errorArray
       };
     } catch (error) {
       this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);

@@ -2,6 +2,7 @@ import { Employee } from 'src/modules/employee/entities/employee.entity';
 import { Location } from 'src/modules/location/entities/location.entity';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, UpdateDateColumn, CreateDateColumn } from 'typeorm';
+import { Aggregator } from '../../aggregator/entities/aggregator.entity';
 
 // Define the enum for picture position
 export enum PicturePosition {
@@ -45,6 +46,9 @@ export class Transaction {
 
   @ManyToOne(() => Location, (location) => location.transactions, { cascade: true })
   location: Location;
+
+  @Column({type: 'text', nullable: true})
+  aggregator: string;
 
   @CreateDateColumn({ type: 'timestamp' })
     createdAt: Date;

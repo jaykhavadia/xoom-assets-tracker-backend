@@ -11,7 +11,7 @@ import { CreateTransactionDto } from 'src/modules/transaction/dto/CreateTransact
 import { Action, Transaction } from 'src/modules/transaction/entities/transaction.entity';
 import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
 import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
 
 @Injectable()
@@ -35,6 +35,15 @@ export class UploadService {
         @InjectRepository(Transaction)
         private readonly transactionRepository: Repository<Transaction>,
     ) { }
+    timeRegex = /^(0[1-9]|1[0-2]):[0-5][0-9]:[0-5][0-9] (AM|PM)$/;
+
+     validateTime = (input: string): boolean => {
+      if (this.timeRegex.test(input)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
 
     async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: CreateTransactionDto[]; errorArray: string[] } | { fine: any[]; errorArray: string[] }> {
         try {
@@ -66,13 +75,7 @@ export class UploadService {
                     }
 
                     return await this.processEmployee(jsonData, employee);
-                } else if (Object.keys(jsonData[0]).includes('Vehicle No.')) {
-                    if (type !== 'transaction') {
-                        throw new Error('INVALID_FILE')
-                    }
-
-                    return await this.processTransaction(jsonData, vehicle, employee, location, aggregator);
-                } else if (Object.keys(jsonData[0]).includes('Trip Date')) {
+                } if (Object.keys(jsonData[0]).includes('Trip Date')) {
                     if (type !== 'fine') {
                         throw new Error('INVALID_FILE')
                     }
@@ -167,7 +170,16 @@ export class UploadService {
 
         const fineResponse = await jsonData.map(async (item, index) => {
             const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
+
+            // Parse the date and time
+            if (this.validateTime(tripTime)) {
+                console.log("The string contains AM or PM");
+            } else {
+                errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`);
+                return;
+            }
             const date = new Date(this.excelDateToJSDate(tripDate));
+            
             const time = this.convertTo24HourFormat(tripTime);
 
             // Find the associated vehicle
@@ -189,31 +201,43 @@ export class UploadService {
             const targetISODate = new Date(date).toISOString().split('T')[0];  // "2024-11-30"
             const targetDate = `${targetISODate} ${time}`;
             console.log("targetDate:", targetDate)
-            const query = `
-                    SELECT t.*, v.*, employee.*, location.name as locationName
-            FROM local.transaction t
-            INNER JOIN local.vehicle v ON v.vehicleNo = '${vehicleNo}'
-            LEFT JOIN local.employee ON t.employeeId = employee.id
-            LEFT JOIN local.location ON t.locationId = location.id
-            WHERE (t.date < '${targetISODate}' OR (t.date = '${targetISODate}' AND t.time <= '${time}'))
-            ORDER BY t.date DESC
-            LIMIT 1
-                    `;
-            const [result] = await this.transactionRepository.query(query);
+
+            const result = await this.transactionRepository
+                    .createQueryBuilder('t')
+                    .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                    .leftJoinAndSelect('t.employee', 'employee')
+                    .leftJoinAndSelect('t.location', 'location')
+                    .addSelect('location.name', 'locationName')
+                    .where(
+                        new Brackets((qb) => {
+                        qb.where('t.date < :endDate', { endDate: targetISODate })
+                            .orWhere(
+                            new Brackets((subQb) => {
+                                subQb.where('t.date = :endDate', { endDate: targetISODate })
+                                .andWhere('t.time <= :endTime', { endTime: time });
+                            })
+                            );
+                        })
+                    )
+                    .orderBy('t.date', 'DESC')
+                    .limit(1)
+                      .getOne();
+
             let details;
+            // console.log(result);
             if (!result) { errorArray.push(`Some thing is wrong No data found At ${index + 1} `); return; }
             if (result?.action === 'out') {
                 details = {
-                    employee_id: result.employeeId,
-                    employee_name: result.name,
-                    employee_code: result.code,
-                    transaction_vehicleId: result.vehicleId,
-                    transaction_locationId: result.transaction_locationId,
+                    employee_id: result.employee.id,
+                    employee_name: result.employee.name,
+                    employee_code: result.employee.code,
+                    transaction_vehicleId: result.vehicle.id,
+                    transaction_locationId: result.location.id,
                 };
             } else {
                 details = {
-                    emirates: result.emirates,
-                    locationName: result.locationName
+                    emirates: result.vehicle.emirates,
+                    locationName: result.location.name
                 };
             }
             return { tripDate: targetISODate, tripTime, Plate, amount, details };
@@ -236,10 +260,10 @@ export class UploadService {
                 transaction.action = item['Status'] === 'Check Out' ? Action.OUT : Action.IN;
 
                 // Parse the date and time
-                if (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM')) {
+                if (this.validateTime(item['Cut Off Time']) && !item['Cut Off Time'].includes('\'') && (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))) {
                     console.log("The string contains AM or PM");
                 } else {
-                    errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM`);
+                    errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item['Cut Off Time']}`);
                     return;
                 }
 
@@ -305,7 +329,7 @@ export class UploadService {
                 transaction.comments = ''; // Default empty comments, update if needed
 
                 // Save the transaction (you need to use a repository or save logic here)
-                return transaction;
+                // return await this.transactionService.create(transaction);
             } catch (error) {
                 errorArray.push(error.message);
             }

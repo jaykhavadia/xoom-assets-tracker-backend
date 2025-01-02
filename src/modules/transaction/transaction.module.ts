@@ -20,5 +20,7 @@ import { SheetModule } from '../sheet/sheet.module';
   imports: [TypeOrmModule.forFeature([Vehicle, Transaction, Employee, Location, User, Aggregator]), CommonModule, VehicleModule, EmployeeModule, LocationModule, JwtAuthModule, AggregatorModule, SheetModule],
   controllers: [TransactionController],
   providers: [TransactionService],
+  exports: [TransactionService]
+
 })
 export class TransactionModule { }

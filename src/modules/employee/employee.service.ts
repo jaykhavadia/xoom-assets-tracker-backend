@@ -54,6 +54,15 @@ export class EmployeeService {
         }
     }
 
+    async findByCode(code: string): Promise<Employee> {
+        try {
+            return await this.employeeRepository.findOneBy({ code });
+        } catch (error) {
+            this.logger.error(`[EmployeeService] [findOne] Error: ${error.message}`);
+            throw new InternalServerErrorException(`Failed to find employee with code: ${code}`);
+        }
+    }
+
     /**
      * Updates an existing employee in the database
      * @param id - the ID of the employee to update

@@ -78,6 +78,15 @@ export class VehicleService {
         }
     }
 
+    async findByVehicleNo(vehicleNo: string): Promise<Vehicle> {
+        try {
+            return await this.vehicleRepository.findOneBy({ vehicleNo });
+        } catch (error) {
+            this.logger.error(`[VehicleService] [findOne] Error: ${error.message}`);
+            throw new InternalServerErrorException(`Failed to find vehicle with id: ${vehicleNo}`);
+        }
+    }
+
     /**
      * Updates an existing vehicle in the database
      * @param id - the ID of the vehicle to update
@@ -121,13 +130,13 @@ export class VehicleService {
             this.logger.log('Starting updateVehicles function.');
 
             // Disable foreign key checks before truncating the table
-            await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 0');
+            // await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 0');
 
             // Clear the vehicle table
-            await this.vehicleRepository.clear();
+            // await this.vehicleRepository.clear();
 
             // Re-enable foreign key checks after clearing the table
-            await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 1');
+            // await this.vehicleRepository.query('SET FOREIGN_KEY_CHECKS = 1');
             // Insert the new vehicle data
             await this.vehicleRepository.save(vehicles);
 
@@ -151,7 +160,7 @@ export class VehicleService {
         const ownedBy = await this.ownedByRepository.findOne({ where: { id: ownedById } });
         const aggregator = await this.aggregatorRepository.findOne({ where: { id: aggregatorId } });
         const missingFields = [];
-        
+
         if (!vehicleType) missingFields.push(`vehicleType (ID: ${vehicleTypeId})`);
         if (!model) missingFields.push(`model (ID: ${modelId})`);
         if (!ownedBy) missingFields.push(`ownedBy (ID: ${ownedById})`);
