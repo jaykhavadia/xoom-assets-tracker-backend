@@ -13,6 +13,9 @@ async function bootstrap() {
     transform: true, // Automatically transform payloads to be objects of the expected type
   }));
 
+  // Set the global prefix
+  app.setGlobalPrefix('api');
+
   await app.listen(3000);
 }
 bootstrap();
