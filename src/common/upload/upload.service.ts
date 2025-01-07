@@ -67,7 +67,7 @@ export class UploadService {
                     if (type !== 'vehicle') {
                         throw new Error('INVALID_FILE');
                     }
-                    return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator);
+                    return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator, vehicle);
 
                 } else if (Object.keys(jsonData[0]).includes('E code')) {
                     if (type !== 'employee') {
@@ -338,9 +338,9 @@ export class UploadService {
         return { transactions: await Promise.all(transactionPromises), errorArray };
     };
 
-    processVehicle = async (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregator: Aggregator[]): Promise<{ vehicles: Vehicle[], errorArray: string[] }> => {
+    processVehicle = async (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregator: Aggregator[], vehicleDataSet: Vehicle[]): Promise<{ vehicles: Vehicle[], errorArray: string[] }> => {
         const errorArray = [];
-        const processedVehicles: { vehicleNo: string, code: string }[] = [];
+        const processedVehicles: { vehicleNo: string, chasisNumber: string }[] = [];
 
         // If the first item has the key 'Vehicle No.', process as vehicles
         const vehiclePromises = jsonData.map(async (item) => {
@@ -350,14 +350,24 @@ export class UploadService {
                     processedVehicles.forEach((processedVehicle) => {
                         if (
                             processedVehicle.vehicleNo === item['Vehicle No.'] ||
-                            processedVehicle.code === item['Code']
+                            processedVehicle.chasisNumber === item['Chasis No.']
                         ) {
                             errorArray.push(
-                                `Vehicle with No: ${item['Vehicle No.']} OR Code: ${item['Code']} are Duplicate`
+                                `Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`
                             );
+                            return;
                         }
                     });
                 }
+
+                const vehicleMatch = vehicleDataSet.find((vehicleData) => vehicleData.vehicleNo === item['Vehicle No.'] || vehicleData.chasisNumber === item['Chasis No.']);
+                if (vehicleMatch) {
+                    errorArray.push(
+                        `Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`
+                    );
+                    return;
+                }
+
                 const vehicle = new Vehicle(); // Create an instance of the Vehicle class
                 vehicle.code = item['Code'];
                 vehicle.vehicleNo = item['Vehicle No.'];
@@ -408,7 +418,7 @@ export class UploadService {
                 vehicle.emirates = item['Emirates'];
                 vehicle.status = item['Status'] || 'available';
                 vehicle.isDeleted = item['isDeleted'] || false; // Default to false if not present
-                processedVehicles.push({ vehicleNo: vehicle.vehicleNo, code: vehicle.code })
+                processedVehicles.push({ vehicleNo: vehicle.vehicleNo, chasisNumber: vehicle.code })
                 return vehicle;
             } catch (error) {
                 errorArray.push(error.message);
