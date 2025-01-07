@@ -37,12 +37,12 @@ export class UploadService {
     ) { }
     timeRegex = /^(0[1-9]|1[0-2]):[0-5][0-9]:[0-5][0-9] (AM|PM)$/;
 
-     validateTime = (input: string): boolean => {
-      if (this.timeRegex.test(input)) {
-        return true;
-      } else {
-        return false;
-      }
+    validateTime = (input: string): boolean => {
+        if (this.timeRegex.test(input)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     async readExcel(file: Express.Multer.File, type: string): Promise<{ vehicles: Vehicle[], errorArray: string[] } | { employees: Employee[], errorArray: string[] } | { transactions: CreateTransactionDto[]; errorArray: string[] } | { fine: any[]; errorArray: string[] }> {
@@ -179,7 +179,7 @@ export class UploadService {
                 return;
             }
             const date = new Date(this.excelDateToJSDate(tripDate));
-            
+
             const time = this.convertTo24HourFormat(tripTime);
 
             // Find the associated vehicle
@@ -203,25 +203,25 @@ export class UploadService {
             console.log("targetDate:", targetDate)
 
             const result = await this.transactionRepository
-                    .createQueryBuilder('t')
-                    .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
-                    .leftJoinAndSelect('t.employee', 'employee')
-                    .leftJoinAndSelect('t.location', 'location')
-                    .addSelect('location.name', 'locationName')
-                    .where(
-                        new Brackets((qb) => {
+                .createQueryBuilder('t')
+                .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
+                .leftJoinAndSelect('t.employee', 'employee')
+                .leftJoinAndSelect('t.location', 'location')
+                .addSelect('location.name', 'locationName')
+                .where(
+                    new Brackets((qb) => {
                         qb.where('t.date < :endDate', { endDate: targetISODate })
                             .orWhere(
-                            new Brackets((subQb) => {
-                                subQb.where('t.date = :endDate', { endDate: targetISODate })
-                                .andWhere('t.time <= :endTime', { endTime: time });
-                            })
+                                new Brackets((subQb) => {
+                                    subQb.where('t.date = :endDate', { endDate: targetISODate })
+                                        .andWhere('t.time <= :endTime', { endTime: time });
+                                })
                             );
-                        })
-                    )
-                    .orderBy('t.date', 'DESC')
-                    .limit(1)
-                      .getOne();
+                    })
+                )
+                .orderBy('t.date', 'DESC')
+                .limit(1)
+                .getOne();
 
             let details;
             // console.log(result);
@@ -340,10 +340,24 @@ export class UploadService {
 
     processVehicle = async (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregator: Aggregator[]): Promise<{ vehicles: Vehicle[], errorArray: string[] }> => {
         const errorArray = [];
+        const processedVehicles: { vehicleNo: string, code: string }[] = [];
 
         // If the first item has the key 'Vehicle No.', process as vehicles
         const vehiclePromises = jsonData.map(async (item) => {
             try {
+                if (processedVehicles.length) {
+                    // Check for duplicates
+                    processedVehicles.forEach((processedVehicle) => {
+                        if (
+                            processedVehicle.vehicleNo === item['Vehicle No.'] ||
+                            processedVehicle.code === item['Code']
+                        ) {
+                            errorArray.push(
+                                `Vehicle with No: ${item['Vehicle No.']} OR Code: ${item['Code']} are Duplicate`
+                            );
+                        }
+                    });
+                }
                 const vehicle = new Vehicle(); // Create an instance of the Vehicle class
                 vehicle.code = item['Code'];
                 vehicle.vehicleNo = item['Vehicle No.'];
@@ -394,6 +408,7 @@ export class UploadService {
                 vehicle.emirates = item['Emirates'];
                 vehicle.status = item['Status'] || 'available';
                 vehicle.isDeleted = item['isDeleted'] || false; // Default to false if not present
+                processedVehicles.push({ vehicleNo: vehicle.vehicleNo, code: vehicle.code })
                 return vehicle;
             } catch (error) {
                 errorArray.push(error.message);
@@ -408,6 +423,7 @@ export class UploadService {
     processEmployee = async (jsonData: any, employeeList: Employee[]): Promise<{ employees: Employee[], errorArray: string[] }> => {
         const errorArray = [];
         const employees: Employee[] = [];
+        const processedEmployee: string[] = [];
         // If the first item has the key 'E code', process as employees
         employees.push(...jsonData.map((item: any) => {
             try {
@@ -417,11 +433,18 @@ export class UploadService {
                     errorArray.push(`Employee with E code ${item['E code']} Already exist.`);
                     return;
                 }
+                if (processedEmployee.includes(item['E code'])) {
+                    errorArray.push(
+                        `Employee with E Code: ${item['E code']} are Duplicate`
+                    );
+                    return;
+                }
                 try {
                     const employee = new Employee(); // Create an instance of the Employee class
                     employee.name = item['Name'];
                     employee.code = item['E code'];
                     employee.status = item['Status'] || 'Active';
+                    processedEmployee.push(item['E code']);
                     return employee;
                 } catch (error) {
                     console.log("[UploadService] [employees.push] error:", error)
