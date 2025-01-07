@@ -62,7 +62,6 @@ exports.AppModule = AppModule = __decorate([
                     password: process.env.DB_PASSWORD,
                     database: process.env.DB_DATABASE,
                     entities: [vehical_entity_1.Vehicle, location_entity_1.Location, employee_entity_1.Employee, transaction_entity_1.Transaction, sheet_entity_1.Sheet, auth_token_entity_1.AuthToken, user_entity_1.User, vehicle_type_entity_1.VehicleType, model_entity_1.Model, owned_by_entity_1.OwnedBy, aggregator_entity_1.Aggregator],
-                    synchronize: true,
                 }),
                 async dataSourceFactory(options) {
                     const dataSource = await new typeorm_2.DataSource(options).initialize();

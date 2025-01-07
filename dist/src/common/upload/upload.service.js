@@ -240,8 +240,17 @@ let UploadService = class UploadService {
         };
         this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregator) => {
             const errorArray = [];
+            const processedVehicles = [];
             const vehiclePromises = jsonData.map(async (item) => {
                 try {
+                    if (processedVehicles.length) {
+                        processedVehicles.forEach((processedVehicle) => {
+                            if (processedVehicle.vehicleNo === item['Vehicle No.'] ||
+                                processedVehicle.code === item['Code']) {
+                                errorArray.push(`Vehicle with No: ${item['Vehicle No.']} OR Code: ${item['Code']} are Duplicate`);
+                            }
+                        });
+                    }
                     const vehicle = new vehical_entity_1.Vehicle();
                     vehicle.code = item['Code'];
                     vehicle.vehicleNo = item['Vehicle No.'];
@@ -277,6 +286,7 @@ let UploadService = class UploadService {
                     vehicle.emirates = item['Emirates'];
                     vehicle.status = item['Status'] || 'available';
                     vehicle.isDeleted = item['isDeleted'] || false;
+                    processedVehicles.push({ vehicleNo: vehicle.vehicleNo, code: vehicle.code });
                     return vehicle;
                 }
                 catch (error) {
@@ -289,6 +299,7 @@ let UploadService = class UploadService {
         this.processEmployee = async (jsonData, employeeList) => {
             const errorArray = [];
             const employees = [];
+            const processedEmployee = [];
             employees.push(...jsonData.map((item) => {
                 try {
                     const employeeMatch = employeeList.find((employee) => employee.code === item['E code']);
@@ -296,11 +307,16 @@ let UploadService = class UploadService {
                         errorArray.push(`Employee with E code ${item['E code']} Already exist.`);
                         return;
                     }
+                    if (processedEmployee.includes(item['E code'])) {
+                        errorArray.push(`Employee with E Code: ${item['E code']} are Duplicate`);
+                        return;
+                    }
                     try {
                         const employee = new employee_entity_1.Employee();
                         employee.name = item['Name'];
                         employee.code = item['E code'];
                         employee.status = item['Status'] || 'Active';
+                        processedEmployee.push(item['E code']);
                         return employee;
                     }
                     catch (error) {
