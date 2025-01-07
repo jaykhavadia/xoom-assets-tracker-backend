@@ -349,8 +349,8 @@ export class UploadService {
                     // Check for duplicates
                     processedVehicles.forEach((processedVehicle) => {
                         if (
-                            processedVehicle.vehicleNo === item['Vehicle No.'] ||
-                            processedVehicle.chasisNumber === item['Chasis No.']
+                            String(processedVehicle.vehicleNo) === String(item['Vehicle No.']) ||
+                            String(processedVehicle.chasisNumber) === String(item['Chasis No.'])
                         ) {
                             errorArray.push(
                                 `Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`
@@ -360,7 +360,8 @@ export class UploadService {
                     });
                 }
 
-                const vehicleMatch = vehicleDataSet.find((vehicleData) => vehicleData.vehicleNo === item['Vehicle No.'] || vehicleData.chasisNumber === item['Chasis No.']);
+                const vehicleMatch = vehicleDataSet.find((vehicleData) => String(vehicleData.vehicleNo) === String(item['Vehicle No.']) ||
+                    String(vehicleData.chasisNumber) === String(item['Chasis No.']));
                 if (vehicleMatch) {
                     errorArray.push(
                         `Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`

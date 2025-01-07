@@ -238,18 +238,25 @@ let UploadService = class UploadService {
             });
             return { transactions: await Promise.all(transactionPromises), errorArray };
         };
-        this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregator) => {
+        this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregator, vehicleDataSet) => {
             const errorArray = [];
             const processedVehicles = [];
             const vehiclePromises = jsonData.map(async (item) => {
                 try {
                     if (processedVehicles.length) {
                         processedVehicles.forEach((processedVehicle) => {
-                            if (processedVehicle.vehicleNo === item['Vehicle No.'] ||
-                                processedVehicle.code === item['Code']) {
-                                errorArray.push(`Vehicle with No: ${item['Vehicle No.']} OR Code: ${item['Code']} are Duplicate`);
+                            if (String(processedVehicle.vehicleNo) === String(item['Vehicle No.']) ||
+                                String(processedVehicle.chasisNumber) === String(item['Chasis No.'])) {
+                                errorArray.push(`Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`);
+                                return;
                             }
                         });
+                    }
+                    const vehicleMatch = vehicleDataSet.find((vehicleData) => String(vehicleData.vehicleNo) === String(item['Vehicle No.']) ||
+                        String(vehicleData.chasisNumber) === String(item['Chasis No.']));
+                    if (vehicleMatch) {
+                        errorArray.push(`Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`);
+                        return;
                     }
                     const vehicle = new vehical_entity_1.Vehicle();
                     vehicle.code = item['Code'];
@@ -286,7 +293,7 @@ let UploadService = class UploadService {
                     vehicle.emirates = item['Emirates'];
                     vehicle.status = item['Status'] || 'available';
                     vehicle.isDeleted = item['isDeleted'] || false;
-                    processedVehicles.push({ vehicleNo: vehicle.vehicleNo, code: vehicle.code });
+                    processedVehicles.push({ vehicleNo: vehicle.vehicleNo, chasisNumber: vehicle.code });
                     return vehicle;
                 }
                 catch (error) {
@@ -379,7 +386,7 @@ let UploadService = class UploadService {
                     if (type !== 'vehicle') {
                         throw new Error('INVALID_FILE');
                     }
-                    return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator);
+                    return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator, vehicle);
                 }
                 else if (Object.keys(jsonData[0]).includes('E code')) {
                     if (type !== 'employee') {
