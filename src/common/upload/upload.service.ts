@@ -350,12 +350,11 @@ export class UploadService {
                     processedVehicles.forEach((processedVehicle) => {
                         if (
                             String(processedVehicle.vehicleNo) === String(item['Vehicle No.']) ||
-                            String(processedVehicle.chasisNumber) === String(item['Chasis No.'])
+                            processedVehicle.chasisNumber === item['Chasis No.']
                         ) {
-                            errorArray.push(
+                            throw new Error(
                                 `Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`
                             );
-                            return;
                         }
                     });
                 }
@@ -419,7 +418,8 @@ export class UploadService {
                 vehicle.emirates = item['Emirates'];
                 vehicle.status = item['Status'] || 'available';
                 vehicle.isDeleted = item['isDeleted'] || false; // Default to false if not present
-                processedVehicles.push({ vehicleNo: vehicle.vehicleNo, chasisNumber: vehicle.code })
+                processedVehicles.push({ vehicleNo: item['Vehicle No.'], chasisNumber: item['Chasis No.'] })
+                
                 return vehicle;
             } catch (error) {
                 errorArray.push(error.message);
