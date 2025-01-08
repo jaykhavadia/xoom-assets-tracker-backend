@@ -246,9 +246,8 @@ let UploadService = class UploadService {
                     if (processedVehicles.length) {
                         processedVehicles.forEach((processedVehicle) => {
                             if (String(processedVehicle.vehicleNo) === String(item['Vehicle No.']) ||
-                                String(processedVehicle.chasisNumber) === String(item['Chasis No.'])) {
-                                errorArray.push(`Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`);
-                                return;
+                                processedVehicle.chasisNumber === item['Chasis No.']) {
+                                throw new Error(`Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`);
                             }
                         });
                     }
@@ -293,7 +292,7 @@ let UploadService = class UploadService {
                     vehicle.emirates = item['Emirates'];
                     vehicle.status = item['Status'] || 'available';
                     vehicle.isDeleted = item['isDeleted'] || false;
-                    processedVehicles.push({ vehicleNo: vehicle.vehicleNo, chasisNumber: vehicle.code });
+                    processedVehicles.push({ vehicleNo: item['Vehicle No.'], chasisNumber: item['Chasis No.'] });
                     return vehicle;
                 }
                 catch (error) {
