@@ -33,10 +33,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         this.logger = new common_1.Logger(TransactionController_1.name);
     }
     async create(body, files) {
-        console.log("🚀 ~ file: transaction.controller.ts:50 ~ TransactionController ~ body:", body);
         try {
-            console.log("🚀 ~ file: transaction.controller.ts:55 ~ TransactionController ~ files:", files);
-            return;
             let transaction = await this.transactionService.create(body);
             if (files && Object.keys(files).length > 0) {
                 const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);

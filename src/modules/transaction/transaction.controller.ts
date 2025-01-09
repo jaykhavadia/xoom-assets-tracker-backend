@@ -46,18 +46,11 @@ export class TransactionController {
     @Body(new ValidationPipe()) body: CreateTransactionDto,
     @UploadedFiles() files?: { [key: string]: Express.Multer.File[] }
   ): Promise<response<Transaction>> {
-
-    console.log("🚀 ~ file: transaction.controller.ts:50 ~ TransactionController ~ body:", body);
-
     try {
-      console.log("🚀 ~ file: transaction.controller.ts:55 ~ TransactionController ~ files:", files);
-      return;
       // const transactionData = JSON.parse(body);
       // Create the transaction first without saving the pictures yet
       let transaction = await this.transactionService.create(body);
       if (files && Object.keys(files).length > 0) {
-
-
         // Save the files using the generated transactionId
         const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
         // Update the transaction with the saved file URLs
@@ -208,8 +201,8 @@ export class TransactionController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<any>> {
     try {
-      const errorArray = await this.transactionService.processTransaction(file, 'transaction');
-
+       const errorArray = await this.transactionService.processTransaction(file, 'transaction');
+     
 
       // Prepare data for the Sheet entity
       const sheetData: Partial<Sheet> = {
