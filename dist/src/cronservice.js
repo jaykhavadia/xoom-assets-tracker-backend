@@ -18,15 +18,6 @@ let CronService = class CronService {
     constructor(authTokenService) {
         this.authTokenService = authTokenService;
     }
-    async handleCron() {
-        try {
-            const response = await axios_1.default.get(process.env.API_URL);
-            console.log('Root endpoint response:', response.data);
-        }
-        catch (error) {
-            console.error('Error calling root endpoint:', error.message);
-        }
-    }
     async refreshAccessToken() {
         const url = 'https://oauth2.googleapis.com/token';
         const params = new URLSearchParams();
@@ -50,12 +41,6 @@ let CronService = class CronService {
     }
 };
 exports.CronService = CronService;
-__decorate([
-    (0, schedule_1.Cron)('*/30 * * * * *'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], CronService.prototype, "handleCron", null);
 __decorate([
     (0, schedule_1.Cron)('0 * * * *'),
     __metadata("design:type", Function),
