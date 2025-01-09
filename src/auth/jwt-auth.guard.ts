@@ -39,9 +39,9 @@ export class JwtAuthGuard implements CanActivate {
                     }
                     return true;
                 case Role.Editor:
-                    const allowedModules = ['vehicles', 'locations'];
+                    const allowedModules = ['vehicle', 'location'];
                     const routePath = request.baseUrl || request.url;
-                    if (!allowedModules.some((path) => routePath.includes(path))) {
+                    if (request.method !== 'GET' && !allowedModules.some((path) => routePath.includes(path))) {
                         throw new ForbiddenException('Editors can only manage vehicles and locations.');
                     }
                     return true;
