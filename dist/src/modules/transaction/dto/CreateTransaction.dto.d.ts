@@ -8,6 +8,7 @@ export declare class CreateTransactionDto {
     vehicle: string;
     aggregator?: string;
     time: string;
+    isCaptured: string;
 }
 export declare class UpdateTransactionDto {
     comments: string;

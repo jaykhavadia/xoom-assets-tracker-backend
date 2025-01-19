@@ -45,7 +45,7 @@ let JwtAuthGuard = class JwtAuthGuard {
                     }
                     return true;
                 case user_entity_1.Role.Editor:
-                    const allowedModules = ['vehicle', 'location'];
+                    const allowedModules = ['vehicle', 'location', 'transaction'];
                     const routePath = request.baseUrl || request.url;
                     if (request.method !== 'GET' && !allowedModules.some((path) => routePath.includes(path))) {
                         throw new common_1.ForbiddenException('Editors can only manage vehicles and locations.');

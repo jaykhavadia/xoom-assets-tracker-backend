@@ -54,6 +54,11 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTransactionDto.prototype, "time", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTransactionDto.prototype, "isCaptured", void 0);
 class UpdateTransactionDto {
 }
 exports.UpdateTransactionDto = UpdateTransactionDto;
