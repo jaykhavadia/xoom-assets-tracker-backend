@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsNumberString, IsNotEmpty, IsEnum, IsOptional, IsEmpty, IsArray } from 'class-validator';
+import { IsString, IsDateString, IsNumberString, IsNotEmpty, IsEnum, IsOptional, IsEmpty, IsArray, IsBoolean } from 'class-validator';
 import { Action } from '../entities/transaction.entity';
 
 export class CreateTransactionDto {
@@ -32,6 +32,10 @@ export class CreateTransactionDto {
     @IsString()
     @IsNotEmpty()
     time: string;
+    
+    @IsBoolean()
+    @IsOptional()
+    isCaptured: string;
 }
 
 export class UpdateTransactionDto {
