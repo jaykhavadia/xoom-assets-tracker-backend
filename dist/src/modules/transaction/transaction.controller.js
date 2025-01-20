@@ -14,11 +14,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var TransactionController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionController = void 0;
+const messages_constants_1 = require("./../../constants/messages.constants");
 const common_1 = require("@nestjs/common");
 const transaction_service_1 = require("./transaction.service");
 const platform_express_1 = require("@nestjs/platform-express");
 const files_helper_service_1 = require("../../common/files-helper/files-helper.service");
-const messages_constants_1 = require("../../constants/messages.constants");
 const CreateTransaction_dto_1 = require("./dto/CreateTransaction.dto");
 const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
 const upload_service_1 = require("../../common/upload/upload.service");
@@ -35,11 +35,17 @@ let TransactionController = TransactionController_1 = class TransactionControlle
     async create(body, files) {
         try {
             let transaction = await this.transactionService.create(body);
-            if (files && Object.keys(files).length > 0) {
-                const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
-                transaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: savedFiles });
+            try {
+                if (files && Object.keys(files).length > 0) {
+                    const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
+                    transaction = await this.transactionService.updateTransaction(transaction.id, { ...transaction, pictures: savedFiles });
+                }
+                this.logger.log(messages_constants_1.Messages.transaction.createSuccess);
             }
-            this.logger.log(messages_constants_1.Messages.transaction.createSuccess);
+            catch (error) {
+                console.log("TransactionController ~ error:", error);
+                throw new common_1.HttpException("Image Upload Issue", common_1.HttpStatus.BAD_REQUEST);
+            }
             return {
                 success: true,
                 message: messages_constants_1.Messages.transaction.createSuccess,
@@ -48,7 +54,9 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         }
         catch (error) {
             this.logger.error(`[TransactionController] [create] Error: ${error.message}`);
-            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
+            throw new common_1.HttpException(error.message === "Image Upload Issue"
+                ? "Transaction is been Created but Image Upload Access Revoked"
+                : error.message, common_1.HttpStatus.BAD_REQUEST);
         }
     }
     async update(id, body) {
@@ -115,13 +123,13 @@ let TransactionController = TransactionController_1 = class TransactionControlle
             const transactions = await this.transactionService.getTransactionsByDateRange(from, to, months, date);
             return {
                 success: true,
-                message: 'Transactions fetched successfully.',
+                message: "Transactions fetched successfully.",
                 data: transactions,
             };
         }
         catch (error) {
             this.logger.error(`[TransactionController] [getTransactionsByDate] Error: ${error.message}`);
-            throw new common_1.HttpException('Failed to fetch transactions.', common_1.HttpStatus.BAD_REQUEST);
+            throw new common_1.HttpException("Failed to fetch transactions.", common_1.HttpStatus.BAD_REQUEST);
         }
     }
     async findOne(id) {
@@ -142,18 +150,18 @@ let TransactionController = TransactionController_1 = class TransactionControlle
     }
     async uploadExcel(file) {
         try {
-            const errorArray = await this.transactionService.processTransaction(file, 'transaction');
+            const errorArray = await this.transactionService.processTransaction(file, "transaction");
             const sheetData = {
                 uploadedAt: new Date(),
-                uploadedAtTime: (0, date_fns_1.format)(new Date(), 'hh:mm a'),
+                uploadedAtTime: (0, date_fns_1.format)(new Date(), "hh:mm a"),
                 fileUrl: file.originalname,
-                type: 'Transaction',
+                type: "Transaction",
             };
             const sheetDetails = await this.sheetService.create(sheetData);
             return {
                 success: true,
                 message: messages_constants_1.Messages.employee.updateBulkSuccess,
-                errorArray
+                errorArray,
             };
         }
         catch (error) {
@@ -163,18 +171,18 @@ let TransactionController = TransactionController_1 = class TransactionControlle
     }
     async uploadFineExcel(file) {
         try {
-            const fileResponse = await this.uploadService.readExcel(file, 'fine');
-            if ('fine' in fileResponse) {
+            const fileResponse = await this.uploadService.readExcel(file, "fine");
+            if ("fine" in fileResponse) {
                 const filteredTransaction = fileResponse.fine.filter((item) => item !== undefined);
             }
             else {
-                throw new Error('Unexpected file response type for transaction.');
+                throw new Error("Unexpected file response type for transaction.");
             }
             return {
                 success: true,
-                message: 'Fine Allocated',
+                message: "Fine Allocated",
                 data: fileResponse.fine,
-                errorArray: fileResponse.errorArray
+                errorArray: fileResponse.errorArray,
             };
         }
         catch (error) {
@@ -187,10 +195,10 @@ exports.TransactionController = TransactionController;
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileFieldsInterceptor)([
-        { name: 'vehiclePictures[back]', maxCount: 1 },
-        { name: 'vehiclePictures[front]', maxCount: 1 },
-        { name: 'vehiclePictures[left]', maxCount: 1 },
-        { name: 'vehiclePictures[right]', maxCount: 1 },
+        { name: "vehiclePictures[back]", maxCount: 1 },
+        { name: "vehiclePictures[front]", maxCount: 1 },
+        { name: "vehiclePictures[left]", maxCount: 1 },
+        { name: "vehiclePictures[right]", maxCount: 1 },
     ])),
     __param(0, (0, common_1.Body)(new common_1.ValidationPipe())),
     __param(1, (0, common_1.UploadedFiles)()),
@@ -199,8 +207,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "create", null);
 __decorate([
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Patch)(":id"),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)(new common_1.ValidationPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, CreateTransaction_dto_1.UpdateTransactionDto]),
@@ -213,54 +221,54 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)('past-transaction/:vehicleNo'),
-    __param(0, (0, common_1.Param)('vehicleNo')),
+    (0, common_1.Get)("past-transaction/:vehicleNo"),
+    __param(0, (0, common_1.Param)("vehicleNo")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findPastTransaction", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(":id"),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "remove", null);
 __decorate([
-    (0, common_1.Get)('filter'),
-    __param(0, (0, common_1.Query)('from')),
-    __param(1, (0, common_1.Query)('to')),
-    __param(2, (0, common_1.Query)('months')),
-    __param(3, (0, common_1.Query)('date')),
+    (0, common_1.Get)("filter"),
+    __param(0, (0, common_1.Query)("from")),
+    __param(1, (0, common_1.Query)("to")),
+    __param(2, (0, common_1.Query)("months")),
+    __param(3, (0, common_1.Query)("date")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, Number, String]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "getTransactionsByDate", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)(":id"),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Post)('upload'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, common_1.Post)("upload"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file")),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "uploadExcel", null);
 __decorate([
-    (0, common_1.Post)('upload-fine'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, common_1.Post)("upload-fine"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file")),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "uploadFineExcel", null);
 exports.TransactionController = TransactionController = TransactionController_1 = __decorate([
-    (0, common_1.Controller)('transaction'),
+    (0, common_1.Controller)("transaction"),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [transaction_service_1.TransactionService,
         upload_service_1.UploadService,

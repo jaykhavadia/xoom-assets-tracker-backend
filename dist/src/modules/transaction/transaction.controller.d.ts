@@ -1,9 +1,9 @@
-import { TransactionService } from './transaction.service';
-import { Transaction } from './entities/transaction.entity';
-import { FilesHelperService } from 'src/common/files-helper/files-helper.service';
-import { CreateTransactionDto, UpdateTransactionDto } from './dto/CreateTransaction.dto';
-import { UploadService } from 'src/common/upload/upload.service';
-import { SheetService } from '../sheet/sheet.service';
+import { TransactionService } from "./transaction.service";
+import { Transaction } from "./entities/transaction.entity";
+import { FilesHelperService } from "src/common/files-helper/files-helper.service";
+import { CreateTransactionDto, UpdateTransactionDto } from "./dto/CreateTransaction.dto";
+import { UploadService } from "src/common/upload/upload.service";
+import { SheetService } from "../sheet/sheet.service";
 export declare class TransactionController {
     private readonly transactionService;
     private readonly uploadService;
