@@ -130,22 +130,8 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         catch (error) {
             this.logger.error(`[TransactionController] [getTransactionsByDate] Error: ${error.message}`);
             throw new common_1.HttpException("Failed to fetch transactions.", common_1.HttpStatus.BAD_REQUEST);
-        }
-    }
-    async findOne(id) {
-        const transactionId = parseInt(id, 10);
-        try {
-            const transaction = await this.transactionService.findOne(transactionId);
-            this.logger.log(messages_constants_1.Messages.transaction.findOneSuccess(transactionId));
-            return {
-                success: true,
-                message: messages_constants_1.Messages.transaction.findOneSuccess(transactionId),
-                data: transaction,
-            };
-        }
-        catch (error) {
-            this.logger.error(`[TransactionController] [findOne] Error: ${error.message}`);
-            throw new common_1.HttpException(messages_constants_1.Messages.transaction.findOneFailure(transactionId), common_1.HttpStatus.BAD_REQUEST);
+<<<<<<< HEAD
+=======
         }
     }
     async uploadExcel(file) {
@@ -188,8 +174,70 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         catch (error) {
             this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);
             throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
+>>>>>>> report_apis
         }
     }
+    async findOne(id) {
+        const transactionId = parseInt(id, 10);
+        try {
+            const transaction = await this.transactionService.findOne(transactionId);
+            this.logger.log(messages_constants_1.Messages.transaction.findOneSuccess(transactionId));
+            return {
+                success: true,
+                message: messages_constants_1.Messages.transaction.findOneSuccess(transactionId),
+                data: transaction,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[TransactionController] [findOne] Error: ${error.message}`);
+            throw new common_1.HttpException(messages_constants_1.Messages.transaction.findOneFailure(transactionId), common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+<<<<<<< HEAD
+    async uploadExcel(file) {
+        try {
+            const errorArray = await this.transactionService.processTransaction(file, "transaction");
+            const sheetData = {
+                uploadedAt: new Date(),
+                uploadedAtTime: (0, date_fns_1.format)(new Date(), "hh:mm a"),
+                fileUrl: file.originalname,
+                type: "Transaction",
+            };
+            const sheetDetails = await this.sheetService.create(sheetData);
+            return {
+                success: true,
+                message: messages_constants_1.Messages.employee.updateBulkSuccess,
+                errorArray,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+    async uploadFineExcel(file) {
+        try {
+            const fileResponse = await this.uploadService.readExcel(file, "fine");
+            if ("fine" in fileResponse) {
+                const filteredTransaction = fileResponse.fine.filter((item) => item !== undefined);
+            }
+            else {
+                throw new Error("Unexpected file response type for transaction.");
+            }
+            return {
+                success: true,
+                message: "Fine Allocated",
+                data: fileResponse.fine,
+                errorArray: fileResponse.errorArray,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+=======
+>>>>>>> report_apis
 };
 exports.TransactionController = TransactionController;
 __decorate([
@@ -245,6 +293,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "getTransactionsByDate", null);
 __decorate([
+<<<<<<< HEAD
     (0, common_1.Get)(":id"),
     __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
@@ -252,6 +301,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findOne", null);
 __decorate([
+=======
+>>>>>>> report_apis
     (0, common_1.Post)("upload"),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file")),
     __param(0, (0, common_1.UploadedFile)()),
@@ -267,6 +318,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "uploadFineExcel", null);
+__decorate([
+    (0, common_1.Get)(":id"),
+    __param(0, (0, common_1.Param)("id")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TransactionController.prototype, "findOne", null);
 exports.TransactionController = TransactionController = TransactionController_1 = __decorate([
     (0, common_1.Controller)("transaction"),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

@@ -19,7 +19,7 @@ export declare class TransactionController {
     findPastTransaction(vehicleNo: string): Promise<response<Transaction>>;
     remove(id: string): Promise<response<void>>;
     getTransactionsByDate(from?: string, to?: string, months?: number, date?: string): Promise<response<Transaction[]>>;
-    findOne(id: string): Promise<response<Transaction>>;
     uploadExcel(file: Express.Multer.File): Promise<response<any>>;
     uploadFineExcel(file: Express.Multer.File): Promise<response<any>>;
+    findOne(id: string): Promise<response<Transaction>>;
 }

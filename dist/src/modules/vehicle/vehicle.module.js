@@ -22,15 +22,29 @@ const owned_by_entity_1 = require("../owned-by/entities/owned_by.entity");
 const aggregator_entity_1 = require("../aggregator/entities/aggregator.entity");
 const jwt_auth_module_1 = require("../../auth/jwt-auth.module");
 const user_entity_1 = require("../user/entities/user.entity");
+const vehicleQuery_service_1 = require("./vehicleQuery.service");
 let VehicleModule = class VehicleModule {
 };
 exports.VehicleModule = VehicleModule;
 exports.VehicleModule = VehicleModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([vehical_entity_1.Vehicle, sheet_entity_1.Sheet, vehicle_type_entity_1.VehicleType, model_entity_1.Model, owned_by_entity_1.OwnedBy, aggregator_entity_1.Aggregator, user_entity_1.User]), common_module_1.CommonModule, sheet_module_1.SheetModule, jwt_auth_module_1.JwtAuthModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                vehical_entity_1.Vehicle,
+                sheet_entity_1.Sheet,
+                vehicle_type_entity_1.VehicleType,
+                model_entity_1.Model,
+                owned_by_entity_1.OwnedBy,
+                aggregator_entity_1.Aggregator,
+                user_entity_1.User,
+            ]),
+            common_module_1.CommonModule,
+            sheet_module_1.SheetModule,
+            jwt_auth_module_1.JwtAuthModule,
+        ],
         controllers: [vehicle_controller_1.VehicleController],
-        providers: [vehicle_service_1.VehicleService, sheet_service_1.SheetService],
-        exports: [vehicle_service_1.VehicleService]
+        providers: [vehicle_service_1.VehicleService, sheet_service_1.SheetService, vehicleQuery_service_1.VehicleQueryService],
+        exports: [vehicle_service_1.VehicleService, vehicleQuery_service_1.VehicleQueryService],
     })
 ], VehicleModule);
 //# sourceMappingURL=vehicle.module.js.map

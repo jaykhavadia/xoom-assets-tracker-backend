@@ -51,7 +51,7 @@ export class Transaction {
   aggregator: string;
 
   @CreateDateColumn({ type: 'timestamp' })
-    createdAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;

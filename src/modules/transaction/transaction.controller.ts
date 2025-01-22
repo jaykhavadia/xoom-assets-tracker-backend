@@ -1,4 +1,3 @@
-import { Messages } from "./../../constants/messages.constants";
 import {
   Controller,
   Post,
@@ -17,6 +16,7 @@ import {
   Query,
   UploadedFile,
   Patch,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { TransactionService } from "./transaction.service";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@nestjs/platform-express";
 import { Transaction } from "./entities/transaction.entity";
 import { FilesHelperService } from "src/common/files-helper/files-helper.service";
+import { Messages } from "src/constants/messages.constants";
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -233,33 +234,6 @@ export class TransactionController {
   }
 
   /**
-   * Retrieves a transaction by its ID.
-   * @param id - The ID of the transaction to retrieve.
-   * @returns The found transaction.
-   */
-  @Get(":id")
-  async findOne(@Param("id") id: string): Promise<response<Transaction>> {
-    const transactionId = parseInt(id, 10); // Parse the ID from the URL
-    try {
-      const transaction = await this.transactionService.findOne(transactionId); // Fetch transaction by ID
-      this.logger.log(Messages.transaction.findOneSuccess(transactionId)); // Log success message
-      return {
-        success: true,
-        message: Messages.transaction.findOneSuccess(transactionId),
-        data: transaction, // Return the found transaction
-      };
-    } catch (error) {
-      this.logger.error(
-        `[TransactionController] [findOne] Error: ${error.message}`,
-      ); // Log error
-      throw new HttpException(
-        Messages.transaction.findOneFailure(transactionId),
-        HttpStatus.BAD_REQUEST,
-      ); // Handle error
-    }
-  }
-
-  /**
    * Endpoint to upload transaction from an Excel file.
    * @param file - The Excel file containing employee data.
    */
@@ -348,6 +322,33 @@ export class TransactionController {
         `[EmployeeController] [uploadExcel] Error: ${error.message}`,
       );
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Retrieves a transaction by its ID.
+   * @param id - The ID of the transaction to retrieve.
+   * @returns The found transaction.
+   */
+  @Get(":id")
+  async findOne(@Param("id") id: string): Promise<response<Transaction>> {
+    const transactionId = parseInt(id, 10); // Parse the ID from the URL
+    try {
+      const transaction = await this.transactionService.findOne(transactionId); // Fetch transaction by ID
+      this.logger.log(Messages.transaction.findOneSuccess(transactionId)); // Log success message
+      return {
+        success: true,
+        message: Messages.transaction.findOneSuccess(transactionId),
+        data: transaction, // Return the found transaction
+      };
+    } catch (error) {
+      this.logger.error(
+        `[TransactionController] [findOne] Error: ${error.message}`,
+      ); // Log error
+      throw new HttpException(
+        Messages.transaction.findOneFailure(transactionId),
+        HttpStatus.BAD_REQUEST,
+      ); // Handle error
     }
   }
 }
