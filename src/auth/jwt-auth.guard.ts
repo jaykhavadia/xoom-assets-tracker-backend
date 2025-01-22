@@ -54,7 +54,7 @@ export class JwtAuthGuard implements CanActivate {
             !allowedModules.some((path) => routePath.includes(path))
           ) {
             throw new ForbiddenException(
-              "Editors can only manage vehicles and locations.",
+              "Editors can only manage vehicles, locations & transaction.",
             );
           }
           return true;
