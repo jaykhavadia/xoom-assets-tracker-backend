@@ -1,0 +1,1 @@
+{"version":3,"file":"google.config.js","sourceRoot":"","sources":["../google.config.ts"],"names":[],"mappings":";;;AAGO,MAAM,YAAY,GAAG,CAAC,aAA4B,EAAE,EAAE,CAAC,CAAC;IAC7D,QAAQ,EAAE,aAAa,CAAC,GAAG,CAAS,kBAAkB,CAAC;IACvD,YAAY,EAAE,aAAa,CAAC,GAAG,CAAS,sBAAsB,CAAC;IAC/D,WAAW,EAAE,aAAa,CAAC,GAAG,CAAS,qBAAqB,CAAC;CAC9D,CAAC,CAAC;AAJU,QAAA,YAAY,gBAItB"}
