@@ -38,6 +38,7 @@ let JwtAuthGuard = class JwtAuthGuard {
             if (!user) {
                 throw new common_1.UnauthorizedException("User not found");
             }
+            request["user"] = user;
             switch (user.role) {
                 case user_entity_1.Role.Owner:
                     return true;

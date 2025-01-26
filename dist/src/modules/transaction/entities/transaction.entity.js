@@ -14,6 +14,7 @@ const employee_entity_1 = require("../../employee/entities/employee.entity");
 const location_entity_1 = require("../../location/entities/location.entity");
 const vehical_entity_1 = require("../../vehicle/entities/vehical.entity");
 const typeorm_1 = require("typeorm");
+const user_entity_1 = require("../../user/entities/user.entity");
 var PicturePosition;
 (function (PicturePosition) {
     PicturePosition["BACK"] = "back";
@@ -34,47 +35,57 @@ __decorate([
     __metadata("design:type", Number)
 ], Transaction.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'date' }),
+    (0, typeorm_1.Column)({ type: "date" }),
     __metadata("design:type", Date)
 ], Transaction.prototype, "date", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'time' }),
+    (0, typeorm_1.Column)({ type: "time" }),
     __metadata("design:type", String)
 ], Transaction.prototype, "time", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: Action, nullable: false }),
+    (0, typeorm_1.Column)({ type: "enum", enum: Action, nullable: false }),
     __metadata("design:type", String)
 ], Transaction.prototype, "action", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
+    (0, typeorm_1.Column)({ type: "json", nullable: true }),
     __metadata("design:type", Array)
 ], Transaction.prototype, "pictures", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    (0, typeorm_1.Column)({ type: "text", nullable: true }),
     __metadata("design:type", String)
 ], Transaction.prototype, "comments", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => vehical_entity_1.Vehicle, (vehicle) => vehicle.transactions, { cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => vehical_entity_1.Vehicle, (vehicle) => vehicle.transactions, {
+        cascade: true,
+    }),
     __metadata("design:type", vehical_entity_1.Vehicle)
 ], Transaction.prototype, "vehicle", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => employee_entity_1.Employee, (employee) => employee.transactions, { cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => employee_entity_1.Employee, (employee) => employee.transactions, {
+        cascade: true,
+    }),
     __metadata("design:type", employee_entity_1.Employee)
 ], Transaction.prototype, "employee", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => location_entity_1.Location, (location) => location.transactions, { cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => location_entity_1.Location, (location) => location.transactions, {
+        cascade: true,
+    }),
     __metadata("design:type", location_entity_1.Location)
 ], Transaction.prototype, "location", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.transactions, { cascade: true }),
+    __metadata("design:type", user_entity_1.User)
+], Transaction.prototype, "user", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "text", nullable: true }),
     __metadata("design:type", String)
 ], Transaction.prototype, "aggregator", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ type: 'timestamp' }),
+    (0, typeorm_1.CreateDateColumn)({ type: "timestamp" }),
     __metadata("design:type", Date)
 ], Transaction.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ type: 'timestamp' }),
+    (0, typeorm_1.UpdateDateColumn)({ type: "timestamp" }),
     __metadata("design:type", Date)
 ], Transaction.prototype, "updatedAt", void 0);
 exports.Transaction = Transaction = __decorate([

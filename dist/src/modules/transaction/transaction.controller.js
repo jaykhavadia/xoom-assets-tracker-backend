@@ -24,6 +24,7 @@ const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
 const upload_service_1 = require("../../common/upload/upload.service");
 const date_fns_1 = require("date-fns");
 const sheet_service_1 = require("../sheet/sheet.service");
+const user_decorator_1 = require("../../auth/decorators/user.decorator");
 let TransactionController = TransactionController_1 = class TransactionController {
     constructor(transactionService, uploadService, sheetService, filesHelperService) {
         this.transactionService = transactionService;
@@ -32,9 +33,12 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         this.filesHelperService = filesHelperService;
         this.logger = new common_1.Logger(TransactionController_1.name);
     }
-    async create(body, files) {
+    async create(body, user, files) {
         try {
-            let transaction = await this.transactionService.create(body);
+            let transaction = await this.transactionService.create({
+                ...body,
+                user,
+            });
             try {
                 if (files && Object.keys(files).length > 0) {
                     const savedFiles = await this.filesHelperService.saveTransactionFiles(files, transaction.id);
@@ -59,9 +63,9 @@ let TransactionController = TransactionController_1 = class TransactionControlle
                 : error.message, common_1.HttpStatus.BAD_REQUEST);
         }
     }
-    async update(id, body) {
+    async update(id, user, body) {
         try {
-            const updatedTransaction = await this.transactionService.update(Number(id), body);
+            const updatedTransaction = await this.transactionService.update(Number(id), { ...body, user });
             return {
                 success: true,
                 message: messages_constants_1.Messages.transaction.updateSuccess(Number(id)),
@@ -74,6 +78,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         }
     }
     async findAll() {
+        console.log("🚀 ~ file: transaction.controller.ts:147 ~ TransactionController ~ findAll ~ findAll:");
         try {
             const transactions = await this.transactionService.findAll();
             this.logger.log(messages_constants_1.Messages.transaction.findAllSuccess);
@@ -201,17 +206,19 @@ __decorate([
         { name: "vehiclePictures[right]", maxCount: 1 },
     ])),
     __param(0, (0, common_1.Body)(new common_1.ValidationPipe())),
-    __param(1, (0, common_1.UploadedFiles)()),
+    __param(1, (0, user_decorator_1.GetUser)()),
+    __param(2, (0, common_1.UploadedFiles)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [CreateTransaction_dto_1.CreateTransactionDto, Object]),
+    __metadata("design:paramtypes", [CreateTransaction_dto_1.CreateTransactionDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(":id"),
     __param(0, (0, common_1.Param)("id")),
-    __param(1, (0, common_1.Body)(new common_1.ValidationPipe())),
+    __param(1, (0, user_decorator_1.GetUser)()),
+    __param(2, (0, common_1.Body)(new common_1.ValidationPipe())),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, CreateTransaction_dto_1.UpdateTransactionDto]),
+    __metadata("design:paramtypes", [String, Object, CreateTransaction_dto_1.UpdateTransactionDto]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "update", null);
 __decorate([

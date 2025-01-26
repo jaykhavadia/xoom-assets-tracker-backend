@@ -25,7 +25,7 @@ __decorate([
     __metadata("design:type", Date)
 ], CreateTransactionDto.prototype, "date", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(transaction_entity_1.Action, { message: 'Action must be either entry or exit' }),
+    (0, class_validator_1.IsEnum)(transaction_entity_1.Action, { message: "Action must be either entry or exit" }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTransactionDto.prototype, "action", void 0);
@@ -44,6 +44,11 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTransactionDto.prototype, "vehicle", void 0);
+__decorate([
+    (0, class_validator_1.IsObject)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], CreateTransactionDto.prototype, "user", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -104,4 +109,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateTransactionDto.prototype, "pictures", void 0);
+__decorate([
+    (0, class_validator_1.IsObject)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateTransactionDto.prototype, "user", void 0);
 //# sourceMappingURL=CreateTransaction.dto.js.map

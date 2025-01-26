@@ -4,6 +4,7 @@ import { FilesHelperService } from "src/common/files-helper/files-helper.service
 import { CreateTransactionDto, UpdateTransactionDto } from "./dto/CreateTransaction.dto";
 import { UploadService } from "src/common/upload/upload.service";
 import { SheetService } from "../sheet/sheet.service";
+import { User } from "../user/entities/user.entity";
 export declare class TransactionController {
     private readonly transactionService;
     private readonly uploadService;
@@ -11,10 +12,10 @@ export declare class TransactionController {
     private readonly filesHelperService;
     private readonly logger;
     constructor(transactionService: TransactionService, uploadService: UploadService, sheetService: SheetService, filesHelperService: FilesHelperService);
-    create(body: CreateTransactionDto, files?: {
+    create(body: CreateTransactionDto, user: Partial<User>, files?: {
         [key: string]: Express.Multer.File[];
     }): Promise<response<Transaction>>;
-    update(id: string, body: UpdateTransactionDto): Promise<response<Transaction>>;
+    update(id: string, user: Partial<User>, body: UpdateTransactionDto): Promise<response<Transaction>>;
     findAll(): Promise<response<Transaction[]>>;
     findPastTransaction(vehicleNo: string): Promise<response<Transaction>>;
     remove(id: string): Promise<response<void>>;

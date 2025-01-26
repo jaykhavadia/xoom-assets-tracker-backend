@@ -36,7 +36,8 @@ export class JwtAuthGuard implements CanActivate {
       if (!user) {
         throw new UnauthorizedException("User not found");
       }
-
+      request["user"] = user;
+      
       // Role-based logic
       switch (user.role) {
         case Role.Owner:

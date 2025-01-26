@@ -35,6 +35,8 @@ import { UploadService } from "src/common/upload/upload.service";
 import { Sheet } from "../sheet/entities/sheet.entity";
 import { format } from "date-fns";
 import { SheetService } from "../sheet/sheet.service";
+import { GetUser } from "src/auth/decorators/user.decorator";
+import { User } from "../user/entities/user.entity";
 
 @Controller("transaction")
 @UseGuards(JwtAuthGuard)
@@ -65,12 +67,16 @@ export class TransactionController {
   )
   async create(
     @Body(new ValidationPipe()) body: CreateTransactionDto,
+    @GetUser() user: Partial<User>,
     @UploadedFiles() files?: { [key: string]: Express.Multer.File[] },
   ): Promise<response<Transaction>> {
     try {
       // const transactionData = JSON.parse(body);
       // Create the transaction first without saving the pictures yet
-      let transaction = await this.transactionService.create(body);
+      let transaction = await this.transactionService.create({
+        ...body,
+        user,
+      });
       try {
         if (files && Object.keys(files).length > 0) {
           // Save the files using the generated transactionId
@@ -110,12 +116,13 @@ export class TransactionController {
   @Patch(":id")
   async update(
     @Param("id") id: string,
+    @GetUser() user: Partial<User>,
     @Body(new ValidationPipe()) body: UpdateTransactionDto,
   ): Promise<response<Transaction>> {
     try {
       const updatedTransaction = await this.transactionService.update(
         Number(id),
-        body,
+        { ...body, user },
       );
       return {
         success: true,
@@ -136,6 +143,9 @@ export class TransactionController {
    */
   @Get()
   async findAll(): Promise<response<Transaction[]>> {
+
+    console.log("🚀 ~ file: transaction.controller.ts:147 ~ TransactionController ~ findAll ~ findAll:");
+
     try {
       const transactions = await this.transactionService.findAll(); // Fetch all transactions
       this.logger.log(Messages.transaction.findAllSuccess); // Log success message

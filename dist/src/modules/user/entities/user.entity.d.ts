@@ -1,3 +1,4 @@
+import { Transaction } from "src/modules/transaction/entities/transaction.entity";
 export declare enum Role {
     Viewer = "Viewer",
     Editor = "Editor",
@@ -10,4 +11,5 @@ export declare class User {
     role: Role;
     email: string;
     password: string;
+    transactions: Transaction[];
 }

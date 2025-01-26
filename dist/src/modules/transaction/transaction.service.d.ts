@@ -1,15 +1,15 @@
-import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
-import { Transaction } from './entities/transaction.entity';
-import { Repository } from 'typeorm';
-import { VehicleService } from '../vehicle/vehicle.service';
-import { EmployeeService } from '../employee/employee.service';
-import { LocationService } from '../location/location.service';
-import { CreateTransactionDto, UpdateTransactionDto } from './dto/CreateTransaction.dto';
-import { AggregatorService } from '../aggregator/aggregator.service';
-import { Employee } from '../employee/entities/employee.entity';
-import { Location } from '../location/entities/location.entity';
-import { Vehicle } from '../vehicle/entities/vehical.entity';
-import { UploadService } from '../../common/upload/upload.service';
+import { Aggregator } from "src/modules/aggregator/entities/aggregator.entity";
+import { Transaction } from "./entities/transaction.entity";
+import { Repository } from "typeorm";
+import { VehicleService } from "../vehicle/vehicle.service";
+import { EmployeeService } from "../employee/employee.service";
+import { LocationService } from "../location/location.service";
+import { CreateTransactionDto, UpdateTransactionDto } from "./dto/CreateTransaction.dto";
+import { AggregatorService } from "../aggregator/aggregator.service";
+import { Employee } from "../employee/entities/employee.entity";
+import { Location } from "../location/entities/location.entity";
+import { Vehicle } from "../vehicle/entities/vehical.entity";
+import { UploadService } from "../../common/upload/upload.service";
 export declare class TransactionService {
     private transactionRepository;
     private readonly vehicleService;

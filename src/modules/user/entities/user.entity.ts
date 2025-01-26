@@ -1,15 +1,17 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Exclude } from "class-transformer";
+import { IsEmail, IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { Transaction } from "src/modules/transaction/entities/transaction.entity";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 
 export enum Role {
-  Viewer = 'Viewer',
-  Editor = 'Editor',
-  Owner = 'Owner',
+  Viewer = "Viewer",
+  Editor = "Editor",
+  Owner = "Owner",
 }
 
-@Entity('users')
+@Entity("users")
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -23,7 +25,7 @@ export class User {
   lastName: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: Role,
     default: Role.Viewer,
   })
@@ -37,8 +39,12 @@ export class User {
   @IsNotEmpty()
   email: string;
 
+  @Exclude()
   @Column()
   @IsString()
   @IsNotEmpty()
   password: string;
+
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  transactions: Transaction[];
 }

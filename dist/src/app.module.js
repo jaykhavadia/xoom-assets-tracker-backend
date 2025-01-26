@@ -48,24 +48,37 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             serve_static_1.ServeStaticModule.forRoot({
-                rootPath: (0, path_1.join)(__dirname, '..', 'public'),
+                rootPath: (0, path_1.join)(__dirname, "..", "public"),
             }),
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),
             typeorm_1.TypeOrmModule.forRootAsync({
                 useFactory: async () => ({
-                    type: 'mysql',
+                    type: "mysql",
                     host: process.env.DB_HOST,
                     port: Number(process.env.DB_PORT),
                     username: process.env.DB_USERNAME,
                     password: process.env.DB_PASSWORD,
                     database: process.env.DB_DATABASE,
-                    entities: [vehical_entity_1.Vehicle, location_entity_1.Location, employee_entity_1.Employee, transaction_entity_1.Transaction, sheet_entity_1.Sheet, auth_token_entity_1.AuthToken, user_entity_1.User, vehicle_type_entity_1.VehicleType, model_entity_1.Model, owned_by_entity_1.OwnedBy, aggregator_entity_1.Aggregator],
+                    entities: [
+                        vehical_entity_1.Vehicle,
+                        location_entity_1.Location,
+                        employee_entity_1.Employee,
+                        transaction_entity_1.Transaction,
+                        sheet_entity_1.Sheet,
+                        auth_token_entity_1.AuthToken,
+                        user_entity_1.User,
+                        vehicle_type_entity_1.VehicleType,
+                        model_entity_1.Model,
+                        owned_by_entity_1.OwnedBy,
+                        aggregator_entity_1.Aggregator,
+                    ],
+                    synchronize: true,
                 }),
                 async dataSourceFactory(options) {
                     const dataSource = await new typeorm_2.DataSource(options).initialize();
-                    console.log('Successfully connected to the database!', dataSource.options);
+                    console.log("Successfully connected to the database!", dataSource.options);
                     return dataSource;
                 },
             }),
@@ -82,7 +95,7 @@ exports.AppModule = AppModule = __decorate([
             aggregator_module_1.AggregatorModule,
             model_module_1.ModelModule,
             owned_by_module_1.OwnedByModule,
-            jwt_auth_module_1.JwtAuthModule
+            jwt_auth_module_1.JwtAuthModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, cronservice_1.CronService],
