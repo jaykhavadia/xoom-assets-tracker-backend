@@ -1,10 +1,10 @@
-import { Vehicle } from './entities/vehical.entity';
-import { Repository } from 'typeorm';
-import { VehicleDto } from './dto/create-vehicle.dto';
-import { VehicleType } from '../vehicle-type/entities/vehicle-type.entity';
-import { Model } from '../model/entities/model.entity';
-import { Aggregator } from '../aggregator/entities/aggregator.entity';
-import { OwnedBy } from '../owned-by/entities/owned_by.entity';
+import { Vehicle } from "./entities/vehical.entity";
+import { Repository } from "typeorm";
+import { VehicleDto } from "./dto/create-vehicle.dto";
+import { VehicleType } from "../vehicle-type/entities/vehicle-type.entity";
+import { Model } from "../model/entities/model.entity";
+import { Aggregator } from "../aggregator/entities/aggregator.entity";
+import { OwnedBy } from "../owned-by/entities/owned_by.entity";
 export declare class VehicleService {
     private vehicleRepository;
     private readonly vehicleTypeRepository;

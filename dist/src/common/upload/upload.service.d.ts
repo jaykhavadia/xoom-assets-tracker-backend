@@ -1,13 +1,13 @@
-import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
-import { Employee } from 'src/modules/employee/entities/employee.entity';
-import { Location } from 'src/modules/location/entities/location.entity';
-import { Model } from 'src/modules/model/entities/model.entity';
-import { OwnedBy } from 'src/modules/owned-by/entities/owned_by.entity';
-import { CreateTransactionDto } from 'src/modules/transaction/dto/CreateTransaction.dto';
-import { Transaction } from 'src/modules/transaction/entities/transaction.entity';
-import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
-import { Vehicle } from 'src/modules/vehicle/entities/vehical.entity';
-import { Repository } from 'typeorm';
+import { Aggregator } from "src/modules/aggregator/entities/aggregator.entity";
+import { Employee } from "src/modules/employee/entities/employee.entity";
+import { Location } from "src/modules/location/entities/location.entity";
+import { Model } from "src/modules/model/entities/model.entity";
+import { OwnedBy } from "src/modules/owned-by/entities/owned_by.entity";
+import { CreateTransactionDto } from "src/modules/transaction/dto/CreateTransaction.dto";
+import { Transaction } from "src/modules/transaction/entities/transaction.entity";
+import { VehicleType } from "src/modules/vehicle-type/entities/vehicle-type.entity";
+import { Vehicle } from "src/modules/vehicle/entities/vehical.entity";
+import { Repository } from "typeorm";
 export declare class UploadService {
     private readonly vehicleTypeRepository;
     private readonly modelRepository;
@@ -44,7 +44,7 @@ export declare class UploadService {
         transactions: CreateTransactionDto[];
         errorArray: string[];
     }>;
-    processVehicle: (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregator: Aggregator[], vehicleDataSet: Vehicle[]) => Promise<{
+    processVehicle: (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregators: Aggregator[], vehicleDataSet: Vehicle[]) => Promise<{
         vehicles: Vehicle[];
         errorArray: string[];
     }>;

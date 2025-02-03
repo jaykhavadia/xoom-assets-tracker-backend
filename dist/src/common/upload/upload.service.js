@@ -49,8 +49,8 @@ let UploadService = class UploadService {
         };
         this.excelDateToJSDate = (serial) => {
             try {
-                const startDate = moment('1900-01-01');
-                const correctedDate = startDate.add(serial - 2, 'days');
+                const startDate = moment("1900-01-01");
+                const correctedDate = startDate.add(serial - 2, "days");
                 const adjustedDate = correctedDate.utcOffset(0, true);
                 return adjustedDate.toDate();
             }
@@ -64,20 +64,20 @@ let UploadService = class UploadService {
                 if (!serial) {
                     throw new Error("Invalid input: serial date is required");
                 }
-                if (typeof serial === 'string' && isNaN(Number(serial))) {
-                    const parts = serial.split('-');
+                if (typeof serial === "string" && isNaN(Number(serial))) {
+                    const parts = serial.split("-");
                     if (parts.length !== 3) {
                         throw new Error("Invalid date string format");
                     }
                     const [day, monthStr, year] = parts;
                     const month = new Date(`${monthStr} 1, 2000`).getMonth() + 1;
                     const formattedYear = year.length === 2 ? `20${year}` : year;
-                    return `${formattedYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    return `${formattedYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                 }
-                if (typeof serial === 'number' || !isNaN(Number(serial))) {
+                if (typeof serial === "number" || !isNaN(Number(serial))) {
                     const excelStartDate = new Date(1900, 0, 1);
                     const jsDate = new Date(excelStartDate.getTime() + (Number(serial) - 2) * 24 * 60 * 60 * 1000);
-                    return jsDate.toISOString().split('T')[0];
+                    return jsDate.toISOString().split("T")[0];
                 }
                 throw new Error("Invalid input: serial date must be a string or number");
             }
@@ -92,7 +92,7 @@ let UploadService = class UploadService {
                 const hours = Math.floor(totalSeconds / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
                 const seconds = totalSeconds % 60;
-                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
             }
             catch (error) {
                 throw new Error("inCorrect Time Format");
@@ -101,7 +101,7 @@ let UploadService = class UploadService {
         this.processFine = async (jsonData, vehicles, employees, transaction) => {
             const errorArray = [];
             const fineResponse = await jsonData.map(async (item, index) => {
-                const { 'Trip Date': tripDate, 'Trip Time': tripTime, Plate, 'Amount(AED)': amount } = item;
+                const { "Trip Date": tripDate, "Trip Time": tripTime, Plate, "Amount(AED)": amount, } = item;
                 if (this.validateTime(tripTime)) {
                     console.log("The string contains AM or PM");
                 }
@@ -122,23 +122,25 @@ let UploadService = class UploadService {
                     errorArray.push(`Invalid date ${inputDate} format provided. at ${index + 1}`);
                     return;
                 }
-                const targetISODate = new Date(date).toISOString().split('T')[0];
+                const targetISODate = new Date(date).toISOString().split("T")[0];
                 const targetDate = `${targetISODate} ${time}`;
                 console.log("targetDate:", targetDate);
                 const result = await this.transactionRepository
-                    .createQueryBuilder('t')
-                    .innerJoinAndSelect('t.vehicle', 'v', 'v.vehicleNo = :vehicleNo', { vehicleNo })
-                    .leftJoinAndSelect('t.employee', 'employee')
-                    .leftJoinAndSelect('t.location', 'location')
-                    .addSelect('location.name', 'locationName')
+                    .createQueryBuilder("t")
+                    .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
+                    vehicleNo,
+                })
+                    .leftJoinAndSelect("t.employee", "employee")
+                    .leftJoinAndSelect("t.location", "location")
+                    .addSelect("location.name", "locationName")
                     .where(new typeorm_2.Brackets((qb) => {
-                    qb.where('t.date < :endDate', { endDate: targetISODate })
-                        .orWhere(new typeorm_2.Brackets((subQb) => {
-                        subQb.where('t.date = :endDate', { endDate: targetISODate })
-                            .andWhere('t.time <= :endTime', { endTime: time });
+                    qb.where("t.date < :endDate", { endDate: targetISODate }).orWhere(new typeorm_2.Brackets((subQb) => {
+                        subQb
+                            .where("t.date = :endDate", { endDate: targetISODate })
+                            .andWhere("t.time <= :endTime", { endTime: time });
                     }));
                 }))
-                    .orderBy('t.date', 'DESC')
+                    .orderBy("t.date", "DESC")
                     .limit(1)
                     .getOne();
                 let details;
@@ -146,7 +148,7 @@ let UploadService = class UploadService {
                     errorArray.push(`Some thing is wrong No data found At ${index + 1} `);
                     return;
                 }
-                if (result?.action === 'out') {
+                if (result?.action === "out") {
                     details = {
                         employee_id: result.employee.id,
                         employee_name: result.employee.name,
@@ -158,79 +160,88 @@ let UploadService = class UploadService {
                 else {
                     details = {
                         emirates: result.vehicle.emirates,
-                        locationName: result.location.name
+                        locationName: result.location.name,
                     };
                 }
                 return { tripDate: targetISODate, tripTime, Plate, amount, details };
             });
             const results = await Promise.all(fineResponse);
-            return { fine: results.flat().filter(item => item !== null && item !== undefined), errorArray };
+            return {
+                fine: results
+                    .flat()
+                    .filter((item) => item !== null && item !== undefined),
+                errorArray,
+            };
         };
         this.processTransaction = async (jsonData, vehicles, employees, locations, aggregators) => {
             const errorArray = [];
             const transactionPromises = jsonData.map(async (item, index) => {
                 try {
                     const transaction = new CreateTransaction_dto_1.CreateTransactionDto();
-                    transaction.action = item['Status'] === 'Check Out' ? transaction_entity_1.Action.OUT : transaction_entity_1.Action.IN;
-                    if (this.validateTime(item['Cut Off Time']) && !item['Cut Off Time'].includes('\'') && (item['Cut Off Time'].includes('AM') || item['Cut Off Time'].includes('PM'))) {
+                    transaction.action =
+                        item["Status"] === "Check Out" ? transaction_entity_1.Action.OUT : transaction_entity_1.Action.IN;
+                    if (this.validateTime(item["Cut Off Time"]) &&
+                        !item["Cut Off Time"].includes("'") &&
+                        (item["Cut Off Time"].includes("AM") ||
+                            item["Cut Off Time"].includes("PM"))) {
                         console.log("The string contains AM or PM");
                     }
                     else {
-                        errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item['Cut Off Time']}`);
+                        errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item["Cut Off Time"]}`);
                         return;
                     }
-                    transaction.time = item['Cut Off Time'];
-                    transaction.date = this.excelDateToJSDate(item['Cut Off Date']);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item['Vehicle No.'].toString());
+                    transaction.time = item["Cut Off Time"];
+                    transaction.date = this.excelDateToJSDate(item["Cut Off Date"]);
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString());
                     if (vehicleMatch) {
-                        if (transaction.action === 'out') {
-                            if (vehicleMatch.status === 'occupied') {
-                                errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                        if (transaction.action === "out") {
+                            if (vehicleMatch.status === "occupied") {
+                                errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item["Vehicle No."])} at Data No. ${index + 1}`);
                                 return;
                             }
                             transaction.vehicle = vehicleMatch.id;
                         }
-                        else if (transaction.action === 'in') {
-                            if (vehicleMatch.status === 'available') {
-                                errorArray.push(`${messages_constants_1.Messages.vehicle.available(item['Vehicle No.'])} at Data No. ${index + 1}`);
+                        else if (transaction.action === "in") {
+                            if (vehicleMatch.status === "available") {
+                                errorArray.push(`${messages_constants_1.Messages.vehicle.available(item["Vehicle No."])} at Data No. ${index + 1}`);
                                 return;
                             }
                             transaction.vehicle = vehicleMatch.id;
                         }
                     }
                     else {
-                        errorArray.push(`Vehicle with number ${item['Vehicle No.']} not found. at Data No. ${index + 1}`);
+                        errorArray.push(`Vehicle with number ${item["Vehicle No."]} not found. at Data No. ${index + 1}`);
                         return;
                     }
-                    const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item['Aggregator']);
+                    const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item["Aggregator"]);
                     if (aggregatorMatch) {
                         transaction.aggregator = aggregatorMatch.name;
                     }
                     else {
-                        errorArray.push(`Aggregator ${item['Aggregator']} not found. at Data No. ${index + 1}`);
+                        errorArray.push(`Aggregator ${item["Aggregator"]} not found. at Data No. ${index + 1}`);
                         return;
                     }
-                    const employeeMatch = employees.find((employee) => employee.code === item['XDS No.']);
+                    const employeeMatch = employees.find((employee) => employee.code === item["XDS No."]);
                     if (employeeMatch) {
-                        if (employeeMatch.status === 'inactive') {
-                            errorArray.push(`${messages_constants_1.Messages.employee.inactive(item['XDS No.'])} at Data No. ${index + 1}`);
+                        if (employeeMatch.status === "inactive") {
+                            errorArray.push(`${messages_constants_1.Messages.employee.inactive(item["XDS No."])} at Data No. ${index + 1}`);
                             return;
                         }
                         transaction.employee = employeeMatch.id;
                     }
                     else {
-                        errorArray.push(`Employee with XDS No. ${item['XDS No.']} not found. at Data No. ${index + 1}`);
+                        errorArray.push(`Employee with XDS No. ${item["XDS No."]} not found. at Data No. ${index + 1}`);
                         return;
                     }
-                    const locationMatch = locations.find((location) => location.name === item['Location']);
+                    const locationMatch = locations.find((location) => location.name === item["Location"]);
                     if (locationMatch) {
                         transaction.location = locationMatch.id;
                     }
                     else {
-                        errorArray.push(`Location with name ${item['Location']} not found. at Data No. ${index + 1}`);
+                        errorArray.push(`Location with name ${item["Location"]} not found. at Data No. ${index + 1}`);
                         return;
                     }
-                    transaction.comments = '';
+                    transaction.comments = "";
                 }
                 catch (error) {
                     errorArray.push(error.message);
@@ -238,61 +249,66 @@ let UploadService = class UploadService {
             });
             return { transactions: await Promise.all(transactionPromises), errorArray };
         };
-        this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregator, vehicleDataSet) => {
+        this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregators, vehicleDataSet) => {
             const errorArray = [];
             const processedVehicles = [];
             const vehiclePromises = jsonData.map(async (item) => {
                 try {
                     if (processedVehicles.length) {
                         processedVehicles.forEach((processedVehicle) => {
-                            if (String(processedVehicle.vehicleNo) === String(item['Vehicle No.']) ||
-                                processedVehicle.chasisNumber === item['Chasis No.']) {
-                                throw new Error(`Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`);
+                            if (String(processedVehicle.vehicleNo) ===
+                                String(item["Vehicle No."]) ||
+                                processedVehicle.chasisNumber === item["Chasis No."]) {
+                                throw new Error(`Vehicle with No: ${item["Vehicle No."]} OR Chasis No.: ${item["Chasis No."]} are Duplicate`);
                             }
                         });
                     }
-                    const vehicleMatch = vehicleDataSet.find((vehicleData) => String(vehicleData.vehicleNo) === String(item['Vehicle No.']) ||
-                        String(vehicleData.chasisNumber) === String(item['Chasis No.']));
+                    const vehicleMatch = vehicleDataSet.find((vehicleData) => String(vehicleData.vehicleNo) === String(item["Vehicle No."]) ||
+                        String(vehicleData.chasisNumber) === String(item["Chasis No."]));
                     if (vehicleMatch) {
-                        errorArray.push(`Vehicle with No: ${item['Vehicle No.']} OR Chasis No.: ${item['Chasis No.']} are Duplicate`);
+                        errorArray.push(`Vehicle with No: ${item["Vehicle No."]} OR Chasis No.: ${item["Chasis No."]} are Duplicate`);
                         return;
                     }
                     const vehicle = new vehical_entity_1.Vehicle();
-                    vehicle.code = item['Code'];
-                    vehicle.vehicleNo = item['Vehicle No.'];
-                    const modelsMatch = models.find((model) => model.brand === item['Model']);
+                    vehicle.code = item["Code"];
+                    vehicle.vehicleNo = item["Vehicle No."];
+                    const modelsMatch = models.find((model) => model.brand === item["Model"]);
                     if (modelsMatch) {
                         vehicle.model = modelsMatch;
                     }
                     else {
-                        errorArray.push(`Model with brand ${item['Model']} not found.`);
+                        errorArray.push(`Model with brand ${item["Model"]} not found.`);
                         return;
                     }
                     const vehicleTypeMatch = vehicleTypes.find((vehicleType) => {
-                        return vehicleType.name === item['Category'] && vehicleType.fuel === item['Fuel'];
+                        return (vehicleType.name === item["Category"] &&
+                            vehicleType.fuel === item["Fuel"]);
                     });
                     if (vehicleTypeMatch) {
                         vehicle.vehicleType = vehicleTypeMatch;
                     }
                     else {
-                        errorArray.push(`vehicleType with Category ${item['Category']} & Fuel ${item['Fuel']} not found.`);
+                        errorArray.push(`vehicleType with Category ${item["Category"]} & Fuel ${item["Fuel"]} not found.`);
                         return;
                     }
-                    const ownedByMatch = ownedBy.find((owner) => owner.name === item['From']);
+                    const ownedByMatch = ownedBy.find((owner) => owner.name === item["From"]);
                     if (ownedByMatch) {
                         vehicle.ownedBy = ownedByMatch;
                     }
                     else {
-                        errorArray.push(`From(ownedBy) with name ${item['From']} not found.`);
+                        errorArray.push(`From(ownedBy) with name ${item["From"]} not found.`);
                         return;
                     }
-                    vehicle.chasisNumber = item['Chasis No.'];
-                    vehicle.aggregator = aggregator.find((item) => item.name === 'idel');
-                    vehicle.registrationExpiry = this.excelDateToJSDate(item['Expiry Date']);
-                    vehicle.emirates = item['Emirates'];
-                    vehicle.status = item['Status'] || 'available';
-                    vehicle.isDeleted = item['isDeleted'] || false;
-                    processedVehicles.push({ vehicleNo: item['Vehicle No.'], chasisNumber: item['Chasis No.'] });
+                    vehicle.chasisNumber = item["Chasis No."];
+                    vehicle.aggregator = aggregators.find((aggregator) => aggregator.name === "idel");
+                    vehicle.registrationExpiry = this.excelDateToJSDate(item["Expiry Date"]);
+                    vehicle.emirates = item["Emirates"];
+                    vehicle.status = item["Status"] || "available";
+                    vehicle.isDeleted = item["isDeleted"] || false;
+                    processedVehicles.push({
+                        vehicleNo: item["Vehicle No."],
+                        chasisNumber: item["Chasis No."],
+                    });
                     return vehicle;
                 }
                 catch (error) {
@@ -308,26 +324,26 @@ let UploadService = class UploadService {
             const processedEmployee = [];
             employees.push(...jsonData.map((item) => {
                 try {
-                    const employeeMatch = employeeList.find((employee) => employee.code === item['E code']);
+                    const employeeMatch = employeeList.find((employee) => employee.code === item["E code"]);
                     if (employeeMatch) {
-                        errorArray.push(`Employee with E code ${item['E code']} Already exist.`);
+                        errorArray.push(`Employee with E code ${item["E code"]} Already exist.`);
                         return;
                     }
-                    if (processedEmployee.includes(item['E code'])) {
-                        errorArray.push(`Employee with E Code: ${item['E code']} are Duplicate`);
+                    if (processedEmployee.includes(item["E code"])) {
+                        errorArray.push(`Employee with E Code: ${item["E code"]} are Duplicate`);
                         return;
                     }
                     try {
                         const employee = new employee_entity_1.Employee();
-                        employee.name = item['Name'];
-                        employee.code = item['E code'];
-                        employee.status = item['Status'] || 'Active';
-                        processedEmployee.push(item['E code']);
+                        employee.name = item["Name"];
+                        employee.code = item["E code"];
+                        employee.status = item["Status"] || "Active";
+                        processedEmployee.push(item["E code"]);
                         return employee;
                     }
                     catch (error) {
                         console.log("[UploadService] [employees.push] error:", error);
-                        errorArray.push(`Employee with E Code ${item['E code']} Failed to Add.`);
+                        errorArray.push(`Employee with E Code ${item["E code"]} Failed to Add.`);
                         return;
                     }
                 }
@@ -350,25 +366,25 @@ let UploadService = class UploadService {
                     seconds = timeArray[2];
                     period = timeArray[3];
                 }
-                if (period.toLowerCase() === 'am' && hours === 12) {
+                if (period.toLowerCase() === "am" && hours === 12) {
                     hours = 0;
                 }
-                else if (period.toLowerCase() === 'pm' && hours !== 12) {
+                else if (period.toLowerCase() === "pm" && hours !== 12) {
                     hours += 12;
                 }
-                const formattedHour = hours.toString().padStart(2, '0');
-                const formattedMinute = minutes.padStart(2, '0');
-                const formattedSeconds = seconds.padStart(2, '0');
+                const formattedHour = hours.toString().padStart(2, "0");
+                const formattedMinute = minutes.padStart(2, "0");
+                const formattedSeconds = seconds.padStart(2, "0");
                 return `${formattedHour}:${formattedMinute}:${formattedSeconds}`;
             }
             catch (error) {
-                throw new Error('inCorrect Time format');
+                throw new Error("inCorrect Time format");
             }
         };
     }
     async readExcel(file, type) {
         try {
-            const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+            const workbook = XLSX.read(file.buffer, { type: "buffer" });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
@@ -381,32 +397,32 @@ let UploadService = class UploadService {
             const ownedBy = await this.ownedByRepository.find();
             const aggregator = await this.aggregatorRepository.find();
             if (jsonData.length > 0) {
-                if (Object.keys(jsonData[0]).includes('Code')) {
-                    if (type !== 'vehicle') {
-                        throw new Error('INVALID_FILE');
+                if (Object.keys(jsonData[0]).includes("Code")) {
+                    if (type !== "vehicle") {
+                        throw new Error("INVALID_FILE");
                     }
                     return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator, vehicle);
                 }
-                else if (Object.keys(jsonData[0]).includes('E code')) {
-                    if (type !== 'employee') {
-                        throw new Error('INVALID_FILE');
+                else if (Object.keys(jsonData[0]).includes("E code")) {
+                    if (type !== "employee") {
+                        throw new Error("INVALID_FILE");
                     }
                     return await this.processEmployee(jsonData, employee);
                 }
-                if (Object.keys(jsonData[0]).includes('Trip Date')) {
-                    if (type !== 'fine') {
-                        throw new Error('INVALID_FILE');
+                if (Object.keys(jsonData[0]).includes("Trip Date")) {
+                    if (type !== "fine") {
+                        throw new Error("INVALID_FILE");
                     }
                     return await this.processFine(jsonData, vehicle, employee, transaction);
                 }
                 else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
-                    throw new Error('Unrecognized sheet format');
+                    throw new Error("Unrecognized sheet format");
                 }
             }
             else {
-                console.warn('No data found in the uploaded Excel sheet.');
-                throw new Error('No data found');
+                console.warn("No data found in the uploaded Excel sheet.");
+                throw new Error("No data found");
             }
         }
         catch (error) {

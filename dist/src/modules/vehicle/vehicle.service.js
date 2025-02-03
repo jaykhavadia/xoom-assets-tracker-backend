@@ -55,7 +55,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
         catch (error) {
             this.logger.error(`[VehicleService] [findAll] Error: ${error.message}`);
-            throw new common_1.InternalServerErrorException('Failed to retrieve vehicles.');
+            throw new common_1.InternalServerErrorException("Failed to retrieve vehicles.");
         }
     }
     async findOne(id) {
@@ -102,21 +102,29 @@ let VehicleService = VehicleService_1 = class VehicleService {
     }
     async updateVehicles(vehicles) {
         try {
-            this.logger.log('Starting updateVehicles function.');
+            this.logger.log("Starting updateVehicles function.");
             await this.vehicleRepository.save(vehicles);
-            this.logger.log('Successfully updated vehicles.');
+            this.logger.log("Successfully updated vehicles.");
         }
         catch (error) {
             this.logger.error(`[VehicleService] [updateVehicles] Error: ${error.message}`);
-            throw new common_1.InternalServerErrorException('Failed to update vehicles.');
+            throw new common_1.InternalServerErrorException("Failed to update vehicles.");
         }
     }
     async checkRelation(checkRelationDto) {
         const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
-        const vehicleType = await this.vehicleTypeRepository.findOne({ where: { id: vehicleTypeId } });
-        const model = await this.modelRepository.findOne({ where: { id: modelId } });
-        const ownedBy = await this.ownedByRepository.findOne({ where: { id: ownedById } });
-        const aggregator = await this.aggregatorRepository.findOne({ where: { id: aggregatorId } });
+        const vehicleType = await this.vehicleTypeRepository.findOne({
+            where: { id: vehicleTypeId },
+        });
+        const model = await this.modelRepository.findOne({
+            where: { id: modelId },
+        });
+        const ownedBy = await this.ownedByRepository.findOne({
+            where: { id: ownedById },
+        });
+        const aggregator = await this.aggregatorRepository.findOne({
+            where: aggregatorId ? { id: aggregatorId } : { name: "idle" },
+        });
         const missingFields = [];
         if (!vehicleType)
             missingFields.push(`vehicleType (ID: ${vehicleTypeId})`);
@@ -125,34 +133,34 @@ let VehicleService = VehicleService_1 = class VehicleService {
         if (!ownedBy)
             missingFields.push(`ownedBy (ID: ${ownedById})`);
         if (missingFields.length > 0) {
-            throw new common_1.BadRequestException(`Invalid or missing fields: ${missingFields.join(', ')}`);
+            throw new common_1.BadRequestException(`Invalid or missing fields: ${missingFields.join(", ")}`);
         }
         return {
             vehicleType,
             model,
             ownedBy,
             aggregator,
-            ...vehicleDto
+            ...vehicleDto,
         };
     }
     async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName) {
         const queryBuilder = this.vehicleRepository
-            .createQueryBuilder('vehicle')
-            .leftJoinAndSelect('vehicle.model', 'model')
-            .leftJoinAndSelect('vehicle.ownedBy', 'owner')
-            .leftJoinAndSelect('vehicle.vehicleType', 'type')
-            .leftJoinAndSelect('vehicle.aggregator', 'aggregator');
+            .createQueryBuilder("vehicle")
+            .leftJoinAndSelect("vehicle.model", "model")
+            .leftJoinAndSelect("vehicle.ownedBy", "owner")
+            .leftJoinAndSelect("vehicle.vehicleType", "type")
+            .leftJoinAndSelect("vehicle.aggregator", "aggregator");
         if (model) {
-            queryBuilder.andWhere('model.brand = :model', { model });
+            queryBuilder.andWhere("model.brand = :model", { model });
         }
         if (ownedBy) {
-            queryBuilder.andWhere('owner.name = :ownedBy', { ownedBy });
+            queryBuilder.andWhere("owner.name = :ownedBy", { ownedBy });
         }
         if (vehicleType) {
-            if (!vehicleType || vehicleType.split('-').length !== 2) {
+            if (!vehicleType || vehicleType.split("-").length !== 2) {
                 throw new Error(`Invalid vehicleType format. Expected 'name - fuel', got '${vehicleType}'`);
             }
-            const [vehicleTypeName, vehicleFuel] = vehicleType.split('-');
+            const [vehicleTypeName, vehicleFuel] = vehicleType.split("-");
             queryBuilder.andWhere("type.name = :vehicleTypeName AND type.fuel = :vehicleFuel", {
                 vehicleTypeName,
                 vehicleFuel,
@@ -168,75 +176,75 @@ let VehicleService = VehicleService_1 = class VehicleService {
     }
     async getVehicleCountByAggregator() {
         return this.vehicleRepository
-            .createQueryBuilder('vehicle')
-            .leftJoinAndSelect('vehicle.aggregator', 'aggregator')
-            .select('aggregator.name', 'aggregatorName')
-            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-            .groupBy('aggregator.name')
+            .createQueryBuilder("vehicle")
+            .leftJoinAndSelect("vehicle.aggregator", "aggregator")
+            .select("aggregator.name", "aggregatorName")
+            .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .groupBy("aggregator.name")
             .getRawMany();
     }
     async getVehicleCountByModel() {
         return this.vehicleRepository
-            .createQueryBuilder('vehicle')
-            .leftJoin('vehicle.model', 'model')
-            .select('model.brand', 'modelBrand')
-            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
-            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
-            .groupBy('model.brand')
+            .createQueryBuilder("vehicle")
+            .leftJoin("vehicle.model", "model")
+            .select("model.brand", "modelBrand")
+            .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
+            .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .groupBy("model.brand")
             .setParameters({
-            available: 'available',
-            occupied: 'occupied',
+            available: "available",
+            occupied: "occupied",
         })
             .getRawMany();
     }
     async getVehicleCountByOwner() {
         return this.vehicleRepository
-            .createQueryBuilder('vehicle')
-            .leftJoin('vehicle.ownedBy', 'ownedBy')
-            .select('ownedBy.name', 'ownerName')
-            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
-            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
-            .groupBy('ownedBy.name')
+            .createQueryBuilder("vehicle")
+            .leftJoin("vehicle.ownedBy", "ownedBy")
+            .select("ownedBy.name", "ownerName")
+            .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
+            .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .groupBy("ownedBy.name")
             .setParameters({
-            available: 'available',
-            occupied: 'occupied',
+            available: "available",
+            occupied: "occupied",
         })
             .getRawMany();
     }
     async getVehicleCountByType() {
         return this.vehicleRepository
-            .createQueryBuilder('vehicle')
-            .leftJoin('vehicle.vehicleType', 'vehicleType')
-            .select('CONCAT(vehicleType.name, \' - \', vehicleType.fuel)', 'vehicleTypeName')
-            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
-            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
-            .groupBy('vehicleType.name, vehicleType.fuel')
+            .createQueryBuilder("vehicle")
+            .leftJoin("vehicle.vehicleType", "vehicleType")
+            .select("CONCAT(vehicleType.name, ' - ', vehicleType.fuel)", "vehicleTypeName")
+            .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
+            .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .groupBy("vehicleType.name, vehicleType.fuel")
             .setParameters({
-            available: 'available',
-            occupied: 'occupied',
+            available: "available",
+            occupied: "occupied",
         })
             .getRawMany();
     }
     async getVehiclesByLocationName(locationName) {
         const queryBuilder = this.vehicleRepository
-            .createQueryBuilder('vehicle')
-            .leftJoin('vehicle.transactions', 'transaction')
-            .leftJoin('transaction.location', 'location')
-            .select('location.name', 'locationName')
-            .addSelect('COUNT(vehicle.id)', 'vehicleCount')
-            .addSelect('SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)', 'available')
-            .addSelect('SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)', 'occupied')
-            .groupBy('location.name')
+            .createQueryBuilder("vehicle")
+            .leftJoin("vehicle.transactions", "transaction")
+            .leftJoin("transaction.location", "location")
+            .select("location.name", "locationName")
+            .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
+            .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .groupBy("location.name")
             .setParameters({
-            available: 'available',
-            occupied: 'occupied',
+            available: "available",
+            occupied: "occupied",
         });
-        queryBuilder.andWhere('location.name IS NOT NULL');
-        if (locationName && locationName !== 'null') {
-            queryBuilder.andWhere('location.name = :locationName', { locationName });
+        queryBuilder.andWhere("location.name IS NOT NULL");
+        if (locationName && locationName !== "null") {
+            queryBuilder.andWhere("location.name = :locationName", { locationName });
         }
         const vehicles = await queryBuilder.getRawMany();
         if (!vehicles || vehicles.length === 0) {
