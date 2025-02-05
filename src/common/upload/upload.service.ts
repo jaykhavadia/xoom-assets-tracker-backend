@@ -518,8 +518,9 @@ export class UploadService {
 
         vehicle.chasisNumber = item["Chasis No."];
         vehicle.aggregator = aggregators.find(
-          (aggregator) => aggregator.name === "idel",
+          (aggregator) => aggregator.name === "idle"
         );
+
         vehicle.registrationExpiry = this.excelDateToJSDate(
           item["Expiry Date"],
         );
