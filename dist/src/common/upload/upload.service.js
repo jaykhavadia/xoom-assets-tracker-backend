@@ -300,7 +300,7 @@ let UploadService = class UploadService {
                         return;
                     }
                     vehicle.chasisNumber = item["Chasis No."];
-                    vehicle.aggregator = aggregators.find((aggregator) => aggregator.name === "idel");
+                    vehicle.aggregator = aggregators.find((aggregator) => aggregator.name === "idle");
                     vehicle.registrationExpiry = this.excelDateToJSDate(item["Expiry Date"]);
                     vehicle.emirates = item["Emirates"];
                     vehicle.status = item["Status"] || "available";
