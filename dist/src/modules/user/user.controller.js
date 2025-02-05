@@ -16,8 +16,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
 const user_service_1 = require("./user.service");
-const user_entity_1 = require("./entities/user.entity");
 const jwt_auth_guard_1 = require("../../auth/jwt-auth.guard");
+const create_user_dto_1 = require("./dto/create-user.dto");
 let UserController = UserController_1 = class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -28,7 +28,7 @@ let UserController = UserController_1 = class UserController {
             const response = await this.userService.create(userData);
             return {
                 success: true,
-                message: 'User created successfully.',
+                message: "User created successfully.",
                 data: response,
             };
         }
@@ -42,7 +42,7 @@ let UserController = UserController_1 = class UserController {
             const response = await this.userService.findAll();
             return {
                 success: true,
-                message: 'Users retrieved successfully.',
+                message: "Users retrieved successfully.",
                 data: response,
             };
         }
@@ -56,7 +56,7 @@ let UserController = UserController_1 = class UserController {
             const response = await this.userService.findOne(id);
             return {
                 success: true,
-                message: 'User retrieved successfully.',
+                message: "User retrieved successfully.",
                 data: response,
             };
         }
@@ -70,7 +70,7 @@ let UserController = UserController_1 = class UserController {
             const response = await this.userService.update(id, updateData);
             return {
                 success: true,
-                message: 'User updated successfully.',
+                message: "User updated successfully.",
                 data: response,
             };
         }
@@ -84,7 +84,7 @@ let UserController = UserController_1 = class UserController {
             await this.userService.remove(id);
             return {
                 success: true,
-                message: 'User removed successfully.',
+                message: "User removed successfully.",
                 data: null,
             };
         }
@@ -99,7 +99,7 @@ __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)(new common_1.ValidationPipe())),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:paramtypes", [create_user_dto_1.UserDto]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "create", null);
 __decorate([
@@ -109,29 +109,29 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)(":id"),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Patch)(":id"),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "update", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(":id"),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "remove", null);
 exports.UserController = UserController = UserController_1 = __decorate([
-    (0, common_1.Controller)('users'),
+    (0, common_1.Controller)("users"),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [user_service_1.UserService])
 ], UserController);
