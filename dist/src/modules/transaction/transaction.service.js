@@ -100,6 +100,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
             let vehicle = await this.vehicleService.findOne(transaction.vehicle.id);
             const aggregatorData = await this.aggregatorService.findOneByName(updateDto?.aggregator || "idle");
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
+            const locationData = await this.locationService.findOne(location);
             vehicle = await this.vehicleService.update(vehicle.id, {
                 ...vehicleData,
                 vehicleTypeId: Number(vehicleType.id),
@@ -107,12 +108,12 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 ownedById: Number(ownedBy.id),
                 aggregatorId: Number(aggregatorData.id || 1),
                 status: "occupied",
+                location: locationData.name,
             });
             const employeeData = await this.employeeService.findOne(updateDto.employee);
             if (employeeData.status === "inactive") {
                 throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.inactive(employeeData.id));
             }
-            const locationData = await this.locationService.findOne(updateDto.location);
             await this.transactionRepository.update({ id }, {
                 comments,
                 date,
@@ -261,6 +262,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
             }
             const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === "out" ? transactionDto?.aggregator : "idle");
             const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
+            const location = await this.locationService.findOne(transactionDto.location);
             if (transactionDto.action === "out") {
                 if (vehicle.status === "occupied") {
                     throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.occupied(vehicle.id));
@@ -272,6 +274,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
                     ownedById: Number(ownedBy.id),
                     aggregatorId: Number(aggregatorData.id),
                     status: "occupied",
+                    location: location.name,
                 });
             }
             else if (transactionDto.action === "in") {
@@ -285,13 +288,13 @@ let TransactionService = TransactionService_1 = class TransactionService {
                     ownedById: Number(ownedBy.id),
                     aggregatorId: Number(aggregatorData.id),
                     status: "available",
+                    location: location.name,
                 });
             }
             const employee = await this.employeeService.findOne(transactionDto.employee);
             if (employee.status === "inactive") {
                 throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.inactive(employee.id));
             }
-            const location = await this.locationService.findOne(transactionDto.location);
             this.logger.log("Successfully updated transaction.");
             return { employee, location, vehicle, aggregator: aggregatorData };
         }

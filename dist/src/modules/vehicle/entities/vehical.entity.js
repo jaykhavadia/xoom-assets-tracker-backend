@@ -94,6 +94,12 @@ __decorate([
     __metadata("design:type", String)
 ], Vehicle.prototype, "chasisNumber", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50 }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], Vehicle.prototype, "location", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: ['available', 'occupied'] }),
     (0, class_validator_1.IsEnum)(['available', 'occupied']),
     __metadata("design:type", String)

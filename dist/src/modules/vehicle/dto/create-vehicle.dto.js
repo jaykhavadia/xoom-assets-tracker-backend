@@ -45,7 +45,7 @@ __decorate([
 ], VehicleDto.prototype, "aggregatorId", void 0);
 __decorate([
     (0, class_transformer_1.Transform)(({ value }) => {
-        return value ? moment(value, 'DD-MM-YYYY').format('DD-MM-YYYY') : null;
+        return value ? moment(value, "DD-MM-YYYY").format("DD-MM-YYYY") : null;
     }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", Date)
@@ -60,7 +60,12 @@ __decorate([
     __metadata("design:type", String)
 ], VehicleDto.prototype, "chasisNumber", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(['available', 'occupied']),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], VehicleDto.prototype, "location", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(["available", "occupied"]),
     __metadata("design:type", String)
 ], VehicleDto.prototype, "status", void 0);
 __decorate([

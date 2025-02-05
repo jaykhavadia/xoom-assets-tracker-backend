@@ -1,46 +1,57 @@
-import { IsString, IsNotEmpty, IsEnum, IsBoolean, IsDate, Matches, IsOptional } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
-import * as moment from 'moment'; // Corrected import
-import { Emirates } from '../entities/vehical.entity';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsBoolean,
+  IsDate,
+  Matches,
+  IsOptional,
+} from "class-validator";
+import { Type, Transform } from "class-transformer";
+import * as moment from "moment"; // Corrected import
+import { Emirates } from "../entities/vehical.entity";
 
 export class VehicleDto {
-    @IsString()
-    @IsNotEmpty()
-    vehicleNo: string;
+  @IsString()
+  @IsNotEmpty()
+  vehicleNo: string;
 
-    @IsString()
-    @IsNotEmpty()
-    code: string;
+  @IsString()
+  @IsNotEmpty()
+  code: string;
 
-    @IsNotEmpty()
-    vehicleTypeId: number;
+  @IsNotEmpty()
+  vehicleTypeId: number;
 
-    @IsNotEmpty()
-    modelId: number;
+  @IsNotEmpty()
+  modelId: number;
 
-    @IsNotEmpty()
-    ownedById: number;
+  @IsNotEmpty()
+  ownedById: number;
 
-    @IsOptional()
-    aggregatorId: number;
+  @IsOptional()
+  aggregatorId: number;
 
-    @Transform(({ value }) => {
-        return value ? moment(value, 'DD-MM-YYYY').format('DD-MM-YYYY') : null;
-    })
-    @IsNotEmpty()
-    registrationExpiry: Date;
+  @Transform(({ value }) => {
+    return value ? moment(value, "DD-MM-YYYY").format("DD-MM-YYYY") : null;
+  })
+  @IsNotEmpty()
+  registrationExpiry: Date;
 
-    @IsEnum(Emirates)
-    emirates: Emirates;
+  @IsEnum(Emirates)
+  emirates: Emirates;
 
-    @IsString()
-    @IsNotEmpty()
-    chasisNumber: string;
+  @IsString()
+  @IsNotEmpty()
+  chasisNumber: string;
 
-    @IsEnum(['available', 'occupied'])
-    status: 'available' | 'occupied';
+  @IsString()
+  @IsNotEmpty()
+  location: string;
 
-    @IsBoolean()
-    isDeleted: boolean;
+  @IsEnum(["available", "occupied"])
+  status: "available" | "occupied";
 
+  @IsBoolean()
+  isDeleted: boolean;
 }

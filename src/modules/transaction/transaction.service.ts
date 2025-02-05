@@ -98,6 +98,8 @@ export class TransactionService {
       const { vehicleType, model, ownedBy, aggregator, ...vehicleData } =
         vehicle;
 
+      const locationData = await this.locationService.findOne(location);
+
       vehicle = await this.vehicleService.update(vehicle.id, {
         ...vehicleData,
         vehicleTypeId: Number(vehicleType.id),
@@ -105,6 +107,7 @@ export class TransactionService {
         ownedById: Number(ownedBy.id),
         aggregatorId: Number(aggregatorData.id || 1),
         status: "occupied",
+        location: locationData.name,
       });
 
       const employeeData = await this.employeeService.findOne(
@@ -115,9 +118,6 @@ export class TransactionService {
           Messages.employee.inactive(employeeData.id),
         ); // Handle error
       }
-      const locationData = await this.locationService.findOne(
-        updateDto.location,
-      );
 
       await this.transactionRepository.update(
         { id },
@@ -364,6 +364,9 @@ export class TransactionService {
         );
       const { vehicleType, model, ownedBy, aggregator, ...vehicleData } =
         vehicle;
+      const location = await this.locationService.findOne(
+        transactionDto.location,
+      );
       if (transactionDto.action === "out") {
         if (vehicle.status === "occupied") {
           throw new InternalServerErrorException(
@@ -377,6 +380,7 @@ export class TransactionService {
           ownedById: Number(ownedBy.id),
           aggregatorId: Number(aggregatorData.id),
           status: "occupied",
+          location: location.name,
         });
       } else if (transactionDto.action === "in") {
         if (vehicle.status === "available") {
@@ -391,6 +395,7 @@ export class TransactionService {
           ownedById: Number(ownedBy.id),
           aggregatorId: Number(aggregatorData.id),
           status: "available",
+          location: location.name,
         });
       }
       const employee = await this.employeeService.findOne(
@@ -401,9 +406,6 @@ export class TransactionService {
           Messages.employee.inactive(employee.id),
         ); // Handle error
       }
-      const location = await this.locationService.findOne(
-        transactionDto.location,
-      );
 
       this.logger.log("Successfully updated transaction.");
       return { employee, location, vehicle, aggregator: aggregatorData };

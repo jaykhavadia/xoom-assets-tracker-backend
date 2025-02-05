@@ -80,6 +80,11 @@ export class Vehicle {
   @IsString()
   @IsNotEmpty()
   chasisNumber: string;
+  
+  @Column({ type: 'varchar', length: 50 })
+  @IsString()
+  @IsNotEmpty()
+  location: string;
 
   @Column({ type: 'enum', enum: ['available', 'occupied'] })
   @IsEnum(['available', 'occupied'])

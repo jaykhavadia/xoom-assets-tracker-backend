@@ -1,4 +1,4 @@
-import { Emirates } from '../entities/vehical.entity';
+import { Emirates } from "../entities/vehical.entity";
 export declare class VehicleDto {
     vehicleNo: string;
     code: string;
@@ -9,6 +9,7 @@ export declare class VehicleDto {
     registrationExpiry: Date;
     emirates: Emirates;
     chasisNumber: string;
-    status: 'available' | 'occupied';
+    location: string;
+    status: "available" | "occupied";
     isDeleted: boolean;
 }

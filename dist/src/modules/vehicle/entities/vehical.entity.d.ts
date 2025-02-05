@@ -23,6 +23,7 @@ export declare class Vehicle {
     registrationExpiry: Date;
     emirates: Emirates;
     chasisNumber: string;
+    location: string;
     status: 'available' | 'occupied';
     isDeleted: boolean;
     transactions: Transaction[];

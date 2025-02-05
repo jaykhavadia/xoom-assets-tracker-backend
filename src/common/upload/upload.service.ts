@@ -84,6 +84,7 @@ export class UploadService {
             ownedBy,
             aggregator,
             vehicle,
+            location,
           );
         } else if (Object.keys(jsonData[0]).includes("E code")) {
           if (type !== "employee") {
@@ -431,6 +432,7 @@ export class UploadService {
     ownedBy: OwnedBy[],
     aggregators: Aggregator[],
     vehicleDataSet: Vehicle[],
+    locations: Location[],
   ): Promise<{ vehicles: Vehicle[]; errorArray: string[] }> => {
     const errorArray = [];
     const processedVehicles: { vehicleNo: string; chasisNumber: string }[] = [];
@@ -518,7 +520,7 @@ export class UploadService {
 
         vehicle.chasisNumber = item["Chasis No."];
         vehicle.aggregator = aggregators.find(
-          (aggregator) => aggregator.name === "idle"
+          (aggregator) => aggregator.name === "idle",
         );
 
         vehicle.registrationExpiry = this.excelDateToJSDate(
@@ -531,6 +533,14 @@ export class UploadService {
           vehicleNo: item["Vehicle No."],
           chasisNumber: item["Chasis No."],
         });
+        const locationMatched = locations.find(
+          (location) => location.name === item["Location"],
+        )?.name;
+        if (!locationMatched) {
+          errorArray.push(`${item["Location"]} -  Location, not found.`);
+          return;
+        }
+        vehicle.location = locationMatched;
 
         return vehicle;
       } catch (error) {

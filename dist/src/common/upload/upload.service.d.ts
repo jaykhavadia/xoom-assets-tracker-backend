@@ -44,7 +44,7 @@ export declare class UploadService {
         transactions: CreateTransactionDto[];
         errorArray: string[];
     }>;
-    processVehicle: (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregators: Aggregator[], vehicleDataSet: Vehicle[]) => Promise<{
+    processVehicle: (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregators: Aggregator[], vehicleDataSet: Vehicle[], locations: Location[]) => Promise<{
         vehicles: Vehicle[];
         errorArray: string[];
     }>;

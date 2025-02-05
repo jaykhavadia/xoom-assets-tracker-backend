@@ -249,7 +249,7 @@ let UploadService = class UploadService {
             });
             return { transactions: await Promise.all(transactionPromises), errorArray };
         };
-        this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregators, vehicleDataSet) => {
+        this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregators, vehicleDataSet, locations) => {
             const errorArray = [];
             const processedVehicles = [];
             const vehiclePromises = jsonData.map(async (item) => {
@@ -309,6 +309,12 @@ let UploadService = class UploadService {
                         vehicleNo: item["Vehicle No."],
                         chasisNumber: item["Chasis No."],
                     });
+                    const locationMatched = locations.find((location) => location.name === item["Location"])?.name;
+                    if (!locationMatched) {
+                        errorArray.push(`${item["Location"]} -  Location, not found.`);
+                        return;
+                    }
+                    vehicle.location = locationMatched;
                     return vehicle;
                 }
                 catch (error) {
@@ -401,7 +407,7 @@ let UploadService = class UploadService {
                     if (type !== "vehicle") {
                         throw new Error("INVALID_FILE");
                     }
-                    return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator, vehicle);
+                    return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator, vehicle, location);
                 }
                 else if (Object.keys(jsonData[0]).includes("E code")) {
                     if (type !== "employee") {
