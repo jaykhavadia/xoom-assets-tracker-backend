@@ -1,10 +1,11 @@
-import { UserService } from './user.service';
-import { User } from './entities/user.entity';
+import { UserService } from "./user.service";
+import { User } from "./entities/user.entity";
+import { UserDto } from "./dto/create-user.dto";
 export declare class UserController {
     private readonly userService;
     private readonly logger;
     constructor(userService: UserService);
-    create(userData: User): Promise<response<User>>;
+    create(userData: UserDto): Promise<response<User>>;
     findAll(): Promise<{
         success: boolean;
         message: string;
