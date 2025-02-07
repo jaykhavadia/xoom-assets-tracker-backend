@@ -50,6 +50,9 @@ let EmployeeService = EmployeeService_1 = class EmployeeService {
                     vehicle: latestTransaction?.action === transaction_entity_1.Action.OUT
                         ? latestTransaction.vehicle
                         : null,
+                    aggregator: latestTransaction?.action === transaction_entity_1.Action.OUT
+                        ? latestTransaction.aggregator
+                        : null,
                 };
             });
         }

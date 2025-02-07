@@ -56,6 +56,10 @@ export class EmployeeService {
             latestTransaction?.action === Action.OUT
               ? latestTransaction.vehicle
               : null, // Include vehicle only if action is OUT
+          aggregator:
+            latestTransaction?.action === Action.OUT
+              ? latestTransaction.aggregator
+              : null,
         };
       });
     } catch (error) {
