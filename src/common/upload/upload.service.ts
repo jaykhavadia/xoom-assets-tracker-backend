@@ -197,94 +197,102 @@ export class UploadService {
     const errorArray = [];
 
     const fineResponse = await jsonData.map(async (item, index) => {
-      const {
-        "Trip Date": tripDate,
-        "Trip Time": tripTime,
-        Plate,
-        "Amount(AED)": amount,
-      } = item;
+      try {
+        const {
+          "Trip Date": tripDate,
+          "Trip Time": tripTime,
+          Plate,
+          "Amount(AED)": amount,
+        } = item;
 
-      // Parse the date and time
-      if (this.validateTime(tripTime)) {
-        console.log("The string contains AM or PM");
-      } else {
-        errorArray.push(
-          `inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`,
+        // Parse the date and time
+        if (this.validateTime(tripTime)) {
+          console.log("[DEBUG] Time format is valid:", tripTime);
+        } else {
+          errorArray.push(
+            `Incorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`,
+          );
+          return;
+        }
+
+        const date = new Date(this.excelDateToJSDate(tripDate));
+
+        const time = this.convertTo24HourFormat(tripTime);
+
+        // Find the associated vehicle
+        const vehicleMatch = vehicles.find(
+          (vehicle) => vehicle.vehicleNo === Plate.toString(),
         );
-        return;
-      }
-      const date = new Date(this.excelDateToJSDate(tripDate));
+        if (!vehicleMatch) {
+          errorArray.push(`Vehicle with number ${Plate} not found.`);
+          return null; // Return null if vehicle not found
+        }
 
-      const time = this.convertTo24HourFormat(tripTime);
+        const vehicleNo = vehicleMatch.vehicleNo;
 
-      // Find the associated vehicle
-      const vehicleMatch = vehicles.find(
-        (vehicle) => vehicle.vehicleNo === Plate.toString(),
-      );
-      if (!vehicleMatch) {
-        errorArray.push(`Vehicle with number ${Plate} not found.`);
-        return null; // Return null if vehicle not found
-      }
+        const inputDate = new Date(date);
+        if (isNaN(inputDate.getTime()) || inputDate.getFullYear() <= 2020) {
+          errorArray.push(
+            `Invalid date ${inputDate} format provided at ${index + 1}.`,
+          );
+          return;
+        }
 
-      const vehicleNo = vehicleMatch.vehicleNo;
-      const inputDate = new Date(date);
+        const targetISODate = new Date(date).toISOString().split("T")[0]; // "2025-01-29"
 
-      // Validate that the date is valid and greater than the year 2020
-      if (isNaN(inputDate.getTime()) || inputDate.getFullYear() <= 2020) {
+        const result = await this.transactionRepository
+          .createQueryBuilder("t")
+          .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
+            vehicleNo,
+          })
+          .leftJoinAndSelect("t.employee", "employee")
+          .leftJoinAndSelect("t.location", "location")
+          .addSelect("location.name", "locationName")
+          .where(
+            new Brackets((qb) => {
+              qb.where("t.date < :endDate", { endDate: targetISODate }).orWhere(
+                new Brackets((subQb) => {
+                  subQb
+                    .where("t.date = :endDate", { endDate: targetISODate })
+                    .andWhere("t.time <= :endTime", { endTime: time });
+                }),
+              );
+            }),
+          )
+          .orderBy("t.date", "DESC")
+          .orderBy("t.time", "DESC")
+          .limit(1)
+          .getOne();
+
+
+        if (!result) {
+          errorArray.push(`Something is wrong, No data found at ${index + 1}.`);
+          return;
+        }
+
+        let details;
+        if (result?.action === "out") {
+          details = {
+            employee_id: result.employee.id,
+            employee_name: result.employee.name,
+            employee_code: result.employee.code,
+            transaction_vehicleId: result.vehicle.id,
+            transaction_locationId: result.location.id,
+          };
+        } else {
+          details = {
+            emirates: result.vehicle.emirates,
+            locationName: result.location.name,
+          };
+        }
+
+        return { tripDate: targetISODate, tripTime, Plate, amount, details };
+      } catch (error) {
+        console.error(`[ERROR] Processing error at ${index + 1}:`, error);
         errorArray.push(
-          `Invalid date ${inputDate} format provided. at ${index + 1}`,
+          `Unexpected error at Data No. ${index + 1}: ${error.message}`,
         );
-        return;
       }
-
-      const targetISODate = new Date(date).toISOString().split("T")[0]; // "2024-11-30"
-      const targetDate = `${targetISODate} ${time}`;
-      console.log("targetDate:", targetDate);
-
-      const result = await this.transactionRepository
-        .createQueryBuilder("t")
-        .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
-          vehicleNo,
-        })
-        .leftJoinAndSelect("t.employee", "employee")
-        .leftJoinAndSelect("t.location", "location")
-        .addSelect("location.name", "locationName")
-        .where(
-          new Brackets((qb) => {
-            qb.where("t.date < :endDate", { endDate: targetISODate }).orWhere(
-              new Brackets((subQb) => {
-                subQb
-                  .where("t.date = :endDate", { endDate: targetISODate })
-                  .andWhere("t.time <= :endTime", { endTime: time });
-              }),
-            );
-          }),
-        )
-        .orderBy("t.date", "DESC")
-        .limit(1)
-        .getOne();
-
-      let details;
-      // console.log(result);
-      if (!result) {
-        errorArray.push(`Some thing is wrong No data found At ${index + 1} `);
-        return;
-      }
-      if (result?.action === "out") {
-        details = {
-          employee_id: result.employee.id,
-          employee_name: result.employee.name,
-          employee_code: result.employee.code,
-          transaction_vehicleId: result.vehicle.id,
-          transaction_locationId: result.location.id,
-        };
-      } else {
-        details = {
-          emirates: result.vehicle.emirates,
-          locationName: result.location.name,
-        };
-      }
-      return { tripDate: targetISODate, tripTime, Plate, amount, details };
     });
 
     const results = await Promise.all(fineResponse);
@@ -294,7 +302,7 @@ export class UploadService {
         .flat()
         .filter((item) => item !== null && item !== undefined),
       errorArray,
-    }; // Flatten and filter out null/undefined
+    };
   };
 
   processTransaction = async (
