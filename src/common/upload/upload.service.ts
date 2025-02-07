@@ -264,7 +264,7 @@ export class UploadService {
           .limit(1)
           .getOne();
 
-        console.log(`[DEBUG] Query Result:`, result);
+        // console.log(`[DEBUG] Query Result:`, result);
 
         if (!result) {
           result = await this.transactionRepository

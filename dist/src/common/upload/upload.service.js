@@ -143,7 +143,6 @@ let UploadService = class UploadService {
                         .orderBy("t.time", "DESC")
                         .limit(1)
                         .getOne();
-                    console.log(`[DEBUG] Query Result:`, result);
                     if (!result) {
                         result = await this.transactionRepository
                             .createQueryBuilder("t")
