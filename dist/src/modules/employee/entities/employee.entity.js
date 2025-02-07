@@ -47,12 +47,6 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => transaction_entity_1.Transaction, (transaction) => transaction.employee),
     __metadata("design:type", Array)
 ], Employee.prototype, "transactions", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], Employee.prototype, "currentVehicle", void 0);
 exports.Employee = Employee = __decorate([
     (0, typeorm_1.Entity)()
 ], Employee);

@@ -6,5 +6,4 @@ export declare class Employee {
     status: 'active' | 'inactive';
     isDeleted: boolean;
     transactions: Transaction[];
-    currentVehicle: string;
 }

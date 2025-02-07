@@ -18,6 +18,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const employee_entity_1 = require("./entities/employee.entity");
 const typeorm_2 = require("typeorm");
+const transaction_entity_1 = require("../transaction/entities/transaction.entity");
 let EmployeeService = EmployeeService_1 = class EmployeeService {
     constructor(employeeRepository) {
         this.employeeRepository = employeeRepository;
@@ -29,16 +30,32 @@ let EmployeeService = EmployeeService_1 = class EmployeeService {
         }
         catch (error) {
             this.logger.error(`[EmployeeService] [create] Error: ${error.message}`);
-            throw new common_1.InternalServerErrorException('Failed to create employee.');
+            throw new common_1.InternalServerErrorException("Failed to create employee.");
         }
     }
     async findAll() {
         try {
-            return await this.employeeRepository.find();
+            const employees = await this.employeeRepository.find({
+                relations: ["transactions", "transactions.vehicle"],
+                order: { transactions: { date: "DESC", time: "DESC" } },
+            });
+            return employees.map((employee) => {
+                const latestTransaction = employee.transactions?.[0];
+                return {
+                    id: employee.id,
+                    code: employee.code,
+                    name: employee.name,
+                    status: employee.status,
+                    isDeleted: employee.isDeleted,
+                    vehicle: latestTransaction?.action === transaction_entity_1.Action.OUT
+                        ? latestTransaction.vehicle
+                        : null,
+                };
+            });
         }
         catch (error) {
             this.logger.error(`[EmployeeService] [findAll] Error: ${error.message}`);
-            throw new common_1.InternalServerErrorException('Failed to retrieve employees.');
+            throw new common_1.InternalServerErrorException("Failed to retrieve employees.");
         }
     }
     async findOne(id) {
@@ -84,9 +101,9 @@ let EmployeeService = EmployeeService_1 = class EmployeeService {
     }
     async updateEmployees(employees) {
         try {
-            this.logger.log('Starting updateEmployees function.');
+            this.logger.log("Starting updateEmployees function.");
             await this.employeeRepository.save(employees);
-            this.logger.log('Successfully updated employees.');
+            this.logger.log("Successfully updated employees.");
         }
         catch (error) {
             this.logger.error(`[EmployeeService] [updateEmployees] Error: ${error.message}`);

@@ -1,19 +1,35 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Logger, Param, Patch, Post, Put, UploadedFile, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
-import { EmployeeService } from './employee.service';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Employee } from './entities/employee.entity';
-import { UploadService } from 'src/common/upload/upload.service';
-import { Messages } from 'src/constants/messages.constants';
-import { Sheet } from '../sheet/entities/sheet.entity';
-import { format } from 'date-fns';
-import { SheetService } from '../sheet/sheet.service';
-import { GoogleDriveService } from 'src/common/google-drive/google-drive.service';
-import * as fs from 'fs';
-import * as mkdirp from 'mkdirp';
-import * as path from 'path';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpException,
+  HttpStatus,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Put,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+  ValidationPipe,
+} from "@nestjs/common";
+import { EmployeeService } from "./employee.service";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { Employee } from "./entities/employee.entity";
+import { UploadService } from "src/common/upload/upload.service";
+import { Messages } from "src/constants/messages.constants";
+import { Sheet } from "../sheet/entities/sheet.entity";
+import { format } from "date-fns";
+import { SheetService } from "../sheet/sheet.service";
+import { GoogleDriveService } from "src/common/google-drive/google-drive.service";
+import * as fs from "fs";
+import * as mkdirp from "mkdirp";
+import * as path from "path";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
-@Controller('employee')
+@Controller("employee")
 @UseGuards(JwtAuthGuard)
 export class EmployeeController {
   private readonly logger = new Logger(EmployeeController.name);
@@ -23,11 +39,11 @@ export class EmployeeController {
     private readonly uploadService: UploadService,
     private readonly sheetService: SheetService,
     private readonly googleDriveService: GoogleDriveService,
-  ) { }
+  ) {}
 
   @Post()
   async create(
-    @Body(new ValidationPipe()) employee: Employee
+    @Body(new ValidationPipe()) employee: Employee,
   ): Promise<response<Employee>> {
     try {
       const response = await this.employeeService.create(employee);
@@ -37,13 +53,18 @@ export class EmployeeController {
         data: response,
       };
     } catch (error) {
-      this.logger.error(`[EmployeeController] [create] Error: ${error.message}`);
-      throw new HttpException(Messages.employee.createFailure, HttpStatus.BAD_REQUEST);
+      this.logger.error(
+        `[EmployeeController] [create] Error: ${error.message}`,
+      );
+      throw new HttpException(
+        Messages.employee.createFailure,
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
   @Get()
-  async findAll(): Promise<response<Employee[]>> {
+  async findAll(): Promise<response<Partial<Employee>[]>> {
     try {
       const response = await this.employeeService.findAll();
       return {
@@ -52,20 +73,28 @@ export class EmployeeController {
         data: response,
       };
     } catch (error) {
-      this.logger.error(`[EmployeeController] [findAll] Error: ${error.message}`);
-      throw new HttpException(Messages.employee.findAllFailure, HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error(
+        `[EmployeeController] [findAll] Error: ${error.message}`,
+      );
+      throw new HttpException(
+        Messages.employee.findAllFailure,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  @Get(':id')
+  @Get(":id")
   async findOne(
-    @Param('id') id: string // Get id as string
+    @Param("id") id: string, // Get id as string
   ): Promise<response<Employee>> {
     const employeeId = parseInt(id, 10); // Convert to number
     try {
       const response = await this.employeeService.findOne(employeeId);
       if (!response) {
-        throw new HttpException(Messages.employee.findOneFailure(employeeId), HttpStatus.NOT_FOUND);
+        throw new HttpException(
+          Messages.employee.findOneFailure(employeeId),
+          HttpStatus.NOT_FOUND,
+        );
       }
       return {
         success: true,
@@ -73,15 +102,20 @@ export class EmployeeController {
         data: response,
       };
     } catch (error) {
-      this.logger.error(`[EmployeeController] [findOne] Error: ${error.message}`);
-      throw new HttpException(Messages.employee.findOneFailure(employeeId), HttpStatus.NOT_FOUND);
+      this.logger.error(
+        `[EmployeeController] [findOne] Error: ${error.message}`,
+      );
+      throw new HttpException(
+        Messages.employee.findOneFailure(employeeId),
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 
-  @Patch(':id')
+  @Patch(":id")
   async update(
-    @Param('id') id: string, // Get id as string
-    @Body(new ValidationPipe()) employee: Employee
+    @Param("id") id: string, // Get id as string
+    @Body(new ValidationPipe()) employee: Employee,
   ): Promise<response<Employee>> {
     const employeeId = parseInt(id, 10); // Convert to number
     try {
@@ -92,14 +126,19 @@ export class EmployeeController {
         data: response,
       };
     } catch (error) {
-      this.logger.error(`[EmployeeController] [update] Error: ${error.message}`);
-      throw new HttpException(Messages.employee.updateFailure(employeeId), HttpStatus.BAD_REQUEST);
+      this.logger.error(
+        `[EmployeeController] [update] Error: ${error.message}`,
+      );
+      throw new HttpException(
+        Messages.employee.updateFailure(employeeId),
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
-  @Delete(':id')
+  @Delete(":id")
   async remove(
-    @Param('id') id: string // Get id as string
+    @Param("id") id: string, // Get id as string
   ): Promise<response<void>> {
     const employeeId = parseInt(id, 10); // Convert to number
     try {
@@ -109,8 +148,13 @@ export class EmployeeController {
         message: Messages.employee.removeSuccess(employeeId),
       };
     } catch (error) {
-      this.logger.error(`[EmployeeController] [remove] Error: ${error.message}`);
-      throw new HttpException(Messages.employee.removeFailure(employeeId), HttpStatus.BAD_REQUEST);
+      this.logger.error(
+        `[EmployeeController] [remove] Error: ${error.message}`,
+      );
+      throw new HttpException(
+        Messages.employee.removeFailure(employeeId),
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
@@ -118,24 +162,30 @@ export class EmployeeController {
    * Endpoint to upload employees from an Excel file.
    * @param file - The Excel file containing employee data.
    */
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<response<void>> {
+  @Post("upload")
+  @UseInterceptors(FileInterceptor("file"))
+  async uploadExcel(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<response<void>> {
     try {
-      const fileResponse = await this.uploadService.readExcel(file, 'employee');
+      const fileResponse = await this.uploadService.readExcel(file, "employee");
       // Save employees to the database (this part needs to be implemented in the service)
-      if ('employees' in fileResponse) {
+      if ("employees" in fileResponse) {
         // Save employees to the database
-        await this.employeeService.updateEmployees(fileResponse.employees.filter((item) => item !== undefined) as Employee[]);
+        await this.employeeService.updateEmployees(
+          fileResponse.employees.filter(
+            (item) => item !== undefined,
+          ) as Employee[],
+        );
       } else {
-        throw new Error('Unexpected file response type for employees.');
+        throw new Error("Unexpected file response type for employees.");
       }
       // Prepare data for the Sheet entity
       const sheetData: Partial<Sheet> = {
         uploadedAt: new Date(), // Current date and time
-        uploadedAtTime: format(new Date(), 'hh:mm a'), // Format the time as '10:30 AM'
+        uploadedAtTime: format(new Date(), "hh:mm a"), // Format the time as '10:30 AM'
         fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
-        type: 'Employee', // Assuming the file path is stored in 'file.path'
+        type: "Employee", // Assuming the file path is stored in 'file.path'
       };
 
       // Save the Sheet entry to the database
@@ -167,10 +217,12 @@ export class EmployeeController {
       return {
         success: true,
         message: Messages.employee.updateBulkSuccess,
-        errorArray: fileResponse.errorArray
+        errorArray: fileResponse.errorArray,
       };
     } catch (error) {
-      this.logger.error(`[EmployeeController] [uploadExcel] Error: ${error.message}`);
+      this.logger.error(
+        `[EmployeeController] [uploadExcel] Error: ${error.message}`,
+      );
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
