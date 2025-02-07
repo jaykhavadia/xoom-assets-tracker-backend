@@ -240,7 +240,7 @@ export class UploadService {
 
         const targetISODate = new Date(date).toISOString().split("T")[0]; // "2025-01-29"
 
-        const result = await this.transactionRepository
+        let result = await this.transactionRepository
           .createQueryBuilder("t")
           .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
             vehicleNo,
@@ -264,10 +264,41 @@ export class UploadService {
           .limit(1)
           .getOne();
 
+        console.log(`[DEBUG] Query Result:`, result);
 
         if (!result) {
-          errorArray.push(`Something is wrong, No data found at ${index + 1}.`);
-          return;
+          result = await this.transactionRepository
+            .createQueryBuilder("t")
+            .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
+              vehicleNo,
+            })
+            .leftJoinAndSelect("t.employee", "employee")
+            .leftJoinAndSelect("t.location", "location")
+            .addSelect("location.name", "locationName")
+            .where(
+              new Brackets((qb) => {
+                qb.where("t.date < :endDate", {
+                  endDate: targetISODate,
+                }).orWhere(
+                  new Brackets((subQb) => {
+                    subQb
+                      .where("t.date = :endDate", { endDate: targetISODate })
+                      .andWhere("t.time <= :endTime", { endTime: time });
+                  }),
+                );
+              }),
+            )
+            .orderBy("t.date", "ASC")
+            .orderBy("t.time", "ASC")
+            .limit(1)
+            .getOne();
+
+          if (!result) {
+            errorArray.push(
+              `Something is wrong, No data found at ${index + 1}.`,
+            );
+            return;
+          }
         }
 
         let details;
