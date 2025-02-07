@@ -250,55 +250,29 @@ export class UploadService {
           .addSelect("location.name", "locationName")
           .where(
             new Brackets((qb) => {
-              qb.where("t.date < :endDate", { endDate: targetISODate }).orWhere(
-                new Brackets((subQb) => {
-                  subQb
-                    .where("t.date = :endDate", { endDate: targetISODate })
-                    .andWhere("t.time <= :endTime", { endTime: time });
-                }),
-              );
+              qb.where("t.date <= :targetDate", { targetDate: targetISODate }) // Ensure correct date filtering
+                .andWhere(
+                  new Brackets((subQb) => {
+                    subQb
+                      .where("t.date < :targetDate", {
+                        targetDate: targetISODate,
+                      })
+                      .orWhere("t.date = :targetDate AND t.time <= :endTime", {
+                        targetDate: targetISODate,
+                        endTime: time,
+                      });
+                  }),
+                );
             }),
           )
-          .orderBy("t.date", "DESC")
-          .orderBy("t.time", "DESC")
+          .orderBy("t.date", "DESC") // Get the most recent transaction before the given date
+          .addOrderBy("t.time", "DESC")
           .limit(1)
           .getOne();
 
-        // console.log(`[DEBUG] Query Result:`, result);
-
         if (!result) {
-          result = await this.transactionRepository
-            .createQueryBuilder("t")
-            .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
-              vehicleNo,
-            })
-            .leftJoinAndSelect("t.employee", "employee")
-            .leftJoinAndSelect("t.location", "location")
-            .addSelect("location.name", "locationName")
-            .where(
-              new Brackets((qb) => {
-                qb.where("t.date < :endDate", {
-                  endDate: targetISODate,
-                }).orWhere(
-                  new Brackets((subQb) => {
-                    subQb
-                      .where("t.date = :endDate", { endDate: targetISODate })
-                      .andWhere("t.time <= :endTime", { endTime: time });
-                  }),
-                );
-              }),
-            )
-            .orderBy("t.date", "ASC")
-            .orderBy("t.time", "ASC")
-            .limit(1)
-            .getOne();
-
-          if (!result) {
-            errorArray.push(
-              `Something is wrong, No data found at ${index + 1}.`,
-            );
-            return;
-          }
+          errorArray.push(`Something is wrong, No data found at ${index + 1}.`);
+          return;
         }
 
         let details;

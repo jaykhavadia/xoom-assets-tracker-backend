@@ -133,42 +133,25 @@ let UploadService = class UploadService {
                         .leftJoinAndSelect("t.location", "location")
                         .addSelect("location.name", "locationName")
                         .where(new typeorm_2.Brackets((qb) => {
-                        qb.where("t.date < :endDate", { endDate: targetISODate }).orWhere(new typeorm_2.Brackets((subQb) => {
+                        qb.where("t.date <= :targetDate", { targetDate: targetISODate })
+                            .andWhere(new typeorm_2.Brackets((subQb) => {
                             subQb
-                                .where("t.date = :endDate", { endDate: targetISODate })
-                                .andWhere("t.time <= :endTime", { endTime: time });
+                                .where("t.date < :targetDate", {
+                                targetDate: targetISODate,
+                            })
+                                .orWhere("t.date = :targetDate AND t.time <= :endTime", {
+                                targetDate: targetISODate,
+                                endTime: time,
+                            });
                         }));
                     }))
                         .orderBy("t.date", "DESC")
-                        .orderBy("t.time", "DESC")
+                        .addOrderBy("t.time", "DESC")
                         .limit(1)
                         .getOne();
                     if (!result) {
-                        result = await this.transactionRepository
-                            .createQueryBuilder("t")
-                            .innerJoinAndSelect("t.vehicle", "v", "v.vehicleNo = :vehicleNo", {
-                            vehicleNo,
-                        })
-                            .leftJoinAndSelect("t.employee", "employee")
-                            .leftJoinAndSelect("t.location", "location")
-                            .addSelect("location.name", "locationName")
-                            .where(new typeorm_2.Brackets((qb) => {
-                            qb.where("t.date < :endDate", {
-                                endDate: targetISODate,
-                            }).orWhere(new typeorm_2.Brackets((subQb) => {
-                                subQb
-                                    .where("t.date = :endDate", { endDate: targetISODate })
-                                    .andWhere("t.time <= :endTime", { endTime: time });
-                            }));
-                        }))
-                            .orderBy("t.date", "ASC")
-                            .orderBy("t.time", "ASC")
-                            .limit(1)
-                            .getOne();
-                        if (!result) {
-                            errorArray.push(`Something is wrong, No data found at ${index + 1}.`);
-                            return;
-                        }
+                        errorArray.push(`Something is wrong, No data found at ${index + 1}.`);
+                        return;
                     }
                     let details;
                     if (result?.action === "out") {
