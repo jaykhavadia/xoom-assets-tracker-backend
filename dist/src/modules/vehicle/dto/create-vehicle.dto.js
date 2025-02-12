@@ -71,5 +71,9 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
+], VehicleDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
 ], VehicleDto.prototype, "isDeleted", void 0);
 //# sourceMappingURL=create-vehicle.dto.js.map

@@ -29,6 +29,7 @@ export declare const Messages: {
         updateBulkSuccess: string;
         updateBulkFailure: string;
         occupied: (id: string) => string;
+        notActive: (id: string) => string;
         available: (id: string) => string;
     };
     location: {

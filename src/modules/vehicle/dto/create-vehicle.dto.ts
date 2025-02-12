@@ -53,5 +53,8 @@ export class VehicleDto {
   status: "available" | "occupied";
 
   @IsBoolean()
+  isActive: boolean;
+ 
+  @IsBoolean()
   isDeleted: boolean;
 }

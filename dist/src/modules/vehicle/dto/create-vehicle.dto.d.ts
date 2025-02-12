@@ -11,5 +11,6 @@ export declare class VehicleDto {
     chasisNumber: string;
     location: string;
     status: "available" | "occupied";
+    isActive: boolean;
     isDeleted: boolean;
 }

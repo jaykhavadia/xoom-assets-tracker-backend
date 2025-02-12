@@ -95,13 +95,26 @@ export class TransactionService {
       const aggregatorData = await this.aggregatorService.findOneByName(
         updateDto?.aggregator || "idle",
       );
-      const { vehicleType, model, ownedBy, aggregator, ...vehicleData } =
-        vehicle;
+      const {
+        vehicleType,
+        model,
+        ownedBy,
+        aggregator,
+        isActive,
+        ...vehicleData
+      } = vehicle;
+
+      if (!isActive) {
+        throw new InternalServerErrorException(
+          Messages.vehicle.notActive(vehicleData.id),
+        ); // Handle error
+      }
 
       const locationData = await this.locationService.findOne(location);
 
       vehicle = await this.vehicleService.update(vehicle.id, {
         ...vehicleData,
+        isActive,
         vehicleTypeId: Number(vehicleType.id),
         modelId: Number(model.id),
         ownedById: Number(ownedBy.id),
@@ -362,8 +375,21 @@ export class TransactionService {
         await this.aggregatorService.findOneByName(
           transactionDto.action === "out" ? transactionDto?.aggregator : "idle",
         );
-      const { vehicleType, model, ownedBy, aggregator, ...vehicleData } =
-        vehicle;
+      const {
+        vehicleType,
+        model,
+        ownedBy,
+        aggregator,
+        isActive,
+        ...vehicleData
+      } = vehicle;
+
+      if (!isActive) {
+        throw new InternalServerErrorException(
+          Messages.vehicle.notActive(vehicleData.id),
+        ); // Handle error
+      }
+
       const location = await this.locationService.findOne(
         transactionDto.location,
       );
@@ -375,6 +401,7 @@ export class TransactionService {
         }
         vehicle = await this.vehicleService.update(vehicle.id, {
           ...vehicleData,
+          isActive,
           vehicleTypeId: Number(vehicleType.id),
           modelId: Number(model.id),
           ownedById: Number(ownedBy.id),
@@ -390,6 +417,7 @@ export class TransactionService {
         }
         vehicle = await this.vehicleService.update(vehicle.id, {
           ...vehicleData,
+          isActive,
           vehicleTypeId: Number(vehicleType.id),
           modelId: Number(model.id),
           ownedById: Number(ownedBy.id),
@@ -509,6 +537,12 @@ export class TransactionService {
           item["Vehicle No."].toString(),
         );
         if (vehicleMatch) {
+          if (!vehicleMatch.isActive) {
+            throw new InternalServerErrorException(
+              Messages.vehicle.notActive(vehicleMatch.id),
+            ); // Handle error
+          }
+
           if (transaction.action === Action.OUT) {
             if (vehicleMatch.status === "occupied") {
               errorArray.push(

@@ -99,10 +99,14 @@ let TransactionService = TransactionService_1 = class TransactionService {
             const transaction = await this.findOne(id);
             let vehicle = await this.vehicleService.findOne(transaction.vehicle.id);
             const aggregatorData = await this.aggregatorService.findOneByName(updateDto?.aggregator || "idle");
-            const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
+            const { vehicleType, model, ownedBy, aggregator, isActive, ...vehicleData } = vehicle;
+            if (!isActive) {
+                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.notActive(vehicleData.id));
+            }
             const locationData = await this.locationService.findOne(location);
             vehicle = await this.vehicleService.update(vehicle.id, {
                 ...vehicleData,
+                isActive,
                 vehicleTypeId: Number(vehicleType.id),
                 modelId: Number(model.id),
                 ownedById: Number(ownedBy.id),
@@ -261,7 +265,10 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 throw new common_1.InternalServerErrorException("Vehicle Not Found");
             }
             const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === "out" ? transactionDto?.aggregator : "idle");
-            const { vehicleType, model, ownedBy, aggregator, ...vehicleData } = vehicle;
+            const { vehicleType, model, ownedBy, aggregator, isActive, ...vehicleData } = vehicle;
+            if (!isActive) {
+                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.notActive(vehicleData.id));
+            }
             const location = await this.locationService.findOne(transactionDto.location);
             if (transactionDto.action === "out") {
                 if (vehicle.status === "occupied") {
@@ -269,6 +276,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 }
                 vehicle = await this.vehicleService.update(vehicle.id, {
                     ...vehicleData,
+                    isActive,
                     vehicleTypeId: Number(vehicleType.id),
                     modelId: Number(model.id),
                     ownedById: Number(ownedBy.id),
@@ -283,6 +291,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 }
                 vehicle = await this.vehicleService.update(vehicle.id, {
                     ...vehicleData,
+                    isActive,
                     vehicleTypeId: Number(vehicleType.id),
                     modelId: Number(model.id),
                     ownedById: Number(ownedBy.id),
@@ -339,6 +348,9 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 transaction.date = this.uploadService.excelDateToJSDate(item["Cut Off Date"]);
                 const vehicleMatch = await this.vehicleService.findByVehicleNo(item["Vehicle No."].toString());
                 if (vehicleMatch) {
+                    if (!vehicleMatch.isActive) {
+                        throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.notActive(vehicleMatch.id));
+                    }
                     if (transaction.action === transaction_entity_1.Action.OUT) {
                         if (vehicleMatch.status === "occupied") {
                             errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item["Vehicle No."])} at Data No. ${index + 1}`);

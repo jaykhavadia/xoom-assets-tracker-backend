@@ -32,6 +32,7 @@ exports.Messages = {
         updateBulkSuccess: 'Bulk Vehicles Added successfully',
         updateBulkFailure: 'Failed to update vehicles',
         occupied: (id) => `Vehicle with ID ${id} is already occupied`,
+        notActive: (id) => `Vehicle with ID ${id} is Not Active`,
         available: (id) => `Vehicle with ID ${id} is already available`,
     },
     location: {

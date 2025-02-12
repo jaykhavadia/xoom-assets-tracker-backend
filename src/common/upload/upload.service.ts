@@ -353,6 +353,12 @@ export class UploadService {
           (vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString(),
         );
         if (vehicleMatch) {
+          if (!vehicleMatch.isActive) {
+            errorArray.push(
+              `${Messages.vehicle.notActive(item["Vehicle No."])} at Data No. ${index + 1}`,
+            );
+            return;
+          }
           if (transaction.action === "out") {
             if (vehicleMatch.status === "occupied") {
               errorArray.push(
@@ -541,6 +547,7 @@ export class UploadService {
         );
         vehicle.emirates = item["Emirates"];
         vehicle.status = item["Status"] || "available";
+        vehicle.isActive = item["isActive"] || true;
         vehicle.isDeleted = item["isDeleted"] || false; // Default to false if not present
         processedVehicles.push({
           vehicleNo: item["Vehicle No."],
