@@ -13,6 +13,7 @@ import { Model } from "../model/entities/model.entity";
 import { Aggregator } from "../aggregator/entities/aggregator.entity";
 import { OwnedBy } from "../owned-by/entities/owned_by.entity";
 import * as moment from "moment";
+import { Action, Transaction } from "../transaction/entities/transaction.entity";
 
 @Injectable()
 export class VehicleService {
@@ -29,6 +30,8 @@ export class VehicleService {
     private readonly aggregatorRepository: Repository<Aggregator>,
     @InjectRepository(OwnedBy)
     private readonly ownedByRepository: Repository<OwnedBy>,
+    @InjectRepository(Transaction)
+    private transactionRepository: Repository<Transaction>,
   ) {}
 
   /**
@@ -167,8 +170,25 @@ export class VehicleService {
     ownedBy: OwnedBy;
     aggregator: Aggregator;
   }> {
-    const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } =
-      checkRelationDto;
+    const {
+      vehicleTypeId,
+      modelId,
+      ownedById,
+      aggregatorId,
+      isActive,
+      ...vehicleDto
+    } = checkRelationDto;
+    const latestTransaction = await this.transactionRepository.findOne({
+      where: { vehicle: { id: vehicleDto.vehicleNo } },
+      order: { createdAt: "DESC" },
+    });
+
+    if (latestTransaction && latestTransaction.action === Action.OUT) {
+      throw new BadRequestException(
+        "Vehicle is currently out for service. can't update the vehicle.",
+      );
+    }
+
     // Fetch the related entities based on the IDs
     const vehicleType = await this.vehicleTypeRepository.findOne({
       where: { id: vehicleTypeId },

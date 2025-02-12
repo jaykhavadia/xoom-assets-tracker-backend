@@ -5,14 +5,16 @@ import { VehicleType } from "../vehicle-type/entities/vehicle-type.entity";
 import { Model } from "../model/entities/model.entity";
 import { Aggregator } from "../aggregator/entities/aggregator.entity";
 import { OwnedBy } from "../owned-by/entities/owned_by.entity";
+import { Transaction } from "../transaction/entities/transaction.entity";
 export declare class VehicleService {
     private vehicleRepository;
     private readonly vehicleTypeRepository;
     private readonly modelRepository;
     private readonly aggregatorRepository;
     private readonly ownedByRepository;
+    private transactionRepository;
     private readonly logger;
-    constructor(vehicleRepository: Repository<Vehicle>, vehicleTypeRepository: Repository<VehicleType>, modelRepository: Repository<Model>, aggregatorRepository: Repository<Aggregator>, ownedByRepository: Repository<OwnedBy>);
+    constructor(vehicleRepository: Repository<Vehicle>, vehicleTypeRepository: Repository<VehicleType>, modelRepository: Repository<Model>, aggregatorRepository: Repository<Aggregator>, ownedByRepository: Repository<OwnedBy>, transactionRepository: Repository<Transaction>);
     create(createVehicleDto: VehicleDto): Promise<Vehicle>;
     findAll(status?: "available" | "occupied"): Promise<Vehicle[]>;
     findOne(id: string): Promise<Vehicle>;

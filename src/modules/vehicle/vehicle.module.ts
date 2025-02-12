@@ -14,6 +14,7 @@ import { Aggregator } from "../aggregator/entities/aggregator.entity";
 import { JwtAuthModule } from "src/auth/jwt-auth.module";
 import { User } from "../user/entities/user.entity";
 import { VehicleQueryService } from "./vehicleQuery.service";
+import { Transaction } from "../transaction/entities/transaction.entity";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { VehicleQueryService } from "./vehicleQuery.service";
       OwnedBy,
       Aggregator,
       User,
+      Transaction,
     ]),
     CommonModule,
     SheetModule,

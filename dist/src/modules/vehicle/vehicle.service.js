@@ -22,13 +22,15 @@ const vehicle_type_entity_1 = require("../vehicle-type/entities/vehicle-type.ent
 const model_entity_1 = require("../model/entities/model.entity");
 const aggregator_entity_1 = require("../aggregator/entities/aggregator.entity");
 const owned_by_entity_1 = require("../owned-by/entities/owned_by.entity");
+const transaction_entity_1 = require("../transaction/entities/transaction.entity");
 let VehicleService = VehicleService_1 = class VehicleService {
-    constructor(vehicleRepository, vehicleTypeRepository, modelRepository, aggregatorRepository, ownedByRepository) {
+    constructor(vehicleRepository, vehicleTypeRepository, modelRepository, aggregatorRepository, ownedByRepository, transactionRepository) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleTypeRepository = vehicleTypeRepository;
         this.modelRepository = modelRepository;
         this.aggregatorRepository = aggregatorRepository;
         this.ownedByRepository = ownedByRepository;
+        this.transactionRepository = transactionRepository;
         this.logger = new common_1.Logger(VehicleService_1.name);
     }
     async create(createVehicleDto) {
@@ -112,7 +114,14 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
     }
     async checkRelation(checkRelationDto) {
-        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
+        const { vehicleTypeId, modelId, ownedById, aggregatorId, isActive, ...vehicleDto } = checkRelationDto;
+        const latestTransaction = await this.transactionRepository.findOne({
+            where: { vehicle: { id: vehicleDto.vehicleNo } },
+            order: { createdAt: "DESC" },
+        });
+        if (latestTransaction && latestTransaction.action === transaction_entity_1.Action.OUT) {
+            throw new common_1.BadRequestException("Vehicle is currently out for service. can't update the vehicle.");
+        }
         const vehicleType = await this.vehicleTypeRepository.findOne({
             where: { id: vehicleTypeId },
         });
@@ -261,7 +270,9 @@ exports.VehicleService = VehicleService = VehicleService_1 = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(model_entity_1.Model)),
     __param(3, (0, typeorm_1.InjectRepository)(aggregator_entity_1.Aggregator)),
     __param(4, (0, typeorm_1.InjectRepository)(owned_by_entity_1.OwnedBy)),
+    __param(5, (0, typeorm_1.InjectRepository)(transaction_entity_1.Transaction)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
