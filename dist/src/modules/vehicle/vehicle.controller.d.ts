@@ -18,6 +18,7 @@ export declare class VehicleController {
     update(id: string, vehicle: VehicleDto): Promise<response<Vehicle>>;
     remove(id: string): Promise<response<void>>;
     uploadExcel(file: Express.Multer.File): Promise<response<void>>;
+    bulkUpdate(file: Express.Multer.File): Promise<response<void>>;
     getFilteredVehicles(model?: string, ownedBy?: string, vehicleType?: string, aggregatorName?: string): Promise<response<Vehicle[]>>;
     getVehicleCountByAggregator(): Promise<response<any>>;
     getVehicleCountByModel(): Promise<response<any>>;

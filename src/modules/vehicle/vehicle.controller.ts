@@ -207,6 +207,65 @@ export class VehicleController {
       ); // Bad request error
     }
   }
+  @Post("active-inactive")
+  @UseInterceptors(FileInterceptor("file")) // Use file interceptor for handling file uploads
+  async bulkUpdate(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<response<void>> {
+    try {
+      const fileResponse = await this.uploadService.readExcel(
+        file,
+        "activeInactive",
+      ); // Parse Excel file and get vehicle data
+      if ("activeInactive" in fileResponse) {
+        console.log("🚀 ~ VehicleController ~ fileResponse:", fileResponse);
+
+        // Save vehicles to the database
+        const updatedVehicles = (await Promise.all(
+          fileResponse.activeInactive.filter((item) => item !== undefined),
+        )) as Vehicle[];
+
+        await Promise.all(
+          updatedVehicles.map(async (vehicle: Vehicle) => {
+
+          console.log("🚀 ~ VehicleController ~ updatedVehicles.map ~ vehicle:", vehicle);
+
+
+            try {
+              await this.vehicleService.update(vehicle.id, vehicle); // Call service to update vehicles in bulk
+            } catch (error) {
+              console.log("[VehicleController] [bulkUpdate] error:", error);
+              fileResponse.errorArray.push(error.message);
+            }
+          }),
+        );
+      } else {
+        throw new Error("Unexpected file response type for vehicles.");
+      }
+
+      // Prepare data for the Sheet entity
+      // const sheetData: Partial<Sheet> = {
+      //   uploadedAt: new Date(), // Current date and time
+      //   uploadedAtTime: format(new Date(), "hh:mm a"), // Format the time as '10:30 AM'
+      //   fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
+      //   type: "Vehicle", // Assuming the file path is stored in 'file.path'
+      // };
+
+      return {
+        success: true,
+        message: Messages.vehicle.updateBulkSuccess, // Success message
+        errorArray: fileResponse.errorArray,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [uploadExcel] Error: ${error.message}`,
+      ); // Log error
+      throw new HttpException(
+        Messages.vehicle.updateBulkFailure,
+        HttpStatus.BAD_REQUEST,
+      ); // Bad request error
+    }
+  }
 
   @Get("filtered")
   async getFilteredVehicles(

@@ -79,8 +79,10 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
     }
     async update(id, updateVehicleDto) {
+        console.log("🚀 ~ VehicleService ~ updateVehicleDto:", updateVehicleDto);
         try {
             const updatedVehicle = await this.checkRelation(updateVehicleDto);
+            console.log("🚀 ~ VehicleService ~ updatedVehicle:", updatedVehicle);
             await this.vehicleRepository.update(id, updatedVehicle);
             return await this.findOne(id);
         }
@@ -114,7 +116,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
     }
     async checkRelation(checkRelationDto) {
-        const { vehicleTypeId, modelId, ownedById, aggregatorId, isActive, ...vehicleDto } = checkRelationDto;
+        const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
         const latestTransaction = await this.transactionRepository.findOne({
             where: { vehicle: { id: vehicleDto.vehicleNo } },
             order: { createdAt: "DESC" },

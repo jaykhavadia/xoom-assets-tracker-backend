@@ -13,7 +13,10 @@ import { Model } from "../model/entities/model.entity";
 import { Aggregator } from "../aggregator/entities/aggregator.entity";
 import { OwnedBy } from "../owned-by/entities/owned_by.entity";
 import * as moment from "moment";
-import { Action, Transaction } from "../transaction/entities/transaction.entity";
+import {
+  Action,
+  Transaction,
+} from "../transaction/entities/transaction.entity";
 
 @Injectable()
 export class VehicleService {
@@ -104,9 +107,18 @@ export class VehicleService {
    * @param updateVehicleDto - the vehicle object with updated information
    * @returns the updated vehicle
    */
-  async update(id: string, updateVehicleDto: VehicleDto): Promise<Vehicle> {
+  async update(
+    id: string,
+    updateVehicleDto: Partial<VehicleDto>,
+  ): Promise<Vehicle> {
+
+    console.log("🚀 ~ VehicleService ~ updateVehicleDto:", updateVehicleDto);
+
     try {
       const updatedVehicle = await this.checkRelation(updateVehicleDto);
+
+      console.log("🚀 ~ VehicleService ~ updatedVehicle:", updatedVehicle);
+
       await this.vehicleRepository.update(id, updatedVehicle);
       return await this.findOne(id);
     } catch (error) {
@@ -164,7 +176,7 @@ export class VehicleService {
     }
   }
 
-  async checkRelation(checkRelationDto: VehicleDto): Promise<{
+  async checkRelation(checkRelationDto: Partial<VehicleDto>): Promise<{
     vehicleType: VehicleType;
     model: Model;
     ownedBy: OwnedBy;
@@ -175,9 +187,9 @@ export class VehicleService {
       modelId,
       ownedById,
       aggregatorId,
-      isActive,
       ...vehicleDto
     } = checkRelationDto;
+    
     const latestTransaction = await this.transactionRepository.findOne({
       where: { vehicle: { id: vehicleDto.vehicleNo } },
       order: { createdAt: "DESC" },

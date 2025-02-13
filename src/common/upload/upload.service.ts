@@ -55,6 +55,7 @@ export class UploadService {
     | { employees: Employee[]; errorArray: string[] }
     | { transactions: CreateTransactionDto[]; errorArray: string[] }
     | { fine: any[]; errorArray: string[] }
+    | { activeInactive: any[]; errorArray: string[] }
   > {
     try {
       const workbook = XLSX.read(file.buffer, { type: "buffer" });
@@ -73,7 +74,16 @@ export class UploadService {
 
       // Check if jsonData has at least one item to determine the sheet type
       if (jsonData.length > 0) {
-        if (Object.keys(jsonData[0]).includes("Code")) {
+        if (
+          Object.keys(jsonData[0]).includes("Code") &&
+          Object.keys(jsonData[0]).includes("Plate No.") &&
+          Object.keys(jsonData[0]).includes("Status")
+        ) {
+          if (type !== "activeInactive") {
+            throw new Error("INVALID_FILE");
+          }
+          return await this.processActiveInactive(jsonData, vehicle);
+        } else if (Object.keys(jsonData[0]).includes("Code")) {
           if (type !== "vehicle") {
             throw new Error("INVALID_FILE");
           }
@@ -92,8 +102,7 @@ export class UploadService {
           }
 
           return await this.processEmployee(jsonData, employee);
-        }
-        if (Object.keys(jsonData[0]).includes("Trip Date")) {
+        } else if (Object.keys(jsonData[0]).includes("Trip Date")) {
           if (type !== "fine") {
             throw new Error("INVALID_FILE");
           }
@@ -442,6 +451,57 @@ export class UploadService {
     });
 
     return { transactions: await Promise.all(transactionPromises), errorArray };
+  };
+
+  processActiveInactive = async (
+    jsonData: any,
+    vehicleDataSet: Vehicle[],
+  ): Promise<{ activeInactive: Vehicle[]; errorArray: string[] }> => {
+    const errorArray = [];
+    const processActiveInactive: Vehicle[] = [];
+
+    // If the first item has the key 'Vehicle No.', process as vehicles
+    const vehiclePromises = jsonData.map(async (item) => {
+      try {
+        if (processActiveInactive.length) {
+          // Check for duplicates
+          processActiveInactive.forEach((processedVehicle: Vehicle) => {
+            if (
+              String(processedVehicle.vehicleNo) ===
+                String(item["Plate No."]) &&
+              String(processedVehicle.code) === String(item["Code"])
+            ) {
+              throw new Error(
+                `Vehicle with No: ${item["Plate No."]} and Code No.: ${item["Code"]} are Duplicate in sheet`,
+              );
+            }
+          });
+        }
+
+        const vehicleMatch = vehicleDataSet.find(
+          (vehicleData) =>
+            String(vehicleData.vehicleNo) === String(item["Plate No."]) &&
+            String(vehicleData.code) === String(item["Code"]),
+        );
+        if (vehicleMatch) {
+          vehicleMatch.isActive = item["Status"] === "Active" ? true : false;
+        } else {
+          errorArray.push(
+            `Vehicle with No: ${item["Plate No."]} and Code No.: ${item["Code"]} are Not in DB`,
+          );
+          return;
+        }
+
+        processActiveInactive.push(vehicleMatch);
+        return vehicleMatch;
+      } catch (error) {
+        errorArray.push(error.message);
+      }
+    });
+
+    const resolvedVehicles = await Promise.all(vehiclePromises);
+
+    return { activeInactive: resolvedVehicles, errorArray };
   };
 
   processVehicle = async (

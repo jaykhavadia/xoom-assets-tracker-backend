@@ -121,6 +121,37 @@ let VehicleController = VehicleController_1 = class VehicleController {
             throw new common_1.HttpException(messages_constants_1.Messages.vehicle.updateBulkFailure, common_1.HttpStatus.BAD_REQUEST);
         }
     }
+    async bulkUpdate(file) {
+        try {
+            const fileResponse = await this.uploadService.readExcel(file, "activeInactive");
+            if ("activeInactive" in fileResponse) {
+                console.log("🚀 ~ VehicleController ~ fileResponse:", fileResponse);
+                const updatedVehicles = (await Promise.all(fileResponse.activeInactive.filter((item) => item !== undefined)));
+                await Promise.all(updatedVehicles.map(async (vehicle) => {
+                    console.log("🚀 ~ VehicleController ~ updatedVehicles.map ~ vehicle:", vehicle);
+                    try {
+                        await this.vehicleService.update(vehicle.id, vehicle);
+                    }
+                    catch (error) {
+                        console.log("[VehicleController] [bulkUpdate] error:", error);
+                        fileResponse.errorArray.push(error.message);
+                    }
+                }));
+            }
+            else {
+                throw new Error("Unexpected file response type for vehicles.");
+            }
+            return {
+                success: true,
+                message: messages_constants_1.Messages.vehicle.updateBulkSuccess,
+                errorArray: fileResponse.errorArray,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[VehicleController] [uploadExcel] Error: ${error.message}`);
+            throw new common_1.HttpException(messages_constants_1.Messages.vehicle.updateBulkFailure, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
     async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName) {
         try {
             const data = await this.vehicleService.getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName);
@@ -393,6 +424,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], VehicleController.prototype, "uploadExcel", null);
+__decorate([
+    (0, common_1.Post)("active-inactive"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file")),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], VehicleController.prototype, "bulkUpdate", null);
 __decorate([
     (0, common_1.Get)("filtered"),
     __param(0, (0, common_1.Query)("model")),

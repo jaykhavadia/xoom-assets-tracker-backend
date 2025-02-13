@@ -264,6 +264,39 @@ let UploadService = class UploadService {
             });
             return { transactions: await Promise.all(transactionPromises), errorArray };
         };
+        this.processActiveInactive = async (jsonData, vehicleDataSet) => {
+            const errorArray = [];
+            const processActiveInactive = [];
+            const vehiclePromises = jsonData.map(async (item) => {
+                try {
+                    if (processActiveInactive.length) {
+                        processActiveInactive.forEach((processedVehicle) => {
+                            if (String(processedVehicle.vehicleNo) ===
+                                String(item["Plate No."]) &&
+                                String(processedVehicle.code) === String(item["Code"])) {
+                                throw new Error(`Vehicle with No: ${item["Plate No."]} and Code No.: ${item["Code"]} are Duplicate in sheet`);
+                            }
+                        });
+                    }
+                    const vehicleMatch = vehicleDataSet.find((vehicleData) => String(vehicleData.vehicleNo) === String(item["Plate No."]) &&
+                        String(vehicleData.code) === String(item["Code"]));
+                    if (vehicleMatch) {
+                        vehicleMatch.isActive = item["Status"] === "Active" ? true : false;
+                    }
+                    else {
+                        errorArray.push(`Vehicle with No: ${item["Plate No."]} and Code No.: ${item["Code"]} are Not in DB`);
+                        return;
+                    }
+                    processActiveInactive.push(vehicleMatch);
+                    return vehicleMatch;
+                }
+                catch (error) {
+                    errorArray.push(error.message);
+                }
+            });
+            const resolvedVehicles = await Promise.all(vehiclePromises);
+            return { activeInactive: resolvedVehicles, errorArray };
+        };
         this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregators, vehicleDataSet, locations) => {
             const errorArray = [];
             const processedVehicles = [];
@@ -419,7 +452,15 @@ let UploadService = class UploadService {
             const ownedBy = await this.ownedByRepository.find();
             const aggregator = await this.aggregatorRepository.find();
             if (jsonData.length > 0) {
-                if (Object.keys(jsonData[0]).includes("Code")) {
+                if (Object.keys(jsonData[0]).includes("Code") &&
+                    Object.keys(jsonData[0]).includes("Plate No.") &&
+                    Object.keys(jsonData[0]).includes("Status")) {
+                    if (type !== "activeInactive") {
+                        throw new Error("INVALID_FILE");
+                    }
+                    return await this.processActiveInactive(jsonData, vehicle);
+                }
+                else if (Object.keys(jsonData[0]).includes("Code")) {
                     if (type !== "vehicle") {
                         throw new Error("INVALID_FILE");
                     }
@@ -431,7 +472,7 @@ let UploadService = class UploadService {
                     }
                     return await this.processEmployee(jsonData, employee);
                 }
-                if (Object.keys(jsonData[0]).includes("Trip Date")) {
+                else if (Object.keys(jsonData[0]).includes("Trip Date")) {
                     if (type !== "fine") {
                         throw new Error("INVALID_FILE");
                     }

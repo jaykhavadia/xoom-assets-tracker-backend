@@ -19,10 +19,10 @@ export declare class VehicleService {
     findAll(status?: "available" | "occupied"): Promise<Vehicle[]>;
     findOne(id: string): Promise<Vehicle>;
     findByVehicleNo(vehicleNo: string): Promise<Vehicle>;
-    update(id: string, updateVehicleDto: VehicleDto): Promise<Vehicle>;
+    update(id: string, updateVehicleDto: Partial<VehicleDto>): Promise<Vehicle>;
     remove(id: string): Promise<void>;
     updateVehicles(vehicles: Vehicle[]): Promise<void>;
-    checkRelation(checkRelationDto: VehicleDto): Promise<{
+    checkRelation(checkRelationDto: Partial<VehicleDto>): Promise<{
         vehicleType: VehicleType;
         model: Model;
         ownedBy: OwnedBy;
