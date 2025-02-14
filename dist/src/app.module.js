@@ -41,6 +41,7 @@ const owned_by_entity_1 = require("./modules/owned-by/entities/owned_by.entity")
 const model_entity_1 = require("./modules/model/entities/model.entity");
 const vehicle_type_entity_1 = require("./modules/vehicle-type/entities/vehicle-type.entity");
 const jwt_auth_module_1 = require("./auth/jwt-auth.module");
+const backup_module_1 = require("./modules/backup/backup.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -96,6 +97,7 @@ exports.AppModule = AppModule = __decorate([
             model_module_1.ModelModule,
             owned_by_module_1.OwnedByModule,
             jwt_auth_module_1.JwtAuthModule,
+            backup_module_1.BackupModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, cronservice_1.CronService],
