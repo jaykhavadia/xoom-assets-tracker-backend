@@ -42,7 +42,7 @@ let CronService = class CronService {
 };
 exports.CronService = CronService;
 __decorate([
-    (0, schedule_1.Cron)('0 * * * *'),
+    (0, schedule_1.Cron)('*/55 * * * *'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

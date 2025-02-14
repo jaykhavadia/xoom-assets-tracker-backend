@@ -66,6 +66,9 @@ export class GoogleAuthService {
   async refreshAccessToken(): Promise<void> {
     try {
       const tokens = await this.oAuth2Client.getAccessToken();
+
+      console.log("🚀 ~ GoogleAuthService ~ refreshAccessToken ~ tokens:", tokens);
+
       if (tokens?.token) {
         const expirationTime = Date.now() + 3600 * 1000;
         await this.authTokenService.saveTokens(tokens.token, this.oAuth2Client.credentials.refresh_token, expirationTime);

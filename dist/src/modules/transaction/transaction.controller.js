@@ -25,12 +25,14 @@ const upload_service_1 = require("../../common/upload/upload.service");
 const date_fns_1 = require("date-fns");
 const sheet_service_1 = require("../sheet/sheet.service");
 const user_decorator_1 = require("../../auth/decorators/user.decorator");
+const google_drive_service_1 = require("../../common/google-drive/google-drive.service");
 let TransactionController = TransactionController_1 = class TransactionController {
-    constructor(transactionService, uploadService, sheetService, filesHelperService) {
+    constructor(transactionService, uploadService, sheetService, filesHelperService, googleDriveService) {
         this.transactionService = transactionService;
         this.uploadService = uploadService;
         this.sheetService = sheetService;
         this.filesHelperService = filesHelperService;
+        this.googleDriveService = googleDriveService;
         this.logger = new common_1.Logger(TransactionController_1.name);
     }
     async create(body, user, files) {
@@ -48,6 +50,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
             }
             catch (error) {
                 console.log("TransactionController ~ error:", error);
+                this.googleDriveService.ensureAuthenticated();
                 throw new common_1.HttpException("Image Upload Issue", common_1.HttpStatus.BAD_REQUEST);
             }
             return {
@@ -280,6 +283,7 @@ exports.TransactionController = TransactionController = TransactionController_1 
     __metadata("design:paramtypes", [transaction_service_1.TransactionService,
         upload_service_1.UploadService,
         sheet_service_1.SheetService,
-        files_helper_service_1.FilesHelperService])
+        files_helper_service_1.FilesHelperService,
+        google_drive_service_1.GoogleDriveService])
 ], TransactionController);
 //# sourceMappingURL=transaction.controller.js.map

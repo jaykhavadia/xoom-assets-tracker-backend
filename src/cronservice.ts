@@ -22,7 +22,7 @@ export class CronService {
     // }
 
     // Cron job to refresh the access token every hour
-    @Cron('0 * * * *') // Runs at the start of every hour
+    @Cron('*/55 * * * *') // Runs at the start of every hour
     async refreshAccessToken() {
         const url = 'https://oauth2.googleapis.com/token';
         const params = new URLSearchParams();

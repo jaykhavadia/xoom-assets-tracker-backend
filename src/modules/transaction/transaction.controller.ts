@@ -37,6 +37,7 @@ import { format } from "date-fns";
 import { SheetService } from "../sheet/sheet.service";
 import { GetUser } from "src/auth/decorators/user.decorator";
 import { User } from "../user/entities/user.entity";
+import { GoogleDriveService } from "src/common/google-drive/google-drive.service";
 
 @Controller("transaction")
 @UseGuards(JwtAuthGuard)
@@ -48,6 +49,7 @@ export class TransactionController {
     private readonly uploadService: UploadService,
     private readonly sheetService: SheetService,
     private readonly filesHelperService: FilesHelperService,
+    private readonly googleDriveService: GoogleDriveService,
   ) {}
 
   /**
@@ -93,6 +95,7 @@ export class TransactionController {
         this.logger.log(Messages.transaction.createSuccess); // Log success message
       } catch (error) {
         console.log("TransactionController ~ error:", error);
+        this.googleDriveService.ensureAuthenticated();
         throw new HttpException("Image Upload Issue", HttpStatus.BAD_REQUEST);
       }
       return {
@@ -143,8 +146,9 @@ export class TransactionController {
    */
   @Get()
   async findAll(): Promise<response<Transaction[]>> {
-
-    console.log("🚀 ~ file: transaction.controller.ts:147 ~ TransactionController ~ findAll ~ findAll:");
+    console.log(
+      "🚀 ~ file: transaction.controller.ts:147 ~ TransactionController ~ findAll ~ findAll:",
+    );
 
     try {
       const transactions = await this.transactionService.findAll(); // Fetch all transactions

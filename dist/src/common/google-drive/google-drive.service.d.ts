@@ -12,7 +12,7 @@ export declare class GoogleDriveService implements OnModuleInit {
     constructor(configService: ConfigService, googleAuthService: GoogleAuthService, authTokenService: AuthTokenService);
     onModuleInit(): Promise<void>;
     setDriveCredentials(): Promise<void>;
-    private ensureAuthenticated;
+    ensureAuthenticated(): Promise<void>;
     private resetAccessToken;
     uploadFile(filePath: string, folderId: string): Promise<{
         id: string;

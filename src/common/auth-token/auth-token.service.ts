@@ -24,7 +24,7 @@ export class AuthTokenService {
       let token = await this.authTokenRepository.findOne({ where: { id: 1 } });
       if (!token) {
         this.logger.warn('No tokens found in the database.');
-        token = await this.saveTokens(this.configService.get('GOOGLE_ACCESS_TOKEN'), this.configService.get('GOOGLE_REFRESH_TOKEN'), 5);
+        token = await this.saveTokens(this.configService.get('GOOGLE_ACCESS_TOKEN'), this.configService.get('GOOGLE_REFRESH_TOKEN'), 3400);
       }
       return token;
     } catch (error) {
@@ -54,7 +54,9 @@ export class AuthTokenService {
           refreshToken,
           accessTokenExpiresAt: expiresAt,
         });
+
       }
+      console.log("🚀 ~ AuthTokenService ~ saveTokens ~ tokenRecord:", tokenRecord);
 
       this.logger.log('Tokens saved/updated successfully');
       return await this.authTokenRepository.save(tokenRecord);

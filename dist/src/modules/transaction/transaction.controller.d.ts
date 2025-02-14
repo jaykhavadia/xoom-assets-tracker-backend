@@ -5,13 +5,15 @@ import { CreateTransactionDto, UpdateTransactionDto } from "./dto/CreateTransact
 import { UploadService } from "src/common/upload/upload.service";
 import { SheetService } from "../sheet/sheet.service";
 import { User } from "../user/entities/user.entity";
+import { GoogleDriveService } from "src/common/google-drive/google-drive.service";
 export declare class TransactionController {
     private readonly transactionService;
     private readonly uploadService;
     private readonly sheetService;
     private readonly filesHelperService;
+    private readonly googleDriveService;
     private readonly logger;
-    constructor(transactionService: TransactionService, uploadService: UploadService, sheetService: SheetService, filesHelperService: FilesHelperService);
+    constructor(transactionService: TransactionService, uploadService: UploadService, sheetService: SheetService, filesHelperService: FilesHelperService, googleDriveService: GoogleDriveService);
     create(body: CreateTransactionDto, user: Partial<User>, files?: {
         [key: string]: Express.Multer.File[];
     }): Promise<response<Transaction>>;
