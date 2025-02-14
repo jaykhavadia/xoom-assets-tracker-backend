@@ -39,6 +39,7 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
     }
     async ensureAuthenticated() {
         const tokenInfo = await this.oAuth2Client.getAccessToken();
+        console.log("🚀 ~ GoogleDriveService ~ ensureAuthenticated ~ tokenInfo:", tokenInfo);
         if (!tokenInfo.token) {
             this.logger.warn('Access token is missing or expired. Attempting to refresh.');
             this.resetAccessToken();
@@ -46,6 +47,7 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
     }
     async resetAccessToken() {
         const newTokens = await this.googleAuthService.refreshAccessToken();
+        console.log("🚀 ~ GoogleDriveService ~ resetAccessToken ~ newTokens:", newTokens);
         await this.oAuth2Client.setCredentials(newTokens);
         await this.setDriveCredentials();
     }
