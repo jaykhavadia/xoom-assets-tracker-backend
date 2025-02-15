@@ -79,10 +79,8 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
     }
     async update(id, updateVehicleDto) {
-        console.log("🚀 ~ VehicleService ~ updateVehicleDto:", updateVehicleDto);
         try {
             const updatedVehicle = await this.checkRelation(updateVehicleDto);
-            console.log("🚀 ~ VehicleService ~ updatedVehicle:", updatedVehicle);
             await this.vehicleRepository.update(id, updatedVehicle);
             return await this.findOne(id);
         }
@@ -160,7 +158,8 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .leftJoinAndSelect("vehicle.model", "model")
             .leftJoinAndSelect("vehicle.ownedBy", "owner")
             .leftJoinAndSelect("vehicle.vehicleType", "type")
-            .leftJoinAndSelect("vehicle.aggregator", "aggregator");
+            .leftJoinAndSelect("vehicle.aggregator", "aggregator")
+            .where("vehicle.isActive = :isActive", { isActive: 1 });
         if (model) {
             queryBuilder.andWhere("model.brand = :model", { model });
         }
@@ -191,6 +190,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .leftJoinAndSelect("vehicle.aggregator", "aggregator")
             .select("aggregator.name", "aggregatorName")
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("aggregator.name")
             .getRawMany();
     }
@@ -202,6 +202,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("model.brand")
             .setParameters({
             available: "available",
@@ -217,6 +218,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("ownedBy.name")
             .setParameters({
             available: "available",
@@ -232,6 +234,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("vehicleType.name, vehicleType.fuel")
             .setParameters({
             available: "available",
@@ -248,6 +251,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("location.name")
             .setParameters({
             available: "available",

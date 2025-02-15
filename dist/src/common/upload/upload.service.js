@@ -102,7 +102,7 @@ let UploadService = class UploadService {
             const errorArray = [];
             const fineResponse = await jsonData.map(async (item, index) => {
                 try {
-                    const { "Trip Date": tripDate, "Trip Time": tripTime, Plate, "Amount(AED)": amount, } = item;
+                    const { "Trip Date": tripDate, "Trip Time": tripTime, Plate, "Amount(AED)": amount, Code, } = item;
                     if (this.validateTime(tripTime)) {
                         console.log("[DEBUG] Time format is valid:", tripTime);
                     }
@@ -112,7 +112,8 @@ let UploadService = class UploadService {
                     }
                     const date = new Date(this.excelDateToJSDate(tripDate));
                     const time = this.convertTo24HourFormat(tripTime);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString() &&
+                        vehicle.code === Code.toString());
                     if (!vehicleMatch) {
                         errorArray.push(`Vehicle with number ${Plate} not found.`);
                         return null;

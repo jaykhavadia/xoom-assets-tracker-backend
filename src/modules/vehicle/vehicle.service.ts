@@ -111,14 +111,8 @@ export class VehicleService {
     id: string,
     updateVehicleDto: Partial<VehicleDto>,
   ): Promise<Vehicle> {
-
-    console.log("🚀 ~ VehicleService ~ updateVehicleDto:", updateVehicleDto);
-
     try {
       const updatedVehicle = await this.checkRelation(updateVehicleDto);
-
-      console.log("🚀 ~ VehicleService ~ updatedVehicle:", updatedVehicle);
-
       await this.vehicleRepository.update(id, updatedVehicle);
       return await this.findOne(id);
     } catch (error) {
@@ -182,14 +176,9 @@ export class VehicleService {
     ownedBy: OwnedBy;
     aggregator: Aggregator;
   }> {
-    const {
-      vehicleTypeId,
-      modelId,
-      ownedById,
-      aggregatorId,
-      ...vehicleDto
-    } = checkRelationDto;
-    
+    const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } =
+      checkRelationDto;
+
     const latestTransaction = await this.transactionRepository.findOne({
       where: { vehicle: { id: vehicleDto.vehicleNo } },
       order: { createdAt: "DESC" },
@@ -245,7 +234,8 @@ export class VehicleService {
       .leftJoinAndSelect("vehicle.model", "model")
       .leftJoinAndSelect("vehicle.ownedBy", "owner")
       .leftJoinAndSelect("vehicle.vehicleType", "type")
-      .leftJoinAndSelect("vehicle.aggregator", "aggregator");
+      .leftJoinAndSelect("vehicle.aggregator", "aggregator")
+      .where("vehicle.isActive = :isActive", { isActive: 1 });
 
     if (model) {
       queryBuilder.andWhere("model.brand = :model", { model });
@@ -287,6 +277,7 @@ export class VehicleService {
       .leftJoinAndSelect("vehicle.aggregator", "aggregator")
       .select("aggregator.name", "aggregatorName")
       .addSelect("COUNT(vehicle.id)", "vehicleCount")
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("aggregator.name")
       .getRawMany();
   }
@@ -305,6 +296,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("model.brand")
       .setParameters({
         available: "available",
@@ -327,6 +319,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("ownedBy.name")
       .setParameters({
         available: "available",
@@ -352,6 +345,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("vehicleType.name, vehicleType.fuel")
       .setParameters({
         available: "available",
@@ -375,6 +369,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("location.name")
       .setParameters({
         available: "available",

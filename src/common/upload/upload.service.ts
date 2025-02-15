@@ -212,6 +212,7 @@ export class UploadService {
           "Trip Time": tripTime,
           Plate,
           "Amount(AED)": amount,
+          Code,
         } = item;
 
         // Parse the date and time
@@ -230,7 +231,9 @@ export class UploadService {
 
         // Find the associated vehicle
         const vehicleMatch = vehicles.find(
-          (vehicle) => vehicle.vehicleNo === Plate.toString(),
+          (vehicle) =>
+            vehicle.vehicleNo === Plate.toString() &&
+            vehicle.code === Code.toString(),
         );
         if (!vehicleMatch) {
           errorArray.push(`Vehicle with number ${Plate} not found.`);

@@ -24,6 +24,7 @@ export class VehicleQueryService {
         .select(["m.brand AS model", "a.name AS aggregator"])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("m.brand, a.name") // Group by model and aggregator
         .orderBy("m.brand"); // Order by model
 
@@ -47,6 +48,7 @@ export class VehicleQueryService {
         .select(["a.name AS aggregator", "m.brand AS model"])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("a.name, m.brand") // Group by aggregator and model
         .orderBy("a.name"); // Order by aggregator
 
@@ -69,6 +71,7 @@ export class VehicleQueryService {
         .select(["o.name AS owned_by", "a.name AS aggregator"])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("o.name, a.name") // Group by OwnedBy and Aggregator
         .orderBy("o.name");
 
@@ -95,6 +98,7 @@ export class VehicleQueryService {
         ])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("a.name, vt.name, vt.fuel") // Group by Aggregator and VehicleType
         .orderBy("a.name"); // Order by Aggregator
 
@@ -122,6 +126,7 @@ export class VehicleQueryService {
         ])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("a.name, v.emirates, vt.name, vt.fuel") // Group by Aggregator and VehicleType
         .orderBy("a.name");
       const result = await queryBuilder.getRawMany();
@@ -146,6 +151,7 @@ export class VehicleQueryService {
         ])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("v.emirates, vt.name, vt.fuel") // Group by Emirates, VehicleType name, and Fuel
         .orderBy("v.emirates"); // Order by Aggregator
 
@@ -167,6 +173,7 @@ export class VehicleQueryService {
         .select(["v.emirates AS emirates", "ob.name AS owned_by"])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("v.emirates, ob.name") // Group by Emirates and OwnedBy name
         .orderBy("v.emirates");
 
@@ -196,6 +203,7 @@ export class VehicleQueryService {
         ])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("v.emirates, ob.name, vt.name, vt.fuel, a.name"); // Group by required fields
 
       const result = await queryBuilder.getRawMany();
@@ -222,6 +230,7 @@ export class VehicleQueryService {
         ])
         .addSelect("COUNT(v.id)", "vehicle_count")
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("v.emirates, ob.name, vt.name, vt.fuel") // Group by required fields
         .orderBy("v.emirates");
 
@@ -251,6 +260,7 @@ export class VehicleQueryService {
           END AS status`,
         ])
         .where("v.isDeleted = :isDeleted", { isDeleted: false })
+        .where("v.isActive = :isActive", { isActive: 1 })
         .groupBy("v.emirates, m.brand") // Group by required fields
         .orderBy("v.emirates");
 
