@@ -63,7 +63,10 @@ export class BackupService {
           { header: "Name", key: "name" },
           { header: "Status", key: "status" },
           { header: "Is Deleted", key: "isDeleted" },
-          { header: "Vehicle", key: "vehicle" },
+          { header: "vehicleID", key: "vehicleID" },
+          { header: "vehicleNo", key: "vehicleNo" },
+          { header: "vehicleCode", key: "vehicleCode" },
+          { header: "vehicleEmirates", key: "vehicleEmirates" },
           { header: "Aggregator", key: "aggregator" },
         ];
 
@@ -75,7 +78,10 @@ export class BackupService {
             name: employee.name,
             status: employee.status,
             isDeleted: employee.isDeleted,
-            vehicle: employee?.vehicle ? employee?.vehicle.id : "N/A",
+            vehicleID: employee?.vehicle ? employee?.vehicle.id : "N/A",
+            vehicleNo: employee?.vehicle ? employee?.vehicle.vehicleNo : "N/A",
+            vehicleCode: employee?.vehicle ? employee?.vehicle.code : "N/A",
+            vehicleEmirates: employee?.vehicle ? employee?.vehicle.emirates : "N/A",
             aggregator: employee?.aggregator ? employee?.aggregator : "N/A",
           });
         });

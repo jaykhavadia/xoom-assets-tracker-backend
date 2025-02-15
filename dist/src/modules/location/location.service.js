@@ -27,7 +27,7 @@ let LocationService = class LocationService {
             return await this.locationRepository.save(newLocation);
         }
         catch (error) {
-            console.log("[LocationService] [create] error:", error);
+            console.error("[LocationService] [create] error:", error);
             throw new common_1.InternalServerErrorException(error.message);
         }
     }
@@ -73,7 +73,7 @@ let LocationService = class LocationService {
             return await this.findOne(id);
         }
         catch (error) {
-            console.log("[LocationService] [update] error:", error);
+            console.error("[LocationService] [update] error:", error);
             throw new common_1.InternalServerErrorException(error.message);
         }
     }

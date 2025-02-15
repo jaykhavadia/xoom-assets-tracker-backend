@@ -30,7 +30,7 @@ let UserService = class UserService {
             return this.userRepository.save(user);
         }
         catch (error) {
-            console.log("[UserService] [create] error:", error);
+            console.error("[UserService] [create] error:", error);
             throw error;
         }
     }
@@ -46,7 +46,7 @@ let UserService = class UserService {
             return user;
         }
         catch (error) {
-            console.log("[UserService] [findOne] error:", error);
+            console.error("[UserService] [findOne] error:", error);
             throw error;
         }
     }
@@ -64,7 +64,7 @@ let UserService = class UserService {
             return this.userRepository.save(user);
         }
         catch (error) {
-            console.log("[UserService] [update] error:", error);
+            console.error("[UserService] [update] error:", error);
             throw error;
         }
     }

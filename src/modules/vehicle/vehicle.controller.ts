@@ -218,7 +218,6 @@ export class VehicleController {
         "activeInactive",
       ); // Parse Excel file and get vehicle data
       if ("activeInactive" in fileResponse) {
-        console.log("🚀 ~ VehicleController ~ fileResponse:", fileResponse);
 
         // Save vehicles to the database
         const updatedVehicles = (await Promise.all(
@@ -227,14 +226,10 @@ export class VehicleController {
 
         await Promise.all(
           updatedVehicles.map(async (vehicle: Vehicle) => {
-
-          console.log("🚀 ~ VehicleController ~ updatedVehicles.map ~ vehicle:", vehicle);
-
-
             try {
               await this.vehicleService.update(vehicle.id, vehicle); // Call service to update vehicles in bulk
             } catch (error) {
-              console.log("[VehicleController] [bulkUpdate] error:", error);
+              this.logger.error("[VehicleController] [bulkUpdate] error:", error);
               fileResponse.errorArray.push(error.message);
             }
           }),

@@ -49,7 +49,7 @@ let TransactionController = TransactionController_1 = class TransactionControlle
                 this.logger.log(messages_constants_1.Messages.transaction.createSuccess);
             }
             catch (error) {
-                console.log("TransactionController ~ error:", error);
+                console.error("TransactionController Create ~ error:", error);
                 this.googleDriveService.ensureAuthenticated();
                 throw new common_1.HttpException("Image Upload Issue", common_1.HttpStatus.BAD_REQUEST);
             }
@@ -81,7 +81,6 @@ let TransactionController = TransactionController_1 = class TransactionControlle
         }
     }
     async findAll() {
-        console.log("🚀 ~ file: transaction.controller.ts:147 ~ TransactionController ~ findAll ~ findAll:");
         try {
             const transactions = await this.transactionService.findAll();
             this.logger.log(messages_constants_1.Messages.transaction.findAllSuccess);

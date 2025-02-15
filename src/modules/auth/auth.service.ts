@@ -20,7 +20,7 @@ export class AuthService {
             }
             throw new UnauthorizedException('Invalid credentials');
         } catch (error) {
-            console.log("[AuthService] [validateUser] error:", error)
+            console.error("[AuthService] [validateUser] error:", error)
             throw error;
         }
     }
@@ -33,7 +33,7 @@ export class AuthService {
                 accessToken: this.jwtService.sign(payload),
             };
         } catch (error) {
-            console.log("[AuthService] [login] error:", error)
+            console.error("[AuthService] [login] error:", error)
             throw error;
         }
     }

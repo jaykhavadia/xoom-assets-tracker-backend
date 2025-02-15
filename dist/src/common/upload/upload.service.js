@@ -98,13 +98,13 @@ let UploadService = class UploadService {
                 throw new Error("inCorrect Time Format");
             }
         };
-        this.processFine = async (jsonData, vehicles, employees, transaction) => {
+        this.processFine = async (jsonData, vehicles) => {
             const errorArray = [];
             const fineResponse = await jsonData.map(async (item, index) => {
                 try {
                     const { "Trip Date": tripDate, "Trip Time": tripTime, Plate, "Amount(AED)": amount, Code, } = item;
                     if (this.validateTime(tripTime)) {
-                        console.log("[DEBUG] Time format is valid:", tripTime);
+                        console.error("[DEBUG] Time format is valid:", tripTime);
                     }
                     else {
                         errorArray.push(`Incorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`);
@@ -196,7 +196,7 @@ let UploadService = class UploadService {
                         !item["Cut Off Time"].includes("'") &&
                         (item["Cut Off Time"].includes("AM") ||
                             item["Cut Off Time"].includes("PM"))) {
-                        console.log("The string contains AM or PM");
+                        console.error("The string contains AM or PM");
                     }
                     else {
                         errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item["Cut Off Time"]}`);
@@ -398,7 +398,7 @@ let UploadService = class UploadService {
                         return employee;
                     }
                     catch (error) {
-                        console.log("[UploadService] [employees.push] error:", error);
+                        console.error("[UploadService] [employees.push] error:", error);
                         errorArray.push(`Employee with E Code ${item["E code"]} Failed to Add.`);
                         return;
                     }
@@ -473,11 +473,12 @@ let UploadService = class UploadService {
                     }
                     return await this.processEmployee(jsonData, employee);
                 }
-                else if (Object.keys(jsonData[0]).includes("Trip Date")) {
+                else if (Object.keys(jsonData[0]).includes("Trip Date") &&
+                    Object.keys(jsonData[0]).includes("Code")) {
                     if (type !== "fine") {
                         throw new Error("INVALID_FILE");
                     }
-                    return await this.processFine(jsonData, vehicle, employee, transaction);
+                    return await this.processFine(jsonData, vehicle);
                 }
                 else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
@@ -490,7 +491,7 @@ let UploadService = class UploadService {
             }
         }
         catch (error) {
-            console.log("[UploadService] [readExcel] error:", error);
+            console.error("[UploadService] [readExcel] error:", error);
             throw error;
         }
     }

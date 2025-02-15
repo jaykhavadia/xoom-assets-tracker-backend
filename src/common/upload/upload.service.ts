@@ -102,15 +102,16 @@ export class UploadService {
           }
 
           return await this.processEmployee(jsonData, employee);
-        } else if (Object.keys(jsonData[0]).includes("Trip Date")) {
+        } else if (
+          Object.keys(jsonData[0]).includes("Trip Date") &&
+          Object.keys(jsonData[0]).includes("Code")
+        ) {
           if (type !== "fine") {
             throw new Error("INVALID_FILE");
           }
           return await this.processFine(
             jsonData,
             vehicle,
-            employee,
-            transaction,
           );
         } else {
           console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
@@ -121,7 +122,7 @@ export class UploadService {
         throw new Error("No data found");
       }
     } catch (error) {
-      console.log("[UploadService] [readExcel] error:", error);
+      console.error("[UploadService] [readExcel] error:", error);
       throw error;
     }
   }
@@ -200,8 +201,6 @@ export class UploadService {
   processFine = async (
     jsonData: any,
     vehicles: Vehicle[],
-    employees: Employee[],
-    transaction: Transaction[],
   ): Promise<{ fine: any[]; errorArray: string[] }> => {
     const errorArray = [];
 
@@ -217,7 +216,7 @@ export class UploadService {
 
         // Parse the date and time
         if (this.validateTime(tripTime)) {
-          console.log("[DEBUG] Time format is valid:", tripTime);
+          console.error("[DEBUG] Time format is valid:", tripTime);
         } else {
           errorArray.push(
             `Incorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`,
@@ -349,7 +348,7 @@ export class UploadService {
           (item["Cut Off Time"].includes("AM") ||
             item["Cut Off Time"].includes("PM"))
         ) {
-          console.log("The string contains AM or PM");
+          console.error("The string contains AM or PM");
         } else {
           errorArray.push(
             `inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item["Cut Off Time"]}`,
@@ -671,7 +670,7 @@ export class UploadService {
             processedEmployee.push(item["E code"]);
             return employee;
           } catch (error) {
-            console.log("[UploadService] [employees.push] error:", error);
+            console.error("[UploadService] [employees.push] error:", error);
             errorArray.push(
               `Employee with E Code ${item["E code"]} Failed to Add.`,
             );

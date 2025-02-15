@@ -18,7 +18,7 @@ export class UserService {
             const user = this.userRepository.create({ ...userData, password: hashedPassword });
             return this.userRepository.save(user);
         } catch (error) {
-            console.log("[UserService] [create] error:", error);
+            console.error("[UserService] [create] error:", error);
             throw error;
         }
     }
@@ -35,7 +35,7 @@ export class UserService {
             }
             return user;
         } catch (error) {
-            console.log("[UserService] [findOne] error:", error);
+            console.error("[UserService] [findOne] error:", error);
             throw error;
         }
     }
@@ -53,7 +53,7 @@ export class UserService {
             Object.assign(user, updateData);
             return this.userRepository.save(user);
         } catch (error) {
-            console.log("[UserService] [update] error:", error)
+            console.error("[UserService] [update] error:", error)
             throw error;
         }
     }

@@ -39,7 +39,7 @@ export declare class UploadService {
     excelDateToJSDate: (serial: number) => Date;
     excelDateToJSDateTransaction: (serial: number | string) => string;
     excelTimeTo24HourFormat: (excelTime: number) => string;
-    processFine: (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]) => Promise<{
+    processFine: (jsonData: any, vehicles: Vehicle[]) => Promise<{
         fine: any[];
         errorArray: string[];
     }>;

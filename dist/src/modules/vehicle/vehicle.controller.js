@@ -125,15 +125,13 @@ let VehicleController = VehicleController_1 = class VehicleController {
         try {
             const fileResponse = await this.uploadService.readExcel(file, "activeInactive");
             if ("activeInactive" in fileResponse) {
-                console.log("🚀 ~ VehicleController ~ fileResponse:", fileResponse);
                 const updatedVehicles = (await Promise.all(fileResponse.activeInactive.filter((item) => item !== undefined)));
                 await Promise.all(updatedVehicles.map(async (vehicle) => {
-                    console.log("🚀 ~ VehicleController ~ updatedVehicles.map ~ vehicle:", vehicle);
                     try {
                         await this.vehicleService.update(vehicle.id, vehicle);
                     }
                     catch (error) {
-                        console.log("[VehicleController] [bulkUpdate] error:", error);
+                        this.logger.error("[VehicleController] [bulkUpdate] error:", error);
                         fileResponse.errorArray.push(error.message);
                     }
                 }));

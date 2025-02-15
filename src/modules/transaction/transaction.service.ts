@@ -519,7 +519,7 @@ export class TransactionService {
           (item["Cut Off Time"].includes("AM") ||
             item["Cut Off Time"].includes("PM"))
         ) {
-          console.log("The string contains AM or PM", index);
+          this.logger.log("The string contains AM or PM", index);
         } else {
           errorArray.push(
             `Incorrect Time Format at Data No. ${index + 1}. Expected HH:MM:SS AM/PM, got ${item["Cut Off Time"]}`,

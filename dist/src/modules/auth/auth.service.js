@@ -29,7 +29,7 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         catch (error) {
-            console.log("[AuthService] [validateUser] error:", error);
+            console.error("[AuthService] [validateUser] error:", error);
             throw error;
         }
     }
@@ -42,7 +42,7 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
-            console.log("[AuthService] [login] error:", error);
+            console.error("[AuthService] [login] error:", error);
             throw error;
         }
     }
