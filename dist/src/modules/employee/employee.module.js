@@ -23,10 +23,15 @@ let EmployeeModule = class EmployeeModule {
 exports.EmployeeModule = EmployeeModule;
 exports.EmployeeModule = EmployeeModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee, sheet_entity_1.Sheet, user_entity_1.User]), common_module_1.CommonModule, sheet_module_1.SheetModule, jwt_auth_module_1.JwtAuthModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee, sheet_entity_1.Sheet, user_entity_1.User]),
+            common_module_1.CommonModule,
+            sheet_module_1.SheetModule,
+            jwt_auth_module_1.JwtAuthModule,
+        ],
         controllers: [employee_controller_1.EmployeeController],
         providers: [employee_service_1.EmployeeService, sheet_service_1.SheetService],
-        exports: [employee_service_1.EmployeeService]
+        exports: [employee_service_1.EmployeeService],
     })
 ], EmployeeModule);
 //# sourceMappingURL=employee.module.js.map

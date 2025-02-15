@@ -17,8 +17,10 @@ const mysql = require("mysql2/promise");
 const ExcelJS = require("exceljs");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
+const employee_service_1 = require("../employee/employee.service");
 let BackupService = BackupService_1 = class BackupService {
-    constructor() {
+    constructor(employeeService) {
+        this.employeeService = employeeService;
         this.logger = new common_1.Logger(BackupService_1.name);
     }
     async backupDatabase() {
@@ -46,6 +48,31 @@ let BackupService = BackupService_1 = class BackupService {
                 }
             }
             await connection.end();
+            this.logger.log("Fetching driver data...");
+            const employees = await this.employeeService.findAll();
+            const driverSheet = workbook.addWorksheet("CustomDrivers");
+            if (employees.length > 0) {
+                driverSheet.columns = [
+                    { header: "ID", key: "id" },
+                    { header: "Code", key: "code" },
+                    { header: "Name", key: "name" },
+                    { header: "Status", key: "status" },
+                    { header: "Is Deleted", key: "isDeleted" },
+                    { header: "Vehicle", key: "vehicle" },
+                    { header: "Aggregator", key: "aggregator" },
+                ];
+                employees.forEach((employee) => {
+                    driverSheet.addRow({
+                        id: employee.id,
+                        code: employee.code,
+                        name: employee.name,
+                        status: employee.status,
+                        isDeleted: employee.isDeleted,
+                        vehicle: employee?.vehicle ? employee?.vehicle.id : "N/A",
+                        aggregator: employee?.aggregator ? employee?.aggregator : "N/A",
+                    });
+                });
+            }
             const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
             const backupDir = "./backups";
             if (!fs.existsSync(backupDir)) {
@@ -73,7 +100,7 @@ let BackupService = BackupService_1 = class BackupService {
             });
             await transporter.sendMail({
                 from: process.env.EMAIL_USER,
-                to: "jaykhavadia@gmail.com",
+                to: process.env.SEND_TO_EMAIL,
                 subject: "Daily Database Backup",
                 text: "Attached is the latest MySQL backup in Excel format.",
                 attachments: [
@@ -107,12 +134,13 @@ let BackupService = BackupService_1 = class BackupService {
 };
 exports.BackupService = BackupService;
 __decorate([
-    (0, schedule_1.Cron)("29 12 * * *"),
+    (0, schedule_1.Cron)("0 0 * * *"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], BackupService.prototype, "backupDatabase", null);
 exports.BackupService = BackupService = BackupService_1 = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [employee_service_1.EmployeeService])
 ], BackupService);
 //# sourceMappingURL=backup.service.js.map

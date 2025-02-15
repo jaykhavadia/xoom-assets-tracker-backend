@@ -10,13 +10,18 @@ exports.BackupModule = void 0;
 const common_1 = require("@nestjs/common");
 const backup_service_1 = require("./backup.service");
 const backup_controller_1 = require("./backup.controller");
+const employee_service_1 = require("../employee/employee.service");
+const employee_entity_1 = require("../employee/entities/employee.entity");
+const typeorm_1 = require("@nestjs/typeorm");
 let BackupModule = class BackupModule {
 };
 exports.BackupModule = BackupModule;
 exports.BackupModule = BackupModule = __decorate([
     (0, common_1.Module)({
+        imports: [typeorm_1.TypeOrmModule.forFeature([employee_entity_1.Employee])],
         controllers: [backup_controller_1.BackupController],
-        providers: [backup_service_1.BackupService],
+        providers: [backup_service_1.BackupService, employee_service_1.EmployeeService],
+        exports: [backup_service_1.BackupService],
     })
 ], BackupModule);
 //# sourceMappingURL=backup.module.js.map

@@ -4,12 +4,15 @@ import * as mysql from "mysql2/promise";
 import * as ExcelJS from "exceljs";
 import * as fs from "fs";
 import * as nodemailer from "nodemailer";
+import { EmployeeService } from "../employee/employee.service";
 
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
 
-  @Cron("29 12 * * *") // Runs daily at 2 AM
+  constructor(private readonly employeeService: EmployeeService) {}
+
+  @Cron("0 0 * * *") // Runs daily at 2 AM
   async backupDatabase() {
     try {
       this.logger.log("Starting database backup...");
@@ -30,33 +33,58 @@ export class BackupService {
 
       for (const table of tables) {
         const tableName: any = Object.values(table)[0];
-        // Fetch data from each table
         const [rows]: any = await connection.query(
           `SELECT * FROM ${tableName}`,
         );
 
-        // Create a new worksheet for each table
         const worksheet = workbook.addWorksheet(tableName);
         if (rows.length > 0) {
-          // Add column headers
           worksheet.columns = Object.keys(rows[0]).map((key) => ({
             header: key,
             key: key,
           }));
 
-          // Add data rows
           rows.forEach((row) => worksheet.addRow(row));
         }
       }
 
       await connection.end();
 
-      // Step 3: Save Excel file
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      // Step 3: Add Custom Sheet "Drivers"
+      this.logger.log("Fetching driver data...");
+      const employees = await this.employeeService.findAll();
+      const driverSheet = workbook.addWorksheet("CustomDrivers");
 
+      if (employees.length > 0) {
+        // Add column headers
+        driverSheet.columns = [
+          { header: "ID", key: "id" },
+          { header: "Code", key: "code" },
+          { header: "Name", key: "name" },
+          { header: "Status", key: "status" },
+          { header: "Is Deleted", key: "isDeleted" },
+          { header: "Vehicle", key: "vehicle" },
+          { header: "Aggregator", key: "aggregator" },
+        ];
+
+        // Add data rows
+        employees.forEach((employee) => {
+          driverSheet.addRow({
+            id: employee.id,
+            code: employee.code,
+            name: employee.name,
+            status: employee.status,
+            isDeleted: employee.isDeleted,
+            vehicle: employee?.vehicle ? employee?.vehicle.id : "N/A",
+            aggregator: employee?.aggregator ? employee?.aggregator : "N/A",
+          });
+        });
+      }
+
+      // Step 4: Save Excel file
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const backupDir = "./backups";
 
-      // Create the directory if it doesn't exist
       if (!fs.existsSync(backupDir)) {
         fs.mkdirSync(backupDir, { recursive: true });
       }
@@ -91,7 +119,7 @@ export class BackupService {
 
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
-        to: "jaykhavadia@gmail.com", // Change this to your recipient
+        to: process.env.SEND_TO_EMAIL,
         subject: "Daily Database Backup",
         text: "Attached is the latest MySQL backup in Excel format.",
         attachments: [

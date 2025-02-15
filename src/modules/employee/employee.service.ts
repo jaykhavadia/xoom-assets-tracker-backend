@@ -7,6 +7,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Employee } from "./entities/employee.entity";
 import { Repository } from "typeorm";
 import { Action } from "../transaction/entities/transaction.entity";
+import { EmployeeWithVehicleDTO } from "./dto/employee.dto";
 
 @Injectable()
 export class EmployeeService {
@@ -35,7 +36,7 @@ export class EmployeeService {
    * Retrieves all employees from the database
    * @returns an array of employees
    */
-  async findAll(): Promise<Partial<Employee>[]> {
+  async findAll(): Promise<EmployeeWithVehicleDTO[]> {
     try {
       const employees = await this.employeeRepository.find({
         relations: ["transactions", "transactions.vehicle"], // Ensure vehicle is loaded
