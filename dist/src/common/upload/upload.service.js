@@ -204,7 +204,7 @@ let UploadService = class UploadService {
                     }
                     transaction.time = item["Cut Off Time"];
                     transaction.date = this.excelDateToJSDate(item["Cut Off Date"]);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString());
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() && vehicle.code === item["Vehicle Code"].toString());
                     if (vehicleMatch) {
                         if (!vehicleMatch.isActive) {
                             errorArray.push(`${messages_constants_1.Messages.vehicle.notActive(item["Vehicle No."])} at Data No. ${index + 1}`);

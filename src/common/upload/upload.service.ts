@@ -361,7 +361,7 @@ export class UploadService {
 
         // Find the associated vehicle
         const vehicleMatch = vehicles.find(
-          (vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString(),
+          (vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() && vehicle.code === item["Vehicle Code"].toString(),
         );
         if (vehicleMatch) {
           if (!vehicleMatch.isActive) {
