@@ -53,6 +53,7 @@ export class EmployeeService {
           name: employee.name,
           status: employee.status,
           isDeleted: employee.isDeleted,
+          transactions: latestTransaction ? latestTransaction : null,
           vehicle:
             latestTransaction?.action === Action.OUT
               ? latestTransaction.vehicle
