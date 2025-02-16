@@ -5,7 +5,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Vehicle } from "./entities/vehical.entity";
+import { Emirates, Vehicle } from "./entities/vehical.entity";
 import { Repository } from "typeorm";
 import { VehicleDto } from "./dto/create-vehicle.dto";
 import { VehicleType } from "../vehicle-type/entities/vehicle-type.entity";
@@ -228,6 +228,7 @@ export class VehicleService {
     ownedBy?: string,
     vehicleType?: string,
     aggregatorName?: string,
+    emirateName?: Emirates,
   ): Promise<any> {
     const queryBuilder = this.vehicleRepository
       .createQueryBuilder("vehicle")
@@ -242,6 +243,9 @@ export class VehicleService {
     }
     if (ownedBy) {
       queryBuilder.andWhere("owner.name = :ownedBy", { ownedBy });
+    }
+    if (emirateName) {
+      queryBuilder.andWhere("emirates = :emirateName", { emirateName });
     }
     if (vehicleType) {
       if (!vehicleType || vehicleType.split("-").length !== 2) {

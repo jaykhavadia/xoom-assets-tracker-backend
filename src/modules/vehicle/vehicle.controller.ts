@@ -19,7 +19,7 @@ import {
 } from "@nestjs/common";
 import { VehicleService } from "./vehicle.service";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { Vehicle } from "./entities/vehical.entity";
+import { Emirates, Vehicle } from "./entities/vehical.entity";
 import { UploadService } from "src/common/upload/upload.service";
 import { Messages } from "src/constants/messages.constants";
 import { SheetService } from "../sheet/sheet.service";
@@ -218,7 +218,6 @@ export class VehicleController {
         "activeInactive",
       ); // Parse Excel file and get vehicle data
       if ("activeInactive" in fileResponse) {
-
         // Save vehicles to the database
         const updatedVehicles = (await Promise.all(
           fileResponse.activeInactive.filter((item) => item !== undefined),
@@ -229,7 +228,10 @@ export class VehicleController {
             try {
               await this.vehicleService.update(vehicle.id, vehicle); // Call service to update vehicles in bulk
             } catch (error) {
-              this.logger.error("[VehicleController] [bulkUpdate] error:", error);
+              this.logger.error(
+                "[VehicleController] [bulkUpdate] error:",
+                error,
+              );
               fileResponse.errorArray.push(error.message);
             }
           }),
@@ -268,6 +270,7 @@ export class VehicleController {
     @Query("ownedBy") ownedBy?: string,
     @Query("vehicleType") vehicleType?: string,
     @Query("aggregator") aggregatorName?: string,
+    @Query("emirates") emirateName?: Emirates,
   ): Promise<response<Vehicle[]>> {
     try {
       const data = await this.vehicleService.getFilteredVehicles(
@@ -275,6 +278,7 @@ export class VehicleController {
         ownedBy,
         vehicleType,
         aggregatorName,
+        emirateName,
       );
       return {
         success: true,

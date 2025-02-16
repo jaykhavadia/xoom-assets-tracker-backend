@@ -152,7 +152,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             ...vehicleDto,
         };
     }
-    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName) {
+    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName, emirateName) {
         const queryBuilder = this.vehicleRepository
             .createQueryBuilder("vehicle")
             .leftJoinAndSelect("vehicle.model", "model")
@@ -165,6 +165,9 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
         if (ownedBy) {
             queryBuilder.andWhere("owner.name = :ownedBy", { ownedBy });
+        }
+        if (emirateName) {
+            queryBuilder.andWhere("emirates = :emirateName", { emirateName });
         }
         if (vehicleType) {
             if (!vehicleType || vehicleType.split("-").length !== 2) {

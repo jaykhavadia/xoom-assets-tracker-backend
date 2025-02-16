@@ -47,6 +47,7 @@ let EmployeeService = EmployeeService_1 = class EmployeeService {
                     name: employee.name,
                     status: employee.status,
                     isDeleted: employee.isDeleted,
+                    transactions: latestTransaction ? latestTransaction : null,
                     vehicle: latestTransaction?.action === transaction_entity_1.Action.OUT
                         ? latestTransaction.vehicle
                         : null,

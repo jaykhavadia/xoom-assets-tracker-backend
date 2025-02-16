@@ -1,4 +1,4 @@
-import { Vehicle } from "./entities/vehical.entity";
+import { Emirates, Vehicle } from "./entities/vehical.entity";
 import { Repository } from "typeorm";
 import { VehicleDto } from "./dto/create-vehicle.dto";
 import { VehicleType } from "../vehicle-type/entities/vehicle-type.entity";
@@ -28,7 +28,7 @@ export declare class VehicleService {
         ownedBy: OwnedBy;
         aggregator: Aggregator;
     }>;
-    getFilteredVehicles(model?: string, ownedBy?: string, vehicleType?: string, aggregatorName?: string): Promise<any>;
+    getFilteredVehicles(model?: string, ownedBy?: string, vehicleType?: string, aggregatorName?: string, emirateName?: Emirates): Promise<any>;
     getVehicleCountByAggregator(): Promise<any[]>;
     getVehicleCountByModel(): Promise<any[]>;
     getVehicleCountByOwner(): Promise<any[]>;

@@ -17,6 +17,7 @@ exports.VehicleController = void 0;
 const common_1 = require("@nestjs/common");
 const vehicle_service_1 = require("./vehicle.service");
 const platform_express_1 = require("@nestjs/platform-express");
+const vehical_entity_1 = require("./entities/vehical.entity");
 const upload_service_1 = require("../../common/upload/upload.service");
 const messages_constants_1 = require("../../constants/messages.constants");
 const sheet_service_1 = require("../sheet/sheet.service");
@@ -150,9 +151,9 @@ let VehicleController = VehicleController_1 = class VehicleController {
             throw new common_1.HttpException(messages_constants_1.Messages.vehicle.updateBulkFailure, common_1.HttpStatus.BAD_REQUEST);
         }
     }
-    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName) {
+    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName, emirateName) {
         try {
-            const data = await this.vehicleService.getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName);
+            const data = await this.vehicleService.getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName, emirateName);
             return {
                 success: true,
                 message: "Filtered vehicles fetched successfully.",
@@ -436,8 +437,9 @@ __decorate([
     __param(1, (0, common_1.Query)("ownedBy")),
     __param(2, (0, common_1.Query)("vehicleType")),
     __param(3, (0, common_1.Query)("aggregator")),
+    __param(4, (0, common_1.Query)("emirates")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], VehicleController.prototype, "getFilteredVehicles", null);
 __decorate([
