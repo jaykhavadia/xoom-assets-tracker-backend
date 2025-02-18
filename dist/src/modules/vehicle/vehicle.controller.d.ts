@@ -15,6 +15,7 @@ export declare class VehicleController {
     constructor(vehicleService: VehicleService, vehicleQueryService: VehicleQueryService, uploadService: UploadService, sheetService: SheetService, googleDriveService: GoogleDriveService);
     create(vehicle: VehicleDto): Promise<response<Vehicle>>;
     findAll(status?: string): Promise<response<Vehicle[]>>;
+    updateActiveInactive(id: string, isActive: boolean): Promise<response<Vehicle>>;
     update(id: string, vehicle: VehicleDto): Promise<response<Vehicle>>;
     remove(id: string): Promise<response<void>>;
     uploadExcel(file: Express.Multer.File): Promise<response<void>>;

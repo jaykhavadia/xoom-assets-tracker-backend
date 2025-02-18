@@ -66,6 +66,26 @@ let VehicleController = VehicleController_1 = class VehicleController {
             throw new common_1.HttpException(messages_constants_1.Messages.vehicle.findAllFailure, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async updateActiveInactive(id, isActive) {
+        const vehicleId = id;
+        try {
+            const vehicle = await this.vehicleService.findOne(vehicleId);
+            if (!vehicle) {
+                throw new common_1.HttpException("Vehicle not found", common_1.HttpStatus.NOT_FOUND);
+            }
+            vehicle.isActive = isActive;
+            const response = await this.vehicleService.update(vehicleId, vehicle);
+            return {
+                success: true,
+                message: messages_constants_1.Messages.vehicle.updateSuccess(vehicleId),
+                data: response,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[VehicleController] [updateActiveInactive] Error: ${error.message}`);
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
     async update(id, vehicle) {
         const vehicleId = id;
         try {
@@ -400,6 +420,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], VehicleController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Patch)("active-inactive/:id"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)(new common_1.ValidationPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", Promise)
+], VehicleController.prototype, "updateActiveInactive", null);
 __decorate([
     (0, common_1.Patch)(":id"),
     __param(0, (0, common_1.Param)("id")),
