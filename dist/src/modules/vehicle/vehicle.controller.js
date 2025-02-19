@@ -66,8 +66,7 @@ let VehicleController = VehicleController_1 = class VehicleController {
             throw new common_1.HttpException(messages_constants_1.Messages.vehicle.findAllFailure, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    async updateActiveInactive(id, isActive) {
-        const vehicleId = id;
+    async updateActiveInactive(vehicleId, isActive) {
         try {
             const vehicle = await this.vehicleService.findOne(vehicleId);
             if (!vehicle) {
@@ -265,7 +264,6 @@ let VehicleController = VehicleController_1 = class VehicleController {
             };
         }
         catch (error) {
-            this.logger.error("[VehicleController] [getVehicleCountByModelAndAggregator] ~ error:", error);
             throw new common_1.InternalServerErrorException("Failed to retrieve vehicle count");
         }
     }
@@ -423,7 +421,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)("active-inactive/:id"),
     __param(0, (0, common_1.Param)("id")),
-    __param(1, (0, common_1.Body)(new common_1.ValidationPipe())),
+    __param(1, (0, common_1.Body)("isActive", new common_1.ValidationPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Boolean]),
     __metadata("design:returntype", Promise)

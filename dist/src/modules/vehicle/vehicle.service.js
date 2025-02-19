@@ -86,7 +86,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
         catch (error) {
             this.logger.error(`[VehicleService] [update] Error: ${error.message}`);
-            throw new common_1.InternalServerErrorException(`Failed to update vehicle with id: ${id}`);
+            throw new common_1.InternalServerErrorException(error.message);
         }
     }
     async remove(id) {
@@ -116,7 +116,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
     async checkRelation(checkRelationDto) {
         const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
         const latestTransaction = await this.transactionRepository.findOne({
-            where: { vehicle: { id: vehicleDto.vehicleNo } },
+            where: { vehicle: { id: vehicleDto.id } },
             order: { createdAt: "DESC" },
         });
         if (latestTransaction && latestTransaction.action === transaction_entity_1.Action.OUT) {

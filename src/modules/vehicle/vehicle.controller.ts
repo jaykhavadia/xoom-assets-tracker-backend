@@ -99,27 +99,30 @@ export class VehicleController {
   // Endpoint for updating an existing vehicle by its ID
   @Patch("active-inactive/:id")
   async updateActiveInactive(
-    @Param("id") id: string, // Get vehicle ID from request parameters
-    @Body(new ValidationPipe()) isActive: boolean, // Validate and parse the vehicle object from request body
+    @Param("id") vehicleId: string,
+    @Body("isActive", new ValidationPipe()) isActive: boolean,
   ): Promise<response<Vehicle>> {
-    const vehicleId = id; // Convert ID to a number
     try {
-      const vehicle = await this.vehicleService.findOne(vehicleId); // Call service to update vehicle
+      const vehicle = await this.vehicleService.findOne(vehicleId);
+
       if (!vehicle) {
-        throw new HttpException("Vehicle not found", HttpStatus.NOT_FOUND); // Bad request error
+        throw new HttpException("Vehicle not found", HttpStatus.NOT_FOUND);
       }
-      vehicle.isActive = isActive;
-      const response = await this.vehicleService.update(vehicleId, vehicle); // Call service to update vehicle
+
+      vehicle.isActive = isActive; // Update isActive field directly
+
+      const response = await this.vehicleService.update(vehicleId, vehicle);
+
       return {
         success: true,
-        message: Messages.vehicle.updateSuccess(vehicleId), // Success message
-        data: response, // Return updated vehicle data
+        message: Messages.vehicle.updateSuccess(vehicleId),
+        data: response,
       };
     } catch (error) {
       this.logger.error(
         `[VehicleController] [updateActiveInactive] Error: ${error.message}`,
-      ); // Log error
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Bad request error
+      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -437,10 +440,6 @@ export class VehicleController {
         data: result,
       };
     } catch (error) {
-      this.logger.error(
-        "[VehicleController] [getVehicleCountByModelAndAggregator] ~ error:",
-        error,
-      );
       throw new InternalServerErrorException(
         "Failed to retrieve vehicle count",
       );

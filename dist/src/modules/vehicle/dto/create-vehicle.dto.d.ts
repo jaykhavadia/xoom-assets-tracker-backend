@@ -1,5 +1,6 @@
 import { Emirates } from "../entities/vehical.entity";
 export declare class VehicleDto {
+    id: string;
     vehicleNo: string;
     code: string;
     vehicleTypeId: number;

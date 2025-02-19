@@ -117,9 +117,7 @@ export class VehicleService {
       return await this.findOne(id);
     } catch (error) {
       this.logger.error(`[VehicleService] [update] Error: ${error.message}`);
-      throw new InternalServerErrorException(
-        `Failed to update vehicle with id: ${id}`,
-      );
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -180,10 +178,9 @@ export class VehicleService {
       checkRelationDto;
 
     const latestTransaction = await this.transactionRepository.findOne({
-      where: { vehicle: { id: vehicleDto.vehicleNo } },
+      where: { vehicle: { id: vehicleDto.id } },
       order: { createdAt: "DESC" },
     });
-
     if (latestTransaction && latestTransaction.action === Action.OUT) {
       throw new BadRequestException(
         "Vehicle is currently out for service. can't update the vehicle.",
