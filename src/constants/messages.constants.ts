@@ -35,6 +35,7 @@ export const Messages = {
         updateBulkSuccess: 'Bulk Vehicles Added successfully',
         updateBulkFailure: 'Failed to update vehicles',
         occupied: (id: string) => `Vehicle with ID ${id} is already occupied`,
+        notActive: (id: string) => `Vehicle with ID ${id} is Not Active`,
         available: (id: string) => `Vehicle with ID ${id} is already available`,
     },
     // Location Messages

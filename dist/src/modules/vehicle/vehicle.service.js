@@ -22,13 +22,15 @@ const vehicle_type_entity_1 = require("../vehicle-type/entities/vehicle-type.ent
 const model_entity_1 = require("../model/entities/model.entity");
 const aggregator_entity_1 = require("../aggregator/entities/aggregator.entity");
 const owned_by_entity_1 = require("../owned-by/entities/owned_by.entity");
+const transaction_entity_1 = require("../transaction/entities/transaction.entity");
 let VehicleService = VehicleService_1 = class VehicleService {
-    constructor(vehicleRepository, vehicleTypeRepository, modelRepository, aggregatorRepository, ownedByRepository) {
+    constructor(vehicleRepository, vehicleTypeRepository, modelRepository, aggregatorRepository, ownedByRepository, transactionRepository) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleTypeRepository = vehicleTypeRepository;
         this.modelRepository = modelRepository;
         this.aggregatorRepository = aggregatorRepository;
         this.ownedByRepository = ownedByRepository;
+        this.transactionRepository = transactionRepository;
         this.logger = new common_1.Logger(VehicleService_1.name);
     }
     async create(createVehicleDto) {
@@ -84,7 +86,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
         }
         catch (error) {
             this.logger.error(`[VehicleService] [update] Error: ${error.message}`);
-            throw new common_1.InternalServerErrorException(`Failed to update vehicle with id: ${id}`);
+            throw new common_1.InternalServerErrorException(error.message);
         }
     }
     async remove(id) {
@@ -113,6 +115,16 @@ let VehicleService = VehicleService_1 = class VehicleService {
     }
     async checkRelation(checkRelationDto) {
         const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } = checkRelationDto;
+        console.log("🚀 ~ VehicleService ~ checkRelation ~ vehicleDto:", vehicleDto);
+        const latestTransaction = await this.transactionRepository.findOne({
+            where: { vehicle: { id: vehicleDto.id } },
+            order: { createdAt: "DESC" },
+        });
+        if (latestTransaction &&
+            latestTransaction.action === transaction_entity_1.Action.OUT &&
+            !vehicleDto.isActive) {
+            throw new common_1.BadRequestException("Vehicle is currently out for service. can't update the vehicle.");
+        }
         const vehicleType = await this.vehicleTypeRepository.findOne({
             where: { id: vehicleTypeId },
         });
@@ -143,18 +155,22 @@ let VehicleService = VehicleService_1 = class VehicleService {
             ...vehicleDto,
         };
     }
-    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName) {
+    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName, emirateName) {
         const queryBuilder = this.vehicleRepository
             .createQueryBuilder("vehicle")
             .leftJoinAndSelect("vehicle.model", "model")
             .leftJoinAndSelect("vehicle.ownedBy", "owner")
             .leftJoinAndSelect("vehicle.vehicleType", "type")
-            .leftJoinAndSelect("vehicle.aggregator", "aggregator");
+            .leftJoinAndSelect("vehicle.aggregator", "aggregator")
+            .where("vehicle.isActive = :isActive", { isActive: 1 });
         if (model) {
             queryBuilder.andWhere("model.brand = :model", { model });
         }
         if (ownedBy) {
             queryBuilder.andWhere("owner.name = :ownedBy", { ownedBy });
+        }
+        if (emirateName) {
+            queryBuilder.andWhere("emirates = :emirateName", { emirateName });
         }
         if (vehicleType) {
             if (!vehicleType || vehicleType.split("-").length !== 2) {
@@ -180,6 +196,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .leftJoinAndSelect("vehicle.aggregator", "aggregator")
             .select("aggregator.name", "aggregatorName")
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("aggregator.name")
             .getRawMany();
     }
@@ -191,6 +208,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("model.brand")
             .setParameters({
             available: "available",
@@ -206,6 +224,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("ownedBy.name")
             .setParameters({
             available: "available",
@@ -221,6 +240,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("vehicleType.name, vehicleType.fuel")
             .setParameters({
             available: "available",
@@ -237,6 +257,7 @@ let VehicleService = VehicleService_1 = class VehicleService {
             .addSelect("COUNT(vehicle.id)", "vehicleCount")
             .addSelect("SUM(CASE WHEN vehicle.status = :available THEN 1 ELSE 0 END)", "available")
             .addSelect("SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)", "occupied")
+            .where("vehicle.isActive = :isActive", { isActive: 1 })
             .groupBy("location.name")
             .setParameters({
             available: "available",
@@ -261,7 +282,9 @@ exports.VehicleService = VehicleService = VehicleService_1 = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(model_entity_1.Model)),
     __param(3, (0, typeorm_1.InjectRepository)(aggregator_entity_1.Aggregator)),
     __param(4, (0, typeorm_1.InjectRepository)(owned_by_entity_1.OwnedBy)),
+    __param(5, (0, typeorm_1.InjectRepository)(transaction_entity_1.Transaction)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

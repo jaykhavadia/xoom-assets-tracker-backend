@@ -19,6 +19,11 @@ class VehicleDto {
 exports.VehicleDto = VehicleDto;
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], VehicleDto.prototype, "id", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], VehicleDto.prototype, "vehicleNo", void 0);
@@ -68,6 +73,11 @@ __decorate([
     (0, class_validator_1.IsEnum)(["available", "occupied"]),
     __metadata("design:type", String)
 ], VehicleDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], VehicleDto.prototype, "isActive", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)

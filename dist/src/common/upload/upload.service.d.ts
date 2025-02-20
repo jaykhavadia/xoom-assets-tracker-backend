@@ -32,16 +32,23 @@ export declare class UploadService {
     } | {
         fine: any[];
         errorArray: string[];
+    } | {
+        activeInactive: any[];
+        errorArray: string[];
     }>;
     excelDateToJSDate: (serial: number) => Date;
     excelDateToJSDateTransaction: (serial: number | string) => string;
     excelTimeTo24HourFormat: (excelTime: number) => string;
-    processFine: (jsonData: any, vehicles: Vehicle[], employees: Employee[], transaction: Transaction[]) => Promise<{
+    processFine: (jsonData: any, vehicles: Vehicle[]) => Promise<{
         fine: any[];
         errorArray: string[];
     }>;
     processTransaction: (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[], aggregators: Aggregator[]) => Promise<{
         transactions: CreateTransactionDto[];
+        errorArray: string[];
+    }>;
+    processActiveInactive: (jsonData: any, vehicleDataSet: Vehicle[]) => Promise<{
+        activeInactive: Vehicle[];
         errorArray: string[];
     }>;
     processVehicle: (jsonData: any, models: Model[], vehicleTypes: VehicleType[], ownedBy: OwnedBy[], aggregators: Aggregator[], vehicleDataSet: Vehicle[], locations: Location[]) => Promise<{

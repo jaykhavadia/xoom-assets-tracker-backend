@@ -21,8 +21,8 @@ export class LocationService {
       const newLocation = this.locationRepository.create(location); // Create a new Location instance
       return await this.locationRepository.save(newLocation); // Save the instance in the database
     } catch (error) {
-      console.log("[LocationService] [create] error:", error)
-      // Log and throw a more specific error message
+      console.error("[LocationService] [create] error:", error)
+      // error and throw a more specific error message
       throw new InternalServerErrorException(
         error.message,
       );
@@ -37,7 +37,7 @@ export class LocationService {
     try {
       return await this.locationRepository.find(); // Find and return all locations
     } catch (error) {
-      // Log and throw a more specific error message
+      // error and throw a more specific error message
       throw new InternalServerErrorException(
         `[LocationService] [findAll] Error: ${error.message}`,
       );
@@ -57,7 +57,7 @@ export class LocationService {
       }
       return location;
     } catch (error) {
-      // Log and throw a more specific error message
+      // error and throw a more specific error message
       throw new InternalServerErrorException(
         `[LocationService] [findOne] Error: ${error.message}`,
       );
@@ -72,7 +72,7 @@ export class LocationService {
       }
       return location;
     } catch (error) {
-      // Log and throw a more specific error message
+      // error and throw a more specific error message
       throw new InternalServerErrorException(
         `[LocationService] [findOne] Error: ${error.message}`,
       );
@@ -94,7 +94,7 @@ export class LocationService {
       await this.locationRepository.update(id, location); // Update the location data
       return await this.findOne(id); // Return the updated location
     } catch (error) {
-      console.log("[LocationService] [update] error:", error)
+      console.error("[LocationService] [update] error:", error)
       // Log and throw a more specific error message
       throw new InternalServerErrorException(
         error.message,

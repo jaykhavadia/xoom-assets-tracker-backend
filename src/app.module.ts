@@ -32,6 +32,7 @@ import { OwnedBy } from "./modules/owned-by/entities/owned_by.entity";
 import { Model } from "./modules/model/entities/model.entity";
 import { VehicleType } from "./modules/vehicle-type/entities/vehicle-type.entity";
 import { JwtAuthModule } from "./auth/jwt-auth.module";
+import { BackupModule } from './modules/backup/backup.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -86,6 +87,7 @@ import { JwtAuthModule } from "./auth/jwt-auth.module";
     ModelModule,
     OwnedByModule,
     JwtAuthModule,
+    BackupModule,
   ],
   controllers: [AppController],
   providers: [AppService, CronService],

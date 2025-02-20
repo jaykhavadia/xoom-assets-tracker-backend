@@ -35,7 +35,7 @@ export class GoogleDriveService implements OnModuleInit {
   async ensureAuthenticated() {
     const tokenInfo = await this.oAuth2Client.getAccessToken();
 
-    console.log("🚀 ~ GoogleDriveService ~ ensureAuthenticated ~ tokenInfo:", tokenInfo);
+    this.logger.log("🚀 ~ GoogleDriveService ~ ensureAuthenticated ~ tokenInfo:", tokenInfo);
 
     if (!tokenInfo.token) {
       this.logger.warn('Access token is missing or expired. Attempting to refresh.');
@@ -46,7 +46,7 @@ export class GoogleDriveService implements OnModuleInit {
   private async resetAccessToken() {
     const newTokens = await this.googleAuthService.refreshAccessToken(); // Use GoogleAuthService
 
-    console.log("🚀 ~ GoogleDriveService ~ resetAccessToken ~ newTokens:", newTokens);
+    this.logger.log("🚀 ~ GoogleDriveService ~ resetAccessToken ~ newTokens:", newTokens);
 
     await this.oAuth2Client.setCredentials(newTokens);
     await this.setDriveCredentials();
@@ -84,7 +84,7 @@ export class GoogleDriveService implements OnModuleInit {
 
       this.logger.log(`File uploaded successfully: ${response.data.name}`);
       const fileId = response.data.id;
-      console.log(`File uploaded successfully: ${fileId}`);
+      this.logger.log(`File uploaded successfully: ${fileId}`);
 
       // Set the file permissions to "Anyone with the link" can view
       await this.drive.permissions.create({

@@ -19,7 +19,7 @@ import {
 } from "@nestjs/common";
 import { VehicleService } from "./vehicle.service";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { Vehicle } from "./entities/vehical.entity";
+import { Emirates, Vehicle } from "./entities/vehical.entity";
 import { UploadService } from "src/common/upload/upload.service";
 import { Messages } from "src/constants/messages.constants";
 import { SheetService } from "../sheet/sheet.service";
@@ -53,7 +53,10 @@ export class VehicleController {
     @Body(new ValidationPipe()) vehicle: VehicleDto, // Validate and parse the vehicle object from request body
   ): Promise<response<Vehicle>> {
     try {
-      const response = await this.vehicleService.create(vehicle); // Call service to create vehicle
+      const response = await this.vehicleService.create({
+        ...vehicle,
+        isActive: vehicle?.isActive || true,
+      }); // Call service to create vehicle
       return {
         success: true,
         message: Messages.vehicle.createSuccess, // Success message
@@ -97,6 +100,35 @@ export class VehicleController {
   }
 
   // Endpoint for updating an existing vehicle by its ID
+  @Patch("active-inactive/:id")
+  async updateActiveInactive(
+    @Param("id") vehicleId: string,
+    @Body("isActive", new ValidationPipe()) isActive: boolean,
+  ): Promise<response<Vehicle>> {
+    try {
+      const vehicle = await this.vehicleService.findOne(vehicleId);
+
+      if (!vehicle) {
+        throw new HttpException("Vehicle not found", HttpStatus.NOT_FOUND);
+      }
+
+      vehicle.isActive = isActive; // Update isActive field directly
+
+      const response = await this.vehicleService.update(vehicleId, vehicle);
+
+      return {
+        success: true,
+        message: Messages.vehicle.updateSuccess(vehicleId),
+        data: response,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [updateActiveInactive] Error: ${error.message}`,
+      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   @Patch(":id")
   async update(
     @Param("id") id: string, // Get vehicle ID from request parameters
@@ -207,6 +239,62 @@ export class VehicleController {
       ); // Bad request error
     }
   }
+  @Post("active-inactive")
+  @UseInterceptors(FileInterceptor("file")) // Use file interceptor for handling file uploads
+  async bulkUpdate(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<response<void>> {
+    try {
+      const fileResponse = await this.uploadService.readExcel(
+        file,
+        "activeInactive",
+      ); // Parse Excel file and get vehicle data
+      if ("activeInactive" in fileResponse) {
+        // Save vehicles to the database
+        const updatedVehicles = (await Promise.all(
+          fileResponse.activeInactive.filter((item) => item !== undefined),
+        )) as Vehicle[];
+
+        await Promise.all(
+          updatedVehicles.map(async (vehicle: Vehicle) => {
+            try {
+              await this.vehicleService.update(vehicle.id, vehicle); // Call service to update vehicles in bulk
+            } catch (error) {
+              this.logger.error(
+                "[VehicleController] [bulkUpdate] error:",
+                error,
+              );
+              fileResponse.errorArray.push(error.message);
+            }
+          }),
+        );
+      } else {
+        throw new Error("Unexpected file response type for vehicles.");
+      }
+
+      // Prepare data for the Sheet entity
+      // const sheetData: Partial<Sheet> = {
+      //   uploadedAt: new Date(), // Current date and time
+      //   uploadedAtTime: format(new Date(), "hh:mm a"), // Format the time as '10:30 AM'
+      //   fileUrl: file.originalname, // Assuming the file path is stored in 'file.path'
+      //   type: "Vehicle", // Assuming the file path is stored in 'file.path'
+      // };
+
+      return {
+        success: true,
+        message: Messages.vehicle.updateBulkSuccess, // Success message
+        errorArray: fileResponse.errorArray,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[VehicleController] [uploadExcel] Error: ${error.message}`,
+      ); // Log error
+      throw new HttpException(
+        Messages.vehicle.updateBulkFailure,
+        HttpStatus.BAD_REQUEST,
+      ); // Bad request error
+    }
+  }
 
   @Get("filtered")
   async getFilteredVehicles(
@@ -214,6 +302,7 @@ export class VehicleController {
     @Query("ownedBy") ownedBy?: string,
     @Query("vehicleType") vehicleType?: string,
     @Query("aggregator") aggregatorName?: string,
+    @Query("emirates") emirateName?: Emirates,
   ): Promise<response<Vehicle[]>> {
     try {
       const data = await this.vehicleService.getFilteredVehicles(
@@ -221,6 +310,7 @@ export class VehicleController {
         ownedBy,
         vehicleType,
         aggregatorName,
+        emirateName,
       );
       return {
         success: true,
@@ -353,10 +443,6 @@ export class VehicleController {
         data: result,
       };
     } catch (error) {
-      this.logger.error(
-        "[VehicleController] [getVehicleCountByModelAndAggregator] ~ error:",
-        error,
-      );
       throw new InternalServerErrorException(
         "Failed to retrieve vehicle count",
       );

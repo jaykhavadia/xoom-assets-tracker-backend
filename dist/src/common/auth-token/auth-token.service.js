@@ -54,7 +54,7 @@ let AuthTokenService = AuthTokenService_1 = class AuthTokenService {
                     accessTokenExpiresAt: expiresAt,
                 });
             }
-            console.log("🚀 ~ AuthTokenService ~ saveTokens ~ tokenRecord:", tokenRecord);
+            this.logger.log("🚀 ~ AuthTokenService ~ saveTokens ~ tokenRecord:", tokenRecord);
             this.logger.log('Tokens saved/updated successfully');
             return await this.authTokenRepository.save(tokenRecord);
         }

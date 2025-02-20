@@ -1,8 +1,8 @@
-import { Transaction } from 'src/modules/transaction/entities/transaction.entity';
-import { VehicleType } from 'src/modules/vehicle-type/entities/vehicle-type.entity';
-import { Aggregator } from 'src/modules/aggregator/entities/aggregator.entity';
-import { OwnedBy } from 'src/modules/owned-by/entities/owned_by.entity';
-import { Model } from 'src/modules/model/entities/model.entity';
+import { Transaction } from "src/modules/transaction/entities/transaction.entity";
+import { VehicleType } from "src/modules/vehicle-type/entities/vehicle-type.entity";
+import { Aggregator } from "src/modules/aggregator/entities/aggregator.entity";
+import { OwnedBy } from "src/modules/owned-by/entities/owned_by.entity";
+import { Model } from "src/modules/model/entities/model.entity";
 export declare enum Emirates {
     AbuDhabi = "AbuDhabi",
     Dubai = "Dubai",
@@ -24,7 +24,8 @@ export declare class Vehicle {
     emirates: Emirates;
     chasisNumber: string;
     location: string;
-    status: 'available' | 'occupied';
+    status: "available" | "occupied";
+    isActive: boolean;
     isDeleted: boolean;
     transactions: Transaction[];
 }

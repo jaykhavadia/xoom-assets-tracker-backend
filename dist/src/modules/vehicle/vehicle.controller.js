@@ -17,6 +17,7 @@ exports.VehicleController = void 0;
 const common_1 = require("@nestjs/common");
 const vehicle_service_1 = require("./vehicle.service");
 const platform_express_1 = require("@nestjs/platform-express");
+const vehical_entity_1 = require("./entities/vehical.entity");
 const upload_service_1 = require("../../common/upload/upload.service");
 const messages_constants_1 = require("../../constants/messages.constants");
 const sheet_service_1 = require("../sheet/sheet.service");
@@ -36,7 +37,10 @@ let VehicleController = VehicleController_1 = class VehicleController {
     }
     async create(vehicle) {
         try {
-            const response = await this.vehicleService.create(vehicle);
+            const response = await this.vehicleService.create({
+                ...vehicle,
+                isActive: vehicle?.isActive || true,
+            });
             return {
                 success: true,
                 message: messages_constants_1.Messages.vehicle.createSuccess,
@@ -63,6 +67,25 @@ let VehicleController = VehicleController_1 = class VehicleController {
         catch (error) {
             this.logger.error(`[VehicleController] [findAll] Error: ${error.message}`);
             throw new common_1.HttpException(messages_constants_1.Messages.vehicle.findAllFailure, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async updateActiveInactive(vehicleId, isActive) {
+        try {
+            const vehicle = await this.vehicleService.findOne(vehicleId);
+            if (!vehicle) {
+                throw new common_1.HttpException("Vehicle not found", common_1.HttpStatus.NOT_FOUND);
+            }
+            vehicle.isActive = isActive;
+            const response = await this.vehicleService.update(vehicleId, vehicle);
+            return {
+                success: true,
+                message: messages_constants_1.Messages.vehicle.updateSuccess(vehicleId),
+                data: response,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[VehicleController] [updateActiveInactive] Error: ${error.message}`);
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
         }
     }
     async update(id, vehicle) {
@@ -121,9 +144,38 @@ let VehicleController = VehicleController_1 = class VehicleController {
             throw new common_1.HttpException(messages_constants_1.Messages.vehicle.updateBulkFailure, common_1.HttpStatus.BAD_REQUEST);
         }
     }
-    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName) {
+    async bulkUpdate(file) {
         try {
-            const data = await this.vehicleService.getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName);
+            const fileResponse = await this.uploadService.readExcel(file, "activeInactive");
+            if ("activeInactive" in fileResponse) {
+                const updatedVehicles = (await Promise.all(fileResponse.activeInactive.filter((item) => item !== undefined)));
+                await Promise.all(updatedVehicles.map(async (vehicle) => {
+                    try {
+                        await this.vehicleService.update(vehicle.id, vehicle);
+                    }
+                    catch (error) {
+                        this.logger.error("[VehicleController] [bulkUpdate] error:", error);
+                        fileResponse.errorArray.push(error.message);
+                    }
+                }));
+            }
+            else {
+                throw new Error("Unexpected file response type for vehicles.");
+            }
+            return {
+                success: true,
+                message: messages_constants_1.Messages.vehicle.updateBulkSuccess,
+                errorArray: fileResponse.errorArray,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[VehicleController] [uploadExcel] Error: ${error.message}`);
+            throw new common_1.HttpException(messages_constants_1.Messages.vehicle.updateBulkFailure, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+    async getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName, emirateName) {
+        try {
+            const data = await this.vehicleService.getFilteredVehicles(model, ownedBy, vehicleType, aggregatorName, emirateName);
             return {
                 success: true,
                 message: "Filtered vehicles fetched successfully.",
@@ -215,7 +267,6 @@ let VehicleController = VehicleController_1 = class VehicleController {
             };
         }
         catch (error) {
-            this.logger.error("[VehicleController] [getVehicleCountByModelAndAggregator] ~ error:", error);
             throw new common_1.InternalServerErrorException("Failed to retrieve vehicle count");
         }
     }
@@ -371,6 +422,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], VehicleController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Patch)("active-inactive/:id"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)("isActive", new common_1.ValidationPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", Promise)
+], VehicleController.prototype, "updateActiveInactive", null);
+__decorate([
     (0, common_1.Patch)(":id"),
     __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)(new common_1.ValidationPipe())),
@@ -394,13 +453,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], VehicleController.prototype, "uploadExcel", null);
 __decorate([
+    (0, common_1.Post)("active-inactive"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file")),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], VehicleController.prototype, "bulkUpdate", null);
+__decorate([
     (0, common_1.Get)("filtered"),
     __param(0, (0, common_1.Query)("model")),
     __param(1, (0, common_1.Query)("ownedBy")),
     __param(2, (0, common_1.Query)("vehicleType")),
     __param(3, (0, common_1.Query)("aggregator")),
+    __param(4, (0, common_1.Query)("emirates")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], VehicleController.prototype, "getFilteredVehicles", null);
 __decorate([

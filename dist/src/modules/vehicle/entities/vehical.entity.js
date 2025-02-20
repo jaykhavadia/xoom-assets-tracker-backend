@@ -32,23 +32,26 @@ let Vehicle = class Vehicle {
 };
 exports.Vehicle = Vehicle;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
     __metadata("design:type", String)
 ], Vehicle.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'vehicleNo', type: 'varchar', length: 50 }),
+    (0, typeorm_1.Column)({ name: "vehicleNo", type: "varchar", length: 50 }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Vehicle.prototype, "vehicleNo", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'code', type: 'varchar', length: 50 }),
+    (0, typeorm_1.Column)({ name: "code", type: "varchar", length: 50 }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Vehicle.prototype, "code", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => vehicle_type_entity_1.VehicleType, (vehicleType) => vehicleType, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => vehicle_type_entity_1.VehicleType, (vehicleType) => vehicleType, {
+        eager: true,
+        cascade: true,
+    }),
     __metadata("design:type", vehicle_type_entity_1.VehicleType)
 ], Vehicle.prototype, "vehicleType", void 0);
 __decorate([
@@ -56,56 +59,67 @@ __decorate([
     __metadata("design:type", model_entity_1.Model)
 ], Vehicle.prototype, "model", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => owned_by_entity_1.OwnedBy, (ownedBy) => ownedBy, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => owned_by_entity_1.OwnedBy, (ownedBy) => ownedBy, {
+        eager: true,
+        cascade: true,
+    }),
     __metadata("design:type", owned_by_entity_1.OwnedBy)
 ], Vehicle.prototype, "ownedBy", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => aggregator_entity_1.Aggregator, (aggregator) => aggregator, { eager: true, cascade: true }),
+    (0, typeorm_1.ManyToOne)(() => aggregator_entity_1.Aggregator, (aggregator) => aggregator, {
+        eager: true,
+        cascade: true,
+    }),
     __metadata("design:type", aggregator_entity_1.Aggregator)
 ], Vehicle.prototype, "aggregator", void 0);
 __decorate([
     (0, typeorm_1.Column)({
-        type: 'date',
+        type: "date",
         nullable: true,
         transformer: {
             to(value) {
-                return value ? moment(value, 'DD-MM-YYYY').toDate() : value;
+                return value ? moment(value, "DD-MM-YYYY").toDate() : value;
             },
             from(value) {
-                return value ? moment(value).format('DD-MM-YYYY') : null;
+                return value ? moment(value).format("DD-MM-YYYY") : null;
             },
         },
     }),
     (0, class_validator_1.Matches)(/^\d{2}-\d{2}-\d{4}$/, {
-        message: 'Date must be in the format dd-mm-yyyy',
+        message: "Date must be in the format dd-mm-yyyy",
     }),
     __metadata("design:type", Date)
 ], Vehicle.prototype, "registrationExpiry", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: Emirates }),
+    (0, typeorm_1.Column)({ type: "enum", enum: Emirates }),
     (0, class_validator_1.IsEnum)(Emirates),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Vehicle.prototype, "emirates", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'chasisNumber', type: 'varchar', length: 50 }),
+    (0, typeorm_1.Column)({ name: "chasisNumber", type: "varchar", length: 50, unique: true }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Vehicle.prototype, "chasisNumber", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 50 }),
+    (0, typeorm_1.Column)({ type: "varchar", length: 50 }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Vehicle.prototype, "location", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: ['available', 'occupied'] }),
-    (0, class_validator_1.IsEnum)(['available', 'occupied']),
+    (0, typeorm_1.Column)({ type: "enum", enum: ["available", "occupied"] }),
+    (0, class_validator_1.IsEnum)(["available", "occupied"]),
     __metadata("design:type", String)
 ], Vehicle.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'isDeleted', type: 'boolean', default: false }),
+    (0, typeorm_1.Column)({ name: "isActive", type: "boolean", default: true }),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], Vehicle.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "isDeleted", type: "boolean", default: false }),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], Vehicle.prototype, "isDeleted", void 0);
@@ -114,7 +128,8 @@ __decorate([
     __metadata("design:type", Array)
 ], Vehicle.prototype, "transactions", void 0);
 exports.Vehicle = Vehicle = __decorate([
-    (0, typeorm_1.Entity)('vehicle'),
-    (0, typeorm_1.Unique)(['chasisNumber'])
+    (0, typeorm_1.Entity)("vehicle"),
+    (0, typeorm_1.Unique)(["code", "vehicleNo"]),
+    (0, typeorm_1.Unique)(["chasisNumber"])
 ], Vehicle);
 //# sourceMappingURL=vehical.entity.js.map

@@ -1,5 +1,6 @@
 import { Emirates } from "../entities/vehical.entity";
 export declare class VehicleDto {
+    id: string;
     vehicleNo: string;
     code: string;
     vehicleTypeId: number;
@@ -11,5 +12,6 @@ export declare class VehicleDto {
     chasisNumber: string;
     location: string;
     status: "available" | "occupied";
+    isActive: boolean;
     isDeleted: boolean;
 }

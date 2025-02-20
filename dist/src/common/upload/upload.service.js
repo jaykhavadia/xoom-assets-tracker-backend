@@ -98,13 +98,13 @@ let UploadService = class UploadService {
                 throw new Error("inCorrect Time Format");
             }
         };
-        this.processFine = async (jsonData, vehicles, employees, transaction) => {
+        this.processFine = async (jsonData, vehicles) => {
             const errorArray = [];
             const fineResponse = await jsonData.map(async (item, index) => {
                 try {
-                    const { "Trip Date": tripDate, "Trip Time": tripTime, Plate, "Amount(AED)": amount, } = item;
+                    const { "Trip Date": tripDate, "Trip Time": tripTime, Plate, "Amount(AED)": amount, Code, } = item;
                     if (this.validateTime(tripTime)) {
-                        console.log("[DEBUG] Time format is valid:", tripTime);
+                        console.error("[DEBUG] Time format is valid:", tripTime);
                     }
                     else {
                         errorArray.push(`Incorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${tripTime}`);
@@ -112,7 +112,8 @@ let UploadService = class UploadService {
                     }
                     const date = new Date(this.excelDateToJSDate(tripDate));
                     const time = this.convertTo24HourFormat(tripTime);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString());
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === Plate.toString() &&
+                        vehicle.code === Code.toString());
                     if (!vehicleMatch) {
                         errorArray.push(`Vehicle with number ${Plate} not found.`);
                         return null;
@@ -195,7 +196,7 @@ let UploadService = class UploadService {
                         !item["Cut Off Time"].includes("'") &&
                         (item["Cut Off Time"].includes("AM") ||
                             item["Cut Off Time"].includes("PM"))) {
-                        console.log("The string contains AM or PM");
+                        console.error("The string contains AM or PM");
                     }
                     else {
                         errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item["Cut Off Time"]}`);
@@ -203,8 +204,12 @@ let UploadService = class UploadService {
                     }
                     transaction.time = item["Cut Off Time"];
                     transaction.date = this.excelDateToJSDate(item["Cut Off Date"]);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString());
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() && vehicle.code === item["Vehicle Code"].toString());
                     if (vehicleMatch) {
+                        if (!vehicleMatch.isActive) {
+                            errorArray.push(`${messages_constants_1.Messages.vehicle.notActive(item["Vehicle No."])} at Data No. ${index + 1}`);
+                            return;
+                        }
                         if (transaction.action === "out") {
                             if (vehicleMatch.status === "occupied") {
                                 errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item["Vehicle No."])} at Data No. ${index + 1}`);
@@ -259,6 +264,39 @@ let UploadService = class UploadService {
                 }
             });
             return { transactions: await Promise.all(transactionPromises), errorArray };
+        };
+        this.processActiveInactive = async (jsonData, vehicleDataSet) => {
+            const errorArray = [];
+            const processActiveInactive = [];
+            const vehiclePromises = jsonData.map(async (item) => {
+                try {
+                    if (processActiveInactive.length) {
+                        processActiveInactive.forEach((processedVehicle) => {
+                            if (String(processedVehicle.vehicleNo) ===
+                                String(item["Plate No."]) &&
+                                String(processedVehicle.code) === String(item["Code"])) {
+                                throw new Error(`Vehicle with No: ${item["Plate No."]} and Code No.: ${item["Code"]} are Duplicate in sheet`);
+                            }
+                        });
+                    }
+                    const vehicleMatch = vehicleDataSet.find((vehicleData) => String(vehicleData.vehicleNo) === String(item["Plate No."]) &&
+                        String(vehicleData.code) === String(item["Code"]));
+                    if (vehicleMatch) {
+                        vehicleMatch.isActive = item["Status"] === "Active" ? true : false;
+                    }
+                    else {
+                        errorArray.push(`Vehicle with No: ${item["Plate No."]} and Code No.: ${item["Code"]} are Not in DB`);
+                        return;
+                    }
+                    processActiveInactive.push(vehicleMatch);
+                    return vehicleMatch;
+                }
+                catch (error) {
+                    errorArray.push(error.message);
+                }
+            });
+            const resolvedVehicles = await Promise.all(vehiclePromises);
+            return { activeInactive: resolvedVehicles, errorArray };
         };
         this.processVehicle = async (jsonData, models, vehicleTypes, ownedBy, aggregators, vehicleDataSet, locations) => {
             const errorArray = [];
@@ -315,6 +353,7 @@ let UploadService = class UploadService {
                     vehicle.registrationExpiry = this.excelDateToJSDate(item["Expiry Date"]);
                     vehicle.emirates = item["Emirates"];
                     vehicle.status = item["Status"] || "available";
+                    vehicle.isActive = item["isActive"] || true;
                     vehicle.isDeleted = item["isDeleted"] || false;
                     processedVehicles.push({
                         vehicleNo: item["Vehicle No."],
@@ -359,7 +398,7 @@ let UploadService = class UploadService {
                         return employee;
                     }
                     catch (error) {
-                        console.log("[UploadService] [employees.push] error:", error);
+                        console.error("[UploadService] [employees.push] error:", error);
                         errorArray.push(`Employee with E Code ${item["E code"]} Failed to Add.`);
                         return;
                     }
@@ -414,7 +453,15 @@ let UploadService = class UploadService {
             const ownedBy = await this.ownedByRepository.find();
             const aggregator = await this.aggregatorRepository.find();
             if (jsonData.length > 0) {
-                if (Object.keys(jsonData[0]).includes("Code")) {
+                if (Object.keys(jsonData[0]).includes("Code") &&
+                    Object.keys(jsonData[0]).includes("Plate No.") &&
+                    Object.keys(jsonData[0]).includes("Status")) {
+                    if (type !== "activeInactive") {
+                        throw new Error("INVALID_FILE");
+                    }
+                    return await this.processActiveInactive(jsonData, vehicle);
+                }
+                else if (Object.keys(jsonData[0]).includes("Code")) {
                     if (type !== "vehicle") {
                         throw new Error("INVALID_FILE");
                     }
@@ -426,11 +473,12 @@ let UploadService = class UploadService {
                     }
                     return await this.processEmployee(jsonData, employee);
                 }
-                if (Object.keys(jsonData[0]).includes("Trip Date")) {
+                else if (Object.keys(jsonData[0]).includes("Trip Date") &&
+                    Object.keys(jsonData[0]).includes("Code")) {
                     if (type !== "fine") {
                         throw new Error("INVALID_FILE");
                     }
-                    return await this.processFine(jsonData, vehicle, employee, transaction);
+                    return await this.processFine(jsonData, vehicle);
                 }
                 else {
                     console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
@@ -443,7 +491,7 @@ let UploadService = class UploadService {
             }
         }
         catch (error) {
-            console.log("[UploadService] [readExcel] error:", error);
+            console.error("[UploadService] [readExcel] error:", error);
             throw error;
         }
     }

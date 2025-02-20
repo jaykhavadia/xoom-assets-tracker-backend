@@ -23,6 +23,7 @@ const aggregator_entity_1 = require("../aggregator/entities/aggregator.entity");
 const jwt_auth_module_1 = require("../../auth/jwt-auth.module");
 const user_entity_1 = require("../user/entities/user.entity");
 const vehicleQuery_service_1 = require("./vehicleQuery.service");
+const transaction_entity_1 = require("../transaction/entities/transaction.entity");
 let VehicleModule = class VehicleModule {
 };
 exports.VehicleModule = VehicleModule;
@@ -37,6 +38,7 @@ exports.VehicleModule = VehicleModule = __decorate([
                 owned_by_entity_1.OwnedBy,
                 aggregator_entity_1.Aggregator,
                 user_entity_1.User,
+                transaction_entity_1.Transaction,
             ]),
             common_module_1.CommonModule,
             sheet_module_1.SheetModule,

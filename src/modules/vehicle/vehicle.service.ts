@@ -5,7 +5,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Vehicle } from "./entities/vehical.entity";
+import { Emirates, Vehicle } from "./entities/vehical.entity";
 import { Repository } from "typeorm";
 import { VehicleDto } from "./dto/create-vehicle.dto";
 import { VehicleType } from "../vehicle-type/entities/vehicle-type.entity";
@@ -13,6 +13,10 @@ import { Model } from "../model/entities/model.entity";
 import { Aggregator } from "../aggregator/entities/aggregator.entity";
 import { OwnedBy } from "../owned-by/entities/owned_by.entity";
 import * as moment from "moment";
+import {
+  Action,
+  Transaction,
+} from "../transaction/entities/transaction.entity";
 
 @Injectable()
 export class VehicleService {
@@ -29,6 +33,8 @@ export class VehicleService {
     private readonly aggregatorRepository: Repository<Aggregator>,
     @InjectRepository(OwnedBy)
     private readonly ownedByRepository: Repository<OwnedBy>,
+    @InjectRepository(Transaction)
+    private transactionRepository: Repository<Transaction>,
   ) {}
 
   /**
@@ -101,16 +107,17 @@ export class VehicleService {
    * @param updateVehicleDto - the vehicle object with updated information
    * @returns the updated vehicle
    */
-  async update(id: string, updateVehicleDto: VehicleDto): Promise<Vehicle> {
+  async update(
+    id: string,
+    updateVehicleDto: Partial<VehicleDto>,
+  ): Promise<Vehicle> {
     try {
       const updatedVehicle = await this.checkRelation(updateVehicleDto);
       await this.vehicleRepository.update(id, updatedVehicle);
       return await this.findOne(id);
     } catch (error) {
       this.logger.error(`[VehicleService] [update] Error: ${error.message}`);
-      throw new InternalServerErrorException(
-        `Failed to update vehicle with id: ${id}`,
-      );
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -161,7 +168,7 @@ export class VehicleService {
     }
   }
 
-  async checkRelation(checkRelationDto: VehicleDto): Promise<{
+  async checkRelation(checkRelationDto: Partial<VehicleDto>): Promise<{
     vehicleType: VehicleType;
     model: Model;
     ownedBy: OwnedBy;
@@ -169,6 +176,24 @@ export class VehicleService {
   }> {
     const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } =
       checkRelationDto;
+
+    console.log("🚀 ~ VehicleService ~ checkRelation ~ vehicleDto:", vehicleDto);
+
+
+    const latestTransaction = await this.transactionRepository.findOne({
+      where: { vehicle: { id: vehicleDto.id } },
+      order: { createdAt: "DESC" },
+    });
+    if (
+      latestTransaction &&
+      latestTransaction.action === Action.OUT &&
+      !vehicleDto.isActive
+    ) {
+      throw new BadRequestException(
+        "Vehicle is currently out for service. can't update the vehicle.",
+      );
+    }
+
     // Fetch the related entities based on the IDs
     const vehicleType = await this.vehicleTypeRepository.findOne({
       where: { id: vehicleTypeId },
@@ -207,19 +232,24 @@ export class VehicleService {
     ownedBy?: string,
     vehicleType?: string,
     aggregatorName?: string,
+    emirateName?: Emirates,
   ): Promise<any> {
     const queryBuilder = this.vehicleRepository
       .createQueryBuilder("vehicle")
       .leftJoinAndSelect("vehicle.model", "model")
       .leftJoinAndSelect("vehicle.ownedBy", "owner")
       .leftJoinAndSelect("vehicle.vehicleType", "type")
-      .leftJoinAndSelect("vehicle.aggregator", "aggregator");
+      .leftJoinAndSelect("vehicle.aggregator", "aggregator")
+      .where("vehicle.isActive = :isActive", { isActive: 1 });
 
     if (model) {
       queryBuilder.andWhere("model.brand = :model", { model });
     }
     if (ownedBy) {
       queryBuilder.andWhere("owner.name = :ownedBy", { ownedBy });
+    }
+    if (emirateName) {
+      queryBuilder.andWhere("emirates = :emirateName", { emirateName });
     }
     if (vehicleType) {
       if (!vehicleType || vehicleType.split("-").length !== 2) {
@@ -255,6 +285,7 @@ export class VehicleService {
       .leftJoinAndSelect("vehicle.aggregator", "aggregator")
       .select("aggregator.name", "aggregatorName")
       .addSelect("COUNT(vehicle.id)", "vehicleCount")
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("aggregator.name")
       .getRawMany();
   }
@@ -273,6 +304,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("model.brand")
       .setParameters({
         available: "available",
@@ -295,6 +327,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("ownedBy.name")
       .setParameters({
         available: "available",
@@ -320,6 +353,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("vehicleType.name, vehicleType.fuel")
       .setParameters({
         available: "available",
@@ -343,6 +377,7 @@ export class VehicleService {
         "SUM(CASE WHEN vehicle.status = :occupied THEN 1 ELSE 0 END)",
         "occupied",
       )
+      .where("vehicle.isActive = :isActive", { isActive: 1 })
       .groupBy("location.name")
       .setParameters({
         available: "available",
