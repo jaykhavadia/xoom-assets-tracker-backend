@@ -97,7 +97,7 @@ __decorate([
     __metadata("design:type", String)
 ], Vehicle.prototype, "emirates", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "chasisNumber", type: "varchar", length: 50 }),
+    (0, typeorm_1.Column)({ name: "chasisNumber", type: "varchar", length: 50, unique: true }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
@@ -129,6 +129,7 @@ __decorate([
 ], Vehicle.prototype, "transactions", void 0);
 exports.Vehicle = Vehicle = __decorate([
     (0, typeorm_1.Entity)("vehicle"),
-    (0, typeorm_1.Unique)(["chasisNumber", "code", "vehicleNo"])
+    (0, typeorm_1.Unique)(["code", "vehicleNo"]),
+    (0, typeorm_1.Unique)(["chasisNumber"])
 ], Vehicle);
 //# sourceMappingURL=vehical.entity.js.map

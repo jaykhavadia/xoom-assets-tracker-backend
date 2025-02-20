@@ -19,7 +19,7 @@ class VehicleDto {
 exports.VehicleDto = VehicleDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], VehicleDto.prototype, "id", void 0);
 __decorate([
@@ -75,6 +75,7 @@ __decorate([
 ], VehicleDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], VehicleDto.prototype, "isActive", void 0);
 __decorate([

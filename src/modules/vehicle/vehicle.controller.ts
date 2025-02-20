@@ -53,7 +53,10 @@ export class VehicleController {
     @Body(new ValidationPipe()) vehicle: VehicleDto, // Validate and parse the vehicle object from request body
   ): Promise<response<Vehicle>> {
     try {
-      const response = await this.vehicleService.create(vehicle); // Call service to create vehicle
+      const response = await this.vehicleService.create({
+        ...vehicle,
+        isActive: vehicle?.isActive || true,
+      }); // Call service to create vehicle
       return {
         success: true,
         message: Messages.vehicle.createSuccess, // Success message

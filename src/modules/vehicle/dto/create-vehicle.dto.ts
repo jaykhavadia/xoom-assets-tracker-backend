@@ -13,7 +13,7 @@ import { Emirates } from "../entities/vehical.entity";
 
 export class VehicleDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   id: string;
 
   @IsString()
@@ -57,6 +57,7 @@ export class VehicleDto {
   status: "available" | "occupied";
 
   @IsBoolean()
+  @IsOptional()
   isActive: boolean;
 
   @IsBoolean()

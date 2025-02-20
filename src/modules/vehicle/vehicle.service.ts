@@ -177,11 +177,18 @@ export class VehicleService {
     const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } =
       checkRelationDto;
 
+    console.log("🚀 ~ VehicleService ~ checkRelation ~ vehicleDto:", vehicleDto);
+
+
     const latestTransaction = await this.transactionRepository.findOne({
       where: { vehicle: { id: vehicleDto.id } },
       order: { createdAt: "DESC" },
     });
-    if (latestTransaction && latestTransaction.action === Action.OUT) {
+    if (
+      latestTransaction &&
+      latestTransaction.action === Action.OUT &&
+      !vehicleDto.isActive
+    ) {
       throw new BadRequestException(
         "Vehicle is currently out for service. can't update the vehicle.",
       );

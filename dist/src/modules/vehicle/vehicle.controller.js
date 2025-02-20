@@ -37,7 +37,10 @@ let VehicleController = VehicleController_1 = class VehicleController {
     }
     async create(vehicle) {
         try {
-            const response = await this.vehicleService.create(vehicle);
+            const response = await this.vehicleService.create({
+                ...vehicle,
+                isActive: vehicle?.isActive || true,
+            });
             return {
                 success: true,
                 message: messages_constants_1.Messages.vehicle.createSuccess,

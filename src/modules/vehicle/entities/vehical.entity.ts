@@ -32,7 +32,8 @@ export enum Emirates {
 }
 
 @Entity("vehicle")
-@Unique(["chasisNumber", "code", "vehicleNo"]) // Ensures chasisNumber is unique
+@Unique(["code", "vehicleNo"]) // Ensures chasisNumber is unique
+@Unique(["chasisNumber"])
 export class Vehicle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -92,7 +93,7 @@ export class Vehicle {
   @IsNotEmpty()
   emirates: Emirates;
 
-  @Column({ name: "chasisNumber", type: "varchar", length: 50 })
+  @Column({ name: "chasisNumber", type: "varchar", length: 50, unique: true })
   @IsString()
   @IsNotEmpty()
   chasisNumber: string;
