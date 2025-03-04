@@ -18,6 +18,7 @@ const ExcelJS = require("exceljs");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
 const employee_service_1 = require("../employee/employee.service");
+const moment = require("moment");
 let BackupService = BackupService_1 = class BackupService {
     constructor(employeeService) {
         this.employeeService = employeeService;
@@ -63,6 +64,8 @@ let BackupService = BackupService_1 = class BackupService {
                     { header: "vehicleCode", key: "vehicleCode" },
                     { header: "vehicleEmirates", key: "vehicleEmirates" },
                     { header: "Aggregator", key: "aggregator" },
+                    { header: "Date", key: "date" },
+                    { header: "Time", key: "time" },
                 ];
                 employees.forEach((employee) => {
                     driverSheet.addRow({
@@ -76,6 +79,8 @@ let BackupService = BackupService_1 = class BackupService {
                         vehicleCode: employee?.vehicle ? employee?.vehicle.code : "N/A",
                         vehicleEmirates: employee?.vehicle ? employee?.vehicle.emirates : "N/A",
                         aggregator: employee?.aggregator ? employee?.aggregator : "N/A",
+                        date: employee?.transactions?.date ? employee?.transactions?.date : "N/A",
+                        time: employee?.transactions?.time ? moment(employee?.transactions?.time, "HH:mm:ss").format("hh.mm a") : "N/A",
                     });
                 });
             }

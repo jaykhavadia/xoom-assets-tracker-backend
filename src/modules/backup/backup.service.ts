@@ -5,6 +5,7 @@ import * as ExcelJS from "exceljs";
 import * as fs from "fs";
 import * as nodemailer from "nodemailer";
 import { EmployeeService } from "../employee/employee.service";
+import * as moment from "moment";
 
 @Injectable()
 export class BackupService {
@@ -68,10 +69,12 @@ export class BackupService {
           { header: "vehicleCode", key: "vehicleCode" },
           { header: "vehicleEmirates", key: "vehicleEmirates" },
           { header: "Aggregator", key: "aggregator" },
+          { header: "Date", key: "date" },
+          { header: "Time", key: "time" },
         ];
 
         // Add data rows
-        employees.forEach((employee) => {
+        employees.forEach((employee: any) => {
           driverSheet.addRow({
             id: employee.id,
             code: employee.code,
@@ -83,6 +86,8 @@ export class BackupService {
             vehicleCode: employee?.vehicle ? employee?.vehicle.code : "N/A",
             vehicleEmirates: employee?.vehicle ? employee?.vehicle.emirates : "N/A",
             aggregator: employee?.aggregator ? employee?.aggregator : "N/A",
+            date: employee?.transactions?.date ? employee?.transactions?.date : "N/A",
+            time: employee?.transactions?.time ? moment(employee?.transactions?.time, "HH:mm:ss").format("hh.mm a") : "N/A",
           });
         });
       }
