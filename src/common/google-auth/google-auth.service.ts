@@ -58,7 +58,7 @@ export class GoogleAuthService {
     });
     this.logger.log('OAuth2 client credentials set');
   }
-
+ 
   /**
    * Refreshes the access token using the refresh token.
    * @returns The refreshed tokens object
