@@ -1,5 +1,5 @@
 import { TransactionService } from "./transaction.service";
-import { Transaction } from "./entities/transaction.entity";
+import { Action, Transaction } from "./entities/transaction.entity";
 import { FilesHelperService } from "src/common/files-helper/files-helper.service";
 import { CreateTransactionDto, UpdateTransactionDto } from "./dto/CreateTransaction.dto";
 import { UploadService } from "src/common/upload/upload.service";
@@ -19,7 +19,7 @@ export declare class TransactionController {
     }): Promise<response<Transaction>>;
     update(id: string, user: Partial<User>, body: UpdateTransactionDto): Promise<response<Transaction>>;
     findAll(): Promise<response<Transaction[]>>;
-    findPastTransaction(vehicleNo: string): Promise<response<Transaction>>;
+    findPastTransaction(vehicleNo: string, action: Action): Promise<response<Transaction>>;
     remove(id: string): Promise<response<void>>;
     getTransactionsByDate(from?: string, to?: string, months?: number, date?: string): Promise<response<Transaction[]>>;
     uploadExcel(file: Express.Multer.File): Promise<response<any>>;

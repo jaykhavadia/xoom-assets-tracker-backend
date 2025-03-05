@@ -17,6 +17,7 @@ exports.TransactionController = void 0;
 const common_1 = require("@nestjs/common");
 const transaction_service_1 = require("./transaction.service");
 const platform_express_1 = require("@nestjs/platform-express");
+const transaction_entity_1 = require("./entities/transaction.entity");
 const files_helper_service_1 = require("../../common/files-helper/files-helper.service");
 const messages_constants_1 = require("../../constants/messages.constants");
 const CreateTransaction_dto_1 = require("./dto/CreateTransaction.dto");
@@ -95,10 +96,10 @@ let TransactionController = TransactionController_1 = class TransactionControlle
             throw new common_1.HttpException(messages_constants_1.Messages.transaction.findAllFailure, common_1.HttpStatus.BAD_REQUEST);
         }
     }
-    async findPastTransaction(vehicleNo) {
+    async findPastTransaction(vehicleNo, action) {
         const vehicleNumber = parseInt(vehicleNo, 10);
         try {
-            const transaction = await this.transactionService.findPastTransaction(vehicleNumber);
+            const transaction = await this.transactionService.findPastTransaction(vehicleNumber, action);
             return {
                 success: true,
                 message: messages_constants_1.Messages.transaction.findPastTransactionSuccess(vehicleNumber),
@@ -230,10 +231,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)("past-transaction/:vehicleNo"),
+    (0, common_1.Get)("past-transaction/:vehicleNo/:action"),
     __param(0, (0, common_1.Param)("vehicleNo")),
+    __param(1, (0, common_1.Param)("action")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findPastTransaction", null);
 __decorate([

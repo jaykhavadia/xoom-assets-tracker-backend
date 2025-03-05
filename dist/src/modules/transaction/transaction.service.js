@@ -181,7 +181,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
             throw new common_1.InternalServerErrorException(messages_constants_1.Messages.transaction.removeFailure(id));
         }
     }
-    async findPastTransaction(vehicleNo) {
+    async findPastTransaction(vehicleNo, action) {
         try {
             const { time, date } = this.getCurrentDateTime();
             const queryBuilder = this.transactionRepository
@@ -200,7 +200,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 .addOrderBy("t.time", "DESC")
                 .limit(1);
             let result = await queryBuilder.getOne();
-            if (result?.action === "in") {
+            if (result?.action === "in" && action === "out") {
                 throw new Error("Vehicle already Checked IN");
             }
             return result;

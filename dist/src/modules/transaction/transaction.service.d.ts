@@ -1,5 +1,5 @@
 import { Aggregator } from "src/modules/aggregator/entities/aggregator.entity";
-import { Transaction } from "./entities/transaction.entity";
+import { Action, Transaction } from "./entities/transaction.entity";
 import { Repository } from "typeorm";
 import { VehicleService } from "../vehicle/vehicle.service";
 import { EmployeeService } from "../employee/employee.service";
@@ -25,7 +25,7 @@ export declare class TransactionService {
     findOne(id: number): Promise<Transaction>;
     findAll(): Promise<Transaction[]>;
     remove(id: number): Promise<void>;
-    findPastTransaction(vehicleNo: number): Promise<Transaction>;
+    findPastTransaction(vehicleNo: number, action: Action): Promise<Transaction>;
     getCurrentDateTime: () => {
         date: string;
         time: string;
