@@ -231,7 +231,10 @@ export class TransactionService {
     }
   }
 
-  async findPastTransaction(vehicleNo: number): Promise<Transaction> {
+  async findPastTransaction(
+    vehicleNo: number,
+    action: Action,
+  ): Promise<Transaction> {
     try {
       const { time, date } = this.getCurrentDateTime();
       const queryBuilder = this.transactionRepository
@@ -251,7 +254,8 @@ export class TransactionService {
         .limit(1);
 
       let result = await queryBuilder.getOne();
-      if (result?.action === "in") {
+      
+      if (result?.action === "in" && action === "out") {
         throw new Error("Vehicle already Checked IN");
       }
 

@@ -23,7 +23,7 @@ import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from "@nestjs/platform-express";
-import { Transaction } from "./entities/transaction.entity";
+import { Action, Transaction } from "./entities/transaction.entity";
 import { FilesHelperService } from "src/common/files-helper/files-helper.service";
 import { Messages } from "src/constants/messages.constants";
 import {
@@ -165,14 +165,17 @@ export class TransactionController {
     }
   }
 
-  @Get("past-transaction/:vehicleNo")
+  @Get("past-transaction/:vehicleNo/:action")
   async findPastTransaction(
     @Param("vehicleNo") vehicleNo: string,
+    @Param("action") action: Action,
   ): Promise<response<Transaction>> {
     const vehicleNumber = parseInt(vehicleNo, 10); // Parse the ID from the URL
     try {
-      const transaction =
-        await this.transactionService.findPastTransaction(vehicleNumber); // Fetch all transactions
+      const transaction = await this.transactionService.findPastTransaction(
+        vehicleNumber,
+        action,
+      ); // Fetch all transactions
       return {
         success: true,
         message: Messages.transaction.findPastTransactionSuccess(vehicleNumber),
