@@ -177,9 +177,6 @@ export class VehicleService {
     const { vehicleTypeId, modelId, ownedById, aggregatorId, ...vehicleDto } =
       checkRelationDto;
 
-    console.log("🚀 ~ VehicleService ~ checkRelation ~ vehicleDto:", vehicleDto);
-
-
     const latestTransaction = await this.transactionRepository.findOne({
       where: { vehicle: { id: vehicleDto.id } },
       order: { createdAt: "DESC" },

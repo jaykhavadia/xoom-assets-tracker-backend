@@ -56,7 +56,6 @@ export class AuthTokenService {
         });
 
       }
-      this.logger.log("🚀 ~ AuthTokenService ~ saveTokens ~ tokenRecord:", tokenRecord);
 
       this.logger.log('Tokens saved/updated successfully');
       return await this.authTokenRepository.save(tokenRecord);
