@@ -257,6 +257,8 @@ export class TransactionService {
       
       if (result?.action === "in" && action === "out") {
         throw new Error("Vehicle already Checked IN");
+      }else if (result?.action === "out" && action === "out") {
+        throw new Error("Vehicle already Checked OUT");
       }
 
       return result;
