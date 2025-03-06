@@ -40,4 +40,5 @@ export declare class TransactionService {
     }>;
     convertTo24HourFormat: (time: string) => string;
     processTransaction(file: Express.Multer.File, type: string): Promise<any>;
+    getEmployeeLatestTransaction(employeeId: number): Promise<response<Transaction>>;
 }

@@ -15,6 +15,8 @@ export const Messages = {
         removeSuccess: (id: number) => `Employee with id: ${id} deleted successfully`,
         removeFailure: (id: number) => `Failed to delete employee with id: ${id}`,
         inactive: (id: number) => `Employee with id: ${id} is inactive`,
+        isOccupied: (id: number, vehicleId: string) => `Employee with id: ${id} already has a vehicle ${vehicleId}`,
+        differentVehicle: (id: number, vehicleId: string) => `Employee with id: ${id} has a different vehicle ${vehicleId}`,
         updateBulkSuccess: 'Bulk Employees Added successfully',
         updateBulkFailure: 'Failed to Added Bulk Employees',
     },

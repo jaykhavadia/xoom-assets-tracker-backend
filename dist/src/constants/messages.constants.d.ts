@@ -11,6 +11,8 @@ export declare const Messages: {
         removeSuccess: (id: number) => string;
         removeFailure: (id: number) => string;
         inactive: (id: number) => string;
+        isOccupied: (id: number, vehicleId: string) => string;
+        differentVehicle: (id: number, vehicleId: string) => string;
         updateBulkSuccess: string;
         updateBulkFailure: string;
     };

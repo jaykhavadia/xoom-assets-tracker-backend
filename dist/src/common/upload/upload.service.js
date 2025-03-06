@@ -16,13 +16,11 @@ exports.UploadService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const moment = require("moment");
-const messages_constants_1 = require("../../constants/messages.constants");
 const aggregator_entity_1 = require("../../modules/aggregator/entities/aggregator.entity");
 const employee_entity_1 = require("../../modules/employee/entities/employee.entity");
 const location_entity_1 = require("../../modules/location/entities/location.entity");
 const model_entity_1 = require("../../modules/model/entities/model.entity");
 const owned_by_entity_1 = require("../../modules/owned-by/entities/owned_by.entity");
-const CreateTransaction_dto_1 = require("../../modules/transaction/dto/CreateTransaction.dto");
 const transaction_entity_1 = require("../../modules/transaction/entities/transaction.entity");
 const vehicle_type_entity_1 = require("../../modules/vehicle-type/entities/vehicle-type.entity");
 const vehical_entity_1 = require("../../modules/vehicle/entities/vehical.entity");
@@ -184,87 +182,6 @@ let UploadService = class UploadService {
                     .filter((item) => item !== null && item !== undefined),
                 errorArray,
             };
-        };
-        this.processTransaction = async (jsonData, vehicles, employees, locations, aggregators) => {
-            const errorArray = [];
-            const transactionPromises = jsonData.map(async (item, index) => {
-                try {
-                    const transaction = new CreateTransaction_dto_1.CreateTransactionDto();
-                    transaction.action =
-                        item["Status"] === "Check Out" ? transaction_entity_1.Action.OUT : transaction_entity_1.Action.IN;
-                    if (this.validateTime(item["Cut Off Time"]) &&
-                        !item["Cut Off Time"].includes("'") &&
-                        (item["Cut Off Time"].includes("AM") ||
-                            item["Cut Off Time"].includes("PM"))) {
-                        console.error("The string contains AM or PM");
-                    }
-                    else {
-                        errorArray.push(`inCorrect Time Format at Data No. ${index + 1} Expected HH:MM:SS AM/PM Got ${item["Cut Off Time"]}`);
-                        return;
-                    }
-                    transaction.time = item["Cut Off Time"];
-                    transaction.date = this.excelDateToJSDate(item["Cut Off Date"]);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() &&
-                        vehicle.code === item["Vehicle Code"].toString());
-                    if (vehicleMatch) {
-                        if (!vehicleMatch.isActive) {
-                            errorArray.push(`${messages_constants_1.Messages.vehicle.notActive(item["Vehicle No."])} at Data No. ${index + 1}`);
-                            return;
-                        }
-                        if (transaction.action === "out") {
-                            if (vehicleMatch.status === "occupied") {
-                                errorArray.push(`${messages_constants_1.Messages.vehicle.occupied(item["Vehicle No."])} at Data No. ${index + 1}`);
-                                return;
-                            }
-                            transaction.vehicle = vehicleMatch.id;
-                        }
-                        else if (transaction.action === "in") {
-                            if (vehicleMatch.status === "available") {
-                                errorArray.push(`${messages_constants_1.Messages.vehicle.available(item["Vehicle No."])} at Data No. ${index + 1}`);
-                                return;
-                            }
-                            transaction.vehicle = vehicleMatch.id;
-                        }
-                    }
-                    else {
-                        errorArray.push(`Vehicle with number ${item["Vehicle No."]} not found. at Data No. ${index + 1}`);
-                        return;
-                    }
-                    const aggregatorMatch = aggregators.find((aggregator) => aggregator.name === item["Aggregator"]);
-                    if (aggregatorMatch) {
-                        transaction.aggregator = aggregatorMatch.name;
-                    }
-                    else {
-                        errorArray.push(`Aggregator ${item["Aggregator"]} not found. at Data No. ${index + 1}`);
-                        return;
-                    }
-                    const employeeMatch = employees.find((employee) => employee.code === item["XDS No."]);
-                    if (employeeMatch) {
-                        if (employeeMatch.status === "inactive") {
-                            errorArray.push(`${messages_constants_1.Messages.employee.inactive(item["XDS No."])} at Data No. ${index + 1}`);
-                            return;
-                        }
-                        transaction.employee = employeeMatch.id;
-                    }
-                    else {
-                        errorArray.push(`Employee with XDS No. ${item["XDS No."]} not found. at Data No. ${index + 1}`);
-                        return;
-                    }
-                    const locationMatch = locations.find((location) => location.name === item["Location"]);
-                    if (locationMatch) {
-                        transaction.location = locationMatch.id;
-                    }
-                    else {
-                        errorArray.push(`Location with name ${item["Location"]} not found. at Data No. ${index + 1}`);
-                        return;
-                    }
-                    transaction.comments = "";
-                }
-                catch (error) {
-                    errorArray.push(error.message);
-                }
-            });
-            return { transactions: await Promise.all(transactionPromises), errorArray };
         };
         this.processActiveInactive = async (jsonData, vehicleDataSet) => {
             const errorArray = [];

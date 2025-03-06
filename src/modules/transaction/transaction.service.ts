@@ -1,5 +1,7 @@
 import { Aggregator } from "src/modules/aggregator/entities/aggregator.entity";
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -131,6 +133,42 @@ export class TransactionService {
           Messages.employee.inactive(employeeData.id),
         ); // Handle error
       }
+      const { data: employeeLastTransaction } =
+        await this.getEmployeeLatestTransaction(employeeData.id);
+      if (
+        updateDto.action === "out" &&
+        employeeLastTransaction &&
+        employeeLastTransaction.action === Action.OUT
+      ) {
+        throw new InternalServerErrorException(
+          Messages.employee.isOccupied(
+            employeeData.id,
+            employeeLastTransaction.vehicle.vehicleNo,
+          ),
+        ); // Handle error
+      }
+      if (
+        updateDto.action === "in" &&
+        employeeLastTransaction &&
+        employeeLastTransaction.action === Action.IN
+      ) {
+        throw new InternalServerErrorException(
+          "Employee is already available cant check in",
+        ); // Handle error
+      }
+      if (
+        updateDto.action === "in" &&
+        employeeLastTransaction &&
+        employeeLastTransaction.action === Action.IN &&
+        employeeLastTransaction.vehicle.vehicleNo !== vehicle.vehicleNo
+      ) {
+        throw new InternalServerErrorException(
+          Messages.employee.differentVehicle(
+            employeeData.id,
+            employeeLastTransaction.vehicle.vehicleNo,
+          ),
+        ); // Handle error
+      }
 
       await this.transactionRepository.update(
         { id },
@@ -254,10 +292,10 @@ export class TransactionService {
         .limit(1);
 
       let result = await queryBuilder.getOne();
-      
+
       if (result?.action === "in" && action === "in") {
         throw new Error("Vehicle already Checked IN");
-      }else if (result?.action === "out" && action === "out") {
+      } else if (result?.action === "out" && action === "out") {
         throw new Error("Vehicle already Checked OUT");
       }
 
@@ -440,6 +478,43 @@ export class TransactionService {
           Messages.employee.inactive(employee.id),
         ); // Handle error
       }
+      const { data: employeeLastTransaction } =
+        await this.getEmployeeLatestTransaction(employee.id);
+
+      if (
+        transactionDto.action === "out" &&
+        employeeLastTransaction &&
+        employeeLastTransaction.action === Action.OUT
+      ) {
+        throw new InternalServerErrorException(
+          Messages.employee.isOccupied(
+            employee.id,
+            employeeLastTransaction.vehicle.vehicleNo,
+          ),
+        ); // Handle error
+      }
+      if (
+        transactionDto.action === "in" &&
+        employeeLastTransaction &&
+        employeeLastTransaction.action === Action.IN
+      ) {
+        throw new InternalServerErrorException(
+          "Employee is already available cant check in",
+        ); // Handle error
+      }
+      if (
+        transactionDto.action === "in" &&
+        employeeLastTransaction &&
+        employeeLastTransaction.action === Action.IN &&
+        employeeLastTransaction.vehicle.vehicleNo !== vehicle.vehicleNo
+      ) {
+        throw new InternalServerErrorException(
+          Messages.employee.differentVehicle(
+            employee.id,
+            employeeLastTransaction.vehicle.vehicleNo,
+          ),
+        ); // Handle error
+      }
 
       this.logger.log("Successfully updated transaction.");
       return { employee, location, vehicle, aggregator: aggregatorData };
@@ -597,6 +672,62 @@ export class TransactionService {
             );
             continue; // Skip to the next iteration
           }
+
+          const { data: employeeLastTransaction } =
+            await this.getEmployeeLatestTransaction(employeeMatch.id);
+
+          if (
+            employeeLastTransaction &&
+            employeeLastTransaction.action === Action.OUT
+          ) {
+            errorArray.push(
+              Messages.employee.isOccupied(
+                item["XDS No."],
+                employeeLastTransaction.vehicle.vehicleNo,
+              ),
+            );
+            continue; // Skip to the next iteration
+          }
+
+          if (
+            transaction.action === "out" &&
+            employeeLastTransaction &&
+            employeeLastTransaction.action === Action.OUT
+          ) {
+            errorArray.push(
+              Messages.employee.isOccupied(
+                employeeMatch.id,
+                employeeLastTransaction.vehicle.vehicleNo,
+              ),
+            );
+            continue; // Skip to the next iteration
+          }
+          if (
+            transaction.action === "in" &&
+            employeeLastTransaction &&
+            employeeLastTransaction.action === Action.IN
+          ) {
+            errorArray.push(
+              "Employee is already available cant check in",
+
+            );
+            continue; // Skip to the next iteration
+          }
+          if (
+            transaction.action === "in" &&
+            employeeLastTransaction &&
+            employeeLastTransaction.action === Action.IN &&
+            employeeLastTransaction.vehicle.vehicleNo !== vehicleMatch.vehicleNo
+          ) {
+            errorArray.push(
+              Messages.employee.differentVehicle(
+                employeeMatch.id,
+                employeeLastTransaction.vehicle.vehicleNo,
+              ),
+            );
+            continue; // Skip to the next iteration
+          }
+
           transaction.employee = employeeMatch.id;
         } else {
           errorArray.push(
@@ -632,5 +763,39 @@ export class TransactionService {
     }
 
     return errorArray;
+  }
+
+  async getEmployeeLatestTransaction(
+    employeeId: number,
+  ): Promise<response<Transaction>> {
+    try {
+      const latestTransaction = await this.transactionRepository.findOne({
+        where: { employee: { id: employeeId } },
+        order: { createdAt: "DESC" },
+        relations: ["vehicle", "employee", "location", "user"], // Include related entities if needed
+      });
+
+      if (!latestTransaction) {
+        return {
+          success: false,
+          message: "No transaction found for the given employee.",
+          data: null,
+        };
+      }
+
+      return {
+        success: true,
+        message: "Latest transaction retrieved successfully.",
+        data: latestTransaction,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[TransactionService] [getLatestTransaction] Error: ${error.message}`,
+      );
+      throw new HttpException(
+        "Failed to retrieve the latest transaction.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }

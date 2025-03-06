@@ -14,6 +14,8 @@ exports.Messages = {
         removeSuccess: (id) => `Employee with id: ${id} deleted successfully`,
         removeFailure: (id) => `Failed to delete employee with id: ${id}`,
         inactive: (id) => `Employee with id: ${id} is inactive`,
+        isOccupied: (id, vehicleId) => `Employee with id: ${id} already has a vehicle ${vehicleId}`,
+        differentVehicle: (id, vehicleId) => `Employee with id: ${id} has a different vehicle ${vehicleId}`,
         updateBulkSuccess: 'Bulk Employees Added successfully',
         updateBulkFailure: 'Failed to Added Bulk Employees',
     },

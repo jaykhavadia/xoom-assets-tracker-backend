@@ -43,10 +43,6 @@ export declare class UploadService {
         fine: any[];
         errorArray: string[];
     }>;
-    processTransaction: (jsonData: any, vehicles: Vehicle[], employees: Employee[], locations: Location[], aggregators: Aggregator[]) => Promise<{
-        transactions: CreateTransactionDto[];
-        errorArray: string[];
-    }>;
     processActiveInactive: (jsonData: any, vehicleDataSet: Vehicle[]) => Promise<{
         activeInactive: Vehicle[];
         errorArray: string[];
