@@ -204,7 +204,8 @@ let UploadService = class UploadService {
                     }
                     transaction.time = item["Cut Off Time"];
                     transaction.date = this.excelDateToJSDate(item["Cut Off Date"]);
-                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() && vehicle.code === item["Vehicle Code"].toString());
+                    const vehicleMatch = vehicles.find((vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() &&
+                        vehicle.code === item["Vehicle Code"].toString());
                     if (vehicleMatch) {
                         if (!vehicleMatch.isActive) {
                             errorArray.push(`${messages_constants_1.Messages.vehicle.notActive(item["Vehicle No."])} at Data No. ${index + 1}`);
@@ -455,29 +456,21 @@ let UploadService = class UploadService {
             if (jsonData.length > 0) {
                 if (Object.keys(jsonData[0]).includes("Code") &&
                     Object.keys(jsonData[0]).includes("Plate No.") &&
-                    Object.keys(jsonData[0]).includes("Status")) {
-                    if (type !== "activeInactive") {
-                        throw new Error("INVALID_FILE");
-                    }
+                    Object.keys(jsonData[0]).includes("Status") &&
+                    type === "activeInactive") {
                     return await this.processActiveInactive(jsonData, vehicle);
                 }
-                else if (Object.keys(jsonData[0]).includes("Code")) {
-                    if (type !== "vehicle") {
-                        throw new Error("INVALID_FILE");
-                    }
+                else if (Object.keys(jsonData[0]).includes("Code") &&
+                    type === "vehicle") {
                     return await this.processVehicle(jsonData, models, vehicleTypes, ownedBy, aggregator, vehicle, location);
                 }
-                else if (Object.keys(jsonData[0]).includes("E code")) {
-                    if (type !== "employee") {
-                        throw new Error("INVALID_FILE");
-                    }
+                else if (Object.keys(jsonData[0]).includes("E code") &&
+                    type === "employee") {
                     return await this.processEmployee(jsonData, employee);
                 }
                 else if (Object.keys(jsonData[0]).includes("Trip Date") &&
-                    Object.keys(jsonData[0]).includes("Code")) {
-                    if (type !== "fine") {
-                        throw new Error("INVALID_FILE");
-                    }
+                    Object.keys(jsonData[0]).includes("Code") &&
+                    type === "fine") {
                     return await this.processFine(jsonData, vehicle);
                 }
                 else {

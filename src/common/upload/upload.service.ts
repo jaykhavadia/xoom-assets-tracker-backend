@@ -77,16 +77,14 @@ export class UploadService {
         if (
           Object.keys(jsonData[0]).includes("Code") &&
           Object.keys(jsonData[0]).includes("Plate No.") &&
-          Object.keys(jsonData[0]).includes("Status")
+          Object.keys(jsonData[0]).includes("Status") &&
+          type === "activeInactive"
         ) {
-          if (type !== "activeInactive") {
-            throw new Error("INVALID_FILE");
-          }
           return await this.processActiveInactive(jsonData, vehicle);
-        } else if (Object.keys(jsonData[0]).includes("Code")) {
-          if (type !== "vehicle") {
-            throw new Error("INVALID_FILE");
-          }
+        } else if (
+          Object.keys(jsonData[0]).includes("Code") &&
+          type === "vehicle"
+        ) {
           return await this.processVehicle(
             jsonData,
             models,
@@ -96,23 +94,17 @@ export class UploadService {
             vehicle,
             location,
           );
-        } else if (Object.keys(jsonData[0]).includes("E code")) {
-          if (type !== "employee") {
-            throw new Error("INVALID_FILE");
-          }
-
+        } else if (
+          Object.keys(jsonData[0]).includes("E code") &&
+          type === "employee"
+        ) {
           return await this.processEmployee(jsonData, employee);
         } else if (
           Object.keys(jsonData[0]).includes("Trip Date") &&
-          Object.keys(jsonData[0]).includes("Code")
+          Object.keys(jsonData[0]).includes("Code") &&
+          type === "fine"
         ) {
-          if (type !== "fine") {
-            throw new Error("INVALID_FILE");
-          }
-          return await this.processFine(
-            jsonData,
-            vehicle,
-          );
+          return await this.processFine(jsonData, vehicle);
         } else {
           console.warn(`Unrecognized sheet format in sheet: ${sheetName}`);
           throw new Error("Unrecognized sheet format");
@@ -361,7 +353,9 @@ export class UploadService {
 
         // Find the associated vehicle
         const vehicleMatch = vehicles.find(
-          (vehicle) => vehicle.vehicleNo === item["Vehicle No."].toString() && vehicle.code === item["Vehicle Code"].toString(),
+          (vehicle) =>
+            vehicle.vehicleNo === item["Vehicle No."].toString() &&
+            vehicle.code === item["Vehicle Code"].toString(),
         );
         if (vehicleMatch) {
           if (!vehicleMatch.isActive) {
