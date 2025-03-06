@@ -255,7 +255,7 @@ export class TransactionService {
 
       let result = await queryBuilder.getOne();
       
-      if (result?.action === "in" && action === "out") {
+      if (result?.action === "in" && action === "in") {
         throw new Error("Vehicle already Checked IN");
       }else if (result?.action === "out" && action === "out") {
         throw new Error("Vehicle already Checked OUT");
