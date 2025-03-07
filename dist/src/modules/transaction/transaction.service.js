@@ -98,22 +98,6 @@ let TransactionService = TransactionService_1 = class TransactionService {
             const { comments, date, employee, location, time, user } = updateDto;
             const transaction = await this.findOne(id);
             let vehicle = await this.vehicleService.findOne(transaction.vehicle.id);
-            const aggregatorData = await this.aggregatorService.findOneByName(updateDto?.aggregator || "idle");
-            const { vehicleType, model, ownedBy, aggregator, isActive, ...vehicleData } = vehicle;
-            if (!isActive) {
-                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.notActive(vehicleData.id));
-            }
-            const locationData = await this.locationService.findOne(location);
-            vehicle = await this.vehicleService.update(vehicle.id, {
-                ...vehicleData,
-                isActive,
-                vehicleTypeId: Number(vehicleType.id),
-                modelId: Number(model.id),
-                ownedById: Number(ownedBy.id),
-                aggregatorId: Number(aggregatorData.id || 1),
-                status: "occupied",
-                location: locationData.name,
-            });
             const employeeData = await this.employeeService.findOne(updateDto.employee);
             if (employeeData.status === "inactive") {
                 throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.inactive(employeeData.id));
@@ -135,6 +119,22 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 employeeLastTransaction.vehicle.vehicleNo !== vehicle.vehicleNo) {
                 throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.differentVehicle(employeeData.id, employeeLastTransaction.vehicle.vehicleNo));
             }
+            const aggregatorData = await this.aggregatorService.findOneByName(updateDto?.aggregator || "idle");
+            const { vehicleType, model, ownedBy, aggregator, isActive, ...vehicleData } = vehicle;
+            if (!isActive) {
+                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.notActive(vehicleData.id));
+            }
+            const locationData = await this.locationService.findOne(location);
+            vehicle = await this.vehicleService.update(vehicle.id, {
+                ...vehicleData,
+                isActive,
+                vehicleTypeId: Number(vehicleType.id),
+                modelId: Number(model.id),
+                ownedById: Number(ownedBy.id),
+                aggregatorId: Number(aggregatorData.id || 1),
+                status: "occupied",
+                location: locationData.name,
+            });
             await this.transactionRepository.update({ id }, {
                 comments,
                 date,
@@ -284,6 +284,30 @@ let TransactionService = TransactionService_1 = class TransactionService {
             if (!vehicle) {
                 throw new common_1.InternalServerErrorException("Vehicle Not Found");
             }
+            const employee = await this.employeeService.findOne(transactionDto.employee);
+            if (!employee) {
+                throw new common_1.InternalServerErrorException("Employee Not Found");
+            }
+            if (employee.status === "inactive") {
+                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.inactive(employee.id));
+            }
+            const { data: employeeLastTransaction } = await this.getEmployeeLatestTransaction(employee.id);
+            if (transactionDto.action === "out" &&
+                employeeLastTransaction &&
+                employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
+                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.isOccupied(employee.id, employeeLastTransaction.vehicle.vehicleNo));
+            }
+            if (transactionDto.action === "in" &&
+                employeeLastTransaction &&
+                employeeLastTransaction.action === transaction_entity_1.Action.IN) {
+                throw new common_1.InternalServerErrorException("Employee is already available cant check in");
+            }
+            if (transactionDto.action === "in" &&
+                employeeLastTransaction &&
+                employeeLastTransaction.action === transaction_entity_1.Action.IN &&
+                employeeLastTransaction.vehicle.vehicleNo !== vehicle.vehicleNo) {
+                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.differentVehicle(employee.id, employeeLastTransaction.vehicle.vehicleNo));
+            }
             const aggregatorData = await this.aggregatorService.findOneByName(transactionDto.action === "out" ? transactionDto?.aggregator : "idle");
             const { vehicleType, model, ownedBy, aggregator, isActive, ...vehicleData } = vehicle;
             if (!isActive) {
@@ -319,27 +343,6 @@ let TransactionService = TransactionService_1 = class TransactionService {
                     status: "available",
                     location: location.name,
                 });
-            }
-            const employee = await this.employeeService.findOne(transactionDto.employee);
-            if (employee.status === "inactive") {
-                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.inactive(employee.id));
-            }
-            const { data: employeeLastTransaction } = await this.getEmployeeLatestTransaction(employee.id);
-            if (transactionDto.action === "out" &&
-                employeeLastTransaction &&
-                employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
-                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.isOccupied(employee.id, employeeLastTransaction.vehicle.vehicleNo));
-            }
-            if (transactionDto.action === "in" &&
-                employeeLastTransaction &&
-                employeeLastTransaction.action === transaction_entity_1.Action.IN) {
-                throw new common_1.InternalServerErrorException("Employee is already available cant check in");
-            }
-            if (transactionDto.action === "in" &&
-                employeeLastTransaction &&
-                employeeLastTransaction.action === transaction_entity_1.Action.IN &&
-                employeeLastTransaction.vehicle.vehicleNo !== vehicle.vehicleNo) {
-                throw new common_1.InternalServerErrorException(messages_constants_1.Messages.employee.differentVehicle(employee.id, employeeLastTransaction.vehicle.vehicleNo));
             }
             this.logger.log("Successfully updated transaction.");
             return { employee, location, vehicle, aggregator: aggregatorData };
@@ -385,6 +388,44 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 transaction.date = this.uploadService.excelDateToJSDate(item["Cut Off Date"]);
                 const vehicleMatch = await this.vehicleService.findByVehicleNo(item["Vehicle No."].toString());
                 if (vehicleMatch) {
+                    const employeeMatch = await this.employeeService.findByCode(item["XDS No."]);
+                    if (employeeMatch) {
+                        if (employeeMatch.status === "inactive") {
+                            errorArray.push(`${messages_constants_1.Messages.employee.inactive(item["XDS No."])} at Data No. ${index + 1}`);
+                            continue;
+                        }
+                        const { data: employeeLastTransaction } = await this.getEmployeeLatestTransaction(employeeMatch.id);
+                        if (employeeLastTransaction &&
+                            employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
+                            errorArray.push(messages_constants_1.Messages.employee.isOccupied(item["XDS No."], employeeLastTransaction.vehicle.vehicleNo));
+                            continue;
+                        }
+                        if (transaction.action === "out" &&
+                            employeeLastTransaction &&
+                            employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
+                            errorArray.push(messages_constants_1.Messages.employee.isOccupied(employeeMatch.id, employeeLastTransaction.vehicle.vehicleNo));
+                            continue;
+                        }
+                        if (transaction.action === "in" &&
+                            employeeLastTransaction &&
+                            employeeLastTransaction.action === transaction_entity_1.Action.IN) {
+                            errorArray.push("Employee is already available cant check in");
+                            continue;
+                        }
+                        if (transaction.action === "in" &&
+                            employeeLastTransaction &&
+                            employeeLastTransaction.action === transaction_entity_1.Action.IN &&
+                            employeeLastTransaction.vehicle.vehicleNo !==
+                                vehicleMatch.vehicleNo) {
+                            errorArray.push(messages_constants_1.Messages.employee.differentVehicle(employeeMatch.id, employeeLastTransaction.vehicle.vehicleNo));
+                            continue;
+                        }
+                        transaction.employee = employeeMatch.id;
+                    }
+                    else {
+                        errorArray.push(`Employee with XDS No. ${item["XDS No."]} not found at Data No. ${index + 1}`);
+                        continue;
+                    }
                     if (!vehicleMatch.isActive) {
                         throw new common_1.InternalServerErrorException(messages_constants_1.Messages.vehicle.notActive(vehicleMatch.id));
                     }
@@ -413,43 +454,6 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 }
                 else {
                     errorArray.push(`Aggregator ${item["Aggregator"]} not found at Data No. ${index + 1}`);
-                    continue;
-                }
-                const employeeMatch = await this.employeeService.findByCode(item["XDS No."]);
-                if (employeeMatch) {
-                    if (employeeMatch.status === "inactive") {
-                        errorArray.push(`${messages_constants_1.Messages.employee.inactive(item["XDS No."])} at Data No. ${index + 1}`);
-                        continue;
-                    }
-                    const { data: employeeLastTransaction } = await this.getEmployeeLatestTransaction(employeeMatch.id);
-                    if (employeeLastTransaction &&
-                        employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
-                        errorArray.push(messages_constants_1.Messages.employee.isOccupied(item["XDS No."], employeeLastTransaction.vehicle.vehicleNo));
-                        continue;
-                    }
-                    if (transaction.action === "out" &&
-                        employeeLastTransaction &&
-                        employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
-                        errorArray.push(messages_constants_1.Messages.employee.isOccupied(employeeMatch.id, employeeLastTransaction.vehicle.vehicleNo));
-                        continue;
-                    }
-                    if (transaction.action === "in" &&
-                        employeeLastTransaction &&
-                        employeeLastTransaction.action === transaction_entity_1.Action.IN) {
-                        errorArray.push("Employee is already available cant check in");
-                        continue;
-                    }
-                    if (transaction.action === "in" &&
-                        employeeLastTransaction &&
-                        employeeLastTransaction.action === transaction_entity_1.Action.IN &&
-                        employeeLastTransaction.vehicle.vehicleNo !== vehicleMatch.vehicleNo) {
-                        errorArray.push(messages_constants_1.Messages.employee.differentVehicle(employeeMatch.id, employeeLastTransaction.vehicle.vehicleNo));
-                        continue;
-                    }
-                    transaction.employee = employeeMatch.id;
-                }
-                else {
-                    errorArray.push(`Employee with XDS No. ${item["XDS No."]} not found at Data No. ${index + 1}`);
                     continue;
                 }
                 const locationMatch = await this.locationService.findByName(item["Location"]);
