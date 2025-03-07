@@ -20,6 +20,7 @@ export declare class TransactionController {
     update(id: string, user: Partial<User>, body: UpdateTransactionDto): Promise<response<Transaction>>;
     findAll(): Promise<response<Transaction[]>>;
     findPastTransaction(vehicleNo: string, action: Action): Promise<response<Transaction>>;
+    getEmployeeLatestTransaction(employeeId: string): Promise<response<Transaction>>;
     remove(id: string): Promise<response<void>>;
     getTransactionsByDate(from?: string, to?: string, months?: number, date?: string): Promise<response<Transaction[]>>;
     uploadExcel(file: Express.Multer.File): Promise<response<any>>;

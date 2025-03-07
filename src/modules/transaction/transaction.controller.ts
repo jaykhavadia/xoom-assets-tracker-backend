@@ -189,6 +189,23 @@ export class TransactionController {
     }
   }
 
+  @Get("past-employee-transaction/:employeeId")
+  async getEmployeeLatestTransaction(
+    @Param("employeeId") employeeId: string,
+  ): Promise<response<Transaction>> {
+    const employee = parseInt(employeeId, 10); // Parse the ID from the URL
+    try {
+      return await this.transactionService.getEmployeeLatestTransaction(
+        employee,
+      ); // Fetch all transactions
+    } catch (error) {
+      this.logger.error(
+        `[TransactionController] [getEmployeeLatestTransaction] Error: ${error.message}`,
+      ); // Log error
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST); // Handle error
+    }
+  }
+
   /**
    * Deletes a transaction by its ID.
    * @param id - The ID of the transaction to delete.

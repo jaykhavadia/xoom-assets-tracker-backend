@@ -111,6 +111,16 @@ let TransactionController = TransactionController_1 = class TransactionControlle
             throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
         }
     }
+    async getEmployeeLatestTransaction(employeeId) {
+        const employee = parseInt(employeeId, 10);
+        try {
+            return await this.transactionService.getEmployeeLatestTransaction(employee);
+        }
+        catch (error) {
+            this.logger.error(`[TransactionController] [getEmployeeLatestTransaction] Error: ${error.message}`);
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
     async remove(id) {
         const transactionId = parseInt(id, 10);
         try {
@@ -238,6 +248,13 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], TransactionController.prototype, "findPastTransaction", null);
+__decorate([
+    (0, common_1.Get)("past-employee-transaction/:employeeId"),
+    __param(0, (0, common_1.Param)("employeeId")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TransactionController.prototype, "getEmployeeLatestTransaction", null);
 __decorate([
     (0, common_1.Delete)(":id"),
     __param(0, (0, common_1.Param)("id")),
