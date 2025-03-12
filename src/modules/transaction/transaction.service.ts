@@ -642,19 +642,6 @@ export class TransactionService {
               await this.getEmployeeLatestTransaction(employeeMatch.id);
 
             if (
-              employeeLastTransaction &&
-              employeeLastTransaction.action === Action.OUT
-            ) {
-              errorArray.push(
-                Messages.employee.isOccupied(
-                  item["XDS No."],
-                  employeeLastTransaction.vehicle.vehicleNo,
-                ),
-              );
-              continue; // Skip to the next iteration
-            }
-
-            if (
               transaction.action === "out" &&
               employeeLastTransaction &&
               employeeLastTransaction.action === Action.OUT

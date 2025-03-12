@@ -395,11 +395,6 @@ let TransactionService = TransactionService_1 = class TransactionService {
                             continue;
                         }
                         const { data: employeeLastTransaction } = await this.getEmployeeLatestTransaction(employeeMatch.id);
-                        if (employeeLastTransaction &&
-                            employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
-                            errorArray.push(messages_constants_1.Messages.employee.isOccupied(item["XDS No."], employeeLastTransaction.vehicle.vehicleNo));
-                            continue;
-                        }
                         if (transaction.action === "out" &&
                             employeeLastTransaction &&
                             employeeLastTransaction.action === transaction_entity_1.Action.OUT) {
