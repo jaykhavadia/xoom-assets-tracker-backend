@@ -90,7 +90,10 @@ export class VehicleService {
     }
   }
 
-  async findByVehicleNoAndCode(vehicleNo: string, code: string): Promise<Vehicle> {
+  async findByVehicleNoAndCode(
+    vehicleNo: string,
+    code: string,
+  ): Promise<Vehicle> {
     try {
       return await this.vehicleRepository.findOneBy({ vehicleNo, code });
     } catch (error) {

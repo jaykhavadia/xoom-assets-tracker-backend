@@ -574,13 +574,11 @@ export class TransactionService {
     const sheetName = workbook.SheetNames[0]; // Get the first sheet name
     const worksheet = workbook.Sheets[sheetName]; // Get the worksheet
     const jsonData = XLSX.utils.sheet_to_json(worksheet); // Convert sheet to JSON
-
     if (
-      Object.keys(jsonData[0]).includes("Vehicle No.") 
-      &&
-      Object.keys(jsonData[0]).includes("Code") 
-      &&
-      type !== "transaction"
+      !(
+        Object.keys(jsonData[0]).includes("Vehicle No.") &&
+        Object.keys(jsonData[0]).includes("Code")
+      )
     ) {
       throw new Error("INVALID_FILE");
     }
