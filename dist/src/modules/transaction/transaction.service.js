@@ -357,8 +357,11 @@ let TransactionService = TransactionService_1 = class TransactionService {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        if (Object.keys(jsonData[0]).includes("Vehicle No.") &&
-            type !== "transaction") {
+        if (Object.keys(jsonData[0]).includes("Vehicle No.")
+            &&
+                Object.keys(jsonData[0]).includes("Code")
+            &&
+                type !== "transaction") {
             throw new Error("INVALID_FILE");
         }
         const errorArray = [];
@@ -386,7 +389,7 @@ let TransactionService = TransactionService_1 = class TransactionService {
                 }
                 transaction.time = item["Cut Off Time"];
                 transaction.date = this.uploadService.excelDateToJSDate(item["Cut Off Date"]);
-                const vehicleMatch = await this.vehicleService.findByVehicleNo(item["Vehicle No."].toString());
+                const vehicleMatch = await this.vehicleService.findByVehicleNoAndCode(item["Vehicle No."].toString(), item["Code"].toString());
                 if (vehicleMatch) {
                     const employeeMatch = await this.employeeService.findByCode(item["XDS No."]);
                     if (employeeMatch) {

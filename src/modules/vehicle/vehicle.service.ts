@@ -90,9 +90,9 @@ export class VehicleService {
     }
   }
 
-  async findByVehicleNo(vehicleNo: string): Promise<Vehicle> {
+  async findByVehicleNoAndCode(vehicleNo: string, code: string): Promise<Vehicle> {
     try {
-      return await this.vehicleRepository.findOneBy({ vehicleNo });
+      return await this.vehicleRepository.findOneBy({ vehicleNo, code });
     } catch (error) {
       this.logger.error(`[VehicleService] [findOne] Error: ${error.message}`);
       throw new InternalServerErrorException(

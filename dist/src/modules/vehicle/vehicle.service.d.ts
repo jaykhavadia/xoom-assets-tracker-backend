@@ -18,7 +18,7 @@ export declare class VehicleService {
     create(createVehicleDto: VehicleDto): Promise<Vehicle>;
     findAll(status?: "available" | "occupied"): Promise<Vehicle[]>;
     findOne(id: string): Promise<Vehicle>;
-    findByVehicleNo(vehicleNo: string): Promise<Vehicle>;
+    findByVehicleNoAndCode(vehicleNo: string, code: string): Promise<Vehicle>;
     update(id: string, updateVehicleDto: Partial<VehicleDto>): Promise<Vehicle>;
     remove(id: string): Promise<void>;
     updateVehicles(vehicles: Vehicle[]): Promise<void>;

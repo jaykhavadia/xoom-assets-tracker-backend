@@ -69,9 +69,9 @@ let VehicleService = VehicleService_1 = class VehicleService {
             throw new common_1.InternalServerErrorException(`Failed to find vehicle with id: ${id}`);
         }
     }
-    async findByVehicleNo(vehicleNo) {
+    async findByVehicleNoAndCode(vehicleNo, code) {
         try {
-            return await this.vehicleRepository.findOneBy({ vehicleNo });
+            return await this.vehicleRepository.findOneBy({ vehicleNo, code });
         }
         catch (error) {
             this.logger.error(`[VehicleService] [findOne] Error: ${error.message}`);

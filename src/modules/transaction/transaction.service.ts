@@ -576,7 +576,10 @@ export class TransactionService {
     const jsonData = XLSX.utils.sheet_to_json(worksheet); // Convert sheet to JSON
 
     if (
-      Object.keys(jsonData[0]).includes("Vehicle No.") &&
+      Object.keys(jsonData[0]).includes("Vehicle No.") 
+      &&
+      Object.keys(jsonData[0]).includes("Code") 
+      &&
       type !== "transaction"
     ) {
       throw new Error("INVALID_FILE");
@@ -622,8 +625,9 @@ export class TransactionService {
         );
 
         // Find the associated vehicle
-        const vehicleMatch = await this.vehicleService.findByVehicleNo(
+        const vehicleMatch = await this.vehicleService.findByVehicleNoAndCode(
           item["Vehicle No."].toString(),
+          item["Code"].toString(),
         );
         if (vehicleMatch) {
           // Find the associated employees
